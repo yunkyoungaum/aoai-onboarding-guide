@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OAI → Azure OpenAI 온보딩 가이드</title>
+<script>
+  (() => {
+    const param = new URLSearchParams(window.location.search).get("scoutTheme");
+    const theme =
+      param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+<style>
+:root {
+  color-scheme: light;
+  --cp-bg: #f7f4ef;
+  --cp-bg-elevated: #fcfbf8;
+  --cp-surface: #ffffff;
+  --cp-surface-soft: #f5f5f5;
+  --cp-border: #dedede;
+  --cp-border-strong: #919191;
+  --cp-text: #242424;
+  --cp-text-muted: #5c5c5c;
+  --cp-text-soft: #6f6f6f;
+  --cp-accent: #b11f4b;
+  --cp-accent-hover: #9a1a41;
+  --cp-accent-soft: rgba(177, 31, 75, 0.08);
+  --cp-accent-fg: #ffffff;
+  --cp-success: #16a34a;
+  --cp-danger: #dc2626;
+  --cp-warning: #f59e0b;
+  --cp-link: #0078d4;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+  --cp-highlight: rgba(177, 31, 75, 0.12);
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --cp-bg: #3d3b3a;
+  --cp-bg-elevated: #343231;
+  --cp-surface: #292929;
+  --cp-surface-soft: #2e2e2e;
+  --cp-border: #474747;
+  --cp-border-strong: #5f5f5f;
+  --cp-text: #dedede;
+  --cp-text-muted: #919191;
+  --cp-text-soft: #b0b0b0;
+  --cp-accent: #fd8ea1;
+  --cp-accent-hover: #fb7b91;
+  --cp-accent-soft: rgba(253, 142, 161, 0.14);
+  --cp-accent-fg: #1a1a1a;
+  --cp-success: #4ade80;
+  --cp-danger: #f87171;
+  --cp-warning: #fbbf24;
+  --cp-link: #4da6ff;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+  --cp-highlight: rgba(253, 142, 161, 0.12);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 2rem 1rem 4rem;
+  background: var(--cp-bg);
+  color: var(--cp-text);
+  font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.6;
+}
+.wrap { max-width: 880px; margin: 0 auto; }
+header.page {
+  margin-bottom: 2rem;
+}
+header.page h1 {
+  font-size: 1.7rem;
+  margin: 0 0 0.4rem;
+}
+header.page p {
+  margin: 0;
+  color: var(--cp-text-muted);
+  font-size: 0.95rem;
+}
+.card {
+  background: var(--cp-surface);
+  border: 1px solid var(--cp-border);
+  border-radius: 16px;
+  padding: 1.4rem 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 0 2px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.14);
+}
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+.num {
+  flex: 0 0 auto;
+  min-width: 2rem; height: 2rem;
+  padding: 0 0.4rem;
+  border-radius: 0.625rem;
+  background: var(--cp-accent);
+  color: var(--cp-accent-fg);
+  display: grid; place-items: center;
+  font-weight: 700;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+.num.sub { font-size: 0.82rem; }
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+  margin-top: 0.6rem;
+}
+@media (max-width: 620px) { .grid2 { grid-template-columns: 1fr; } }
+.mini {
+  border: 1px solid var(--cp-border);
+  border-radius: 0.625rem;
+  padding: 0.8rem 0.9rem;
+  background: var(--cp-surface-soft);
+}
+.mini h3 { margin: 0 0 0.4rem; font-size: 0.98rem; }
+.mini h3 .dot {
+  display: inline-block; width: 0.6rem; height: 0.6rem;
+  border-radius: 50%; margin-right: 0.4rem; vertical-align: middle;
+}
+.dot.pub { background: var(--cp-link); }
+.dot.pri { background: var(--cp-success); }
+.mini ul { padding-left: 1.1rem; }
+.mini li { font-size: 0.86rem; margin: 0.25rem 0; }
+.card-head h2 { font-size: 1.15rem; margin: 0; }
+.card p { margin: 0.5rem 0; }
+.muted { color: var(--cp-text-muted); font-size: 0.92rem; }
+ul { margin: 0.5rem 0; padding-left: 1.2rem; }
+li { margin: 0.3rem 0; }
+code, .mono {
+  font-family: Consolas, "Courier New", Courier, monospace;
+  background: var(--cp-surface-soft);
+  border: 1px solid var(--cp-border);
+  border-radius: 6px;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.85rem;
+}
+pre {
+  background: var(--cp-surface-soft);
+  border: 1px solid var(--cp-border);
+  border-radius: 0.625rem;
+  padding: 0.8rem 1rem;
+  overflow-x: auto;
+  font-family: Consolas, "Courier New", Courier, monospace;
+  font-size: 0.82rem;
+  margin: 0.6rem 0;
+}
+.tag {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--cp-accent-soft);
+  color: var(--cp-accent);
+  margin-left: auto;
+}
+.btn {
+  display: inline-block;
+  margin-top: 0.7rem;
+  padding: 0.55rem 1rem;
+  background: var(--cp-accent);
+  color: var(--cp-accent-fg);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: 0.625rem;
+  transition: background 0.15s ease;
+}
+.btn:hover { background: var(--cp-accent-hover); }
+.note {
+  border-left: 3px solid var(--cp-warning);
+  background: var(--cp-highlight);
+  padding: 0.6rem 0.9rem;
+  border-radius: 0 0.625rem 0.625rem 0;
+  font-size: 0.88rem;
+  margin: 0.7rem 0 0;
+}
+.steps { counter-reset: s; list-style: none; padding-left: 0; }
+.steps li {
+  counter-increment: s;
+  position: relative;
+  padding-left: 1.9rem;
+  margin: 0.5rem 0;
+}
+.steps li::before {
+  content: counter(s);
+  position: absolute; left: 0; top: 0.05rem;
+  width: 1.4rem; height: 1.4rem;
+  border-radius: 50%;
+  background: var(--cp-accent-soft);
+  color: var(--cp-accent);
+  font-size: 0.78rem; font-weight: 700;
+  display: grid; place-items: center;
+}
+a.link { color: var(--cp-link); }
+mark.hl {
+  background: var(--cp-highlight);
+  color: var(--cp-accent);
+  font-weight: 700;
+  padding: 0.05rem 0.3rem;
+  border-radius: 5px;
+  box-shadow: inset 0 0 0 1px var(--cp-accent-soft);
+}
+footer { text-align: center; color: var(--cp-text-soft); font-size: 0.8rem; margin-top: 2rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <h1>OpenAI → Azure OpenAI 온보딩 가이드</h1>
+    <p>고객 전환 시 핵심 4단계 · 2025.10 문서 개정 반영 (콘텐츠 필터 = Guardrails)</p>
+  </header>
+
+  <!-- 1 -->
+  <section class="card">
+    <div class="card-head">
+      <div class="num">1</div>
+      <h2>쿼터 확인</h2>
+      <span class="tag">필수</span>
+    </div>
+    <p>쿼터는 <strong>구독 전체가 아니라 리전 · 모델 · 배포 단위</strong>로 <code>TPM</code>(분당 토큰) / <code>RPM</code>(분당 요청)으로 할당됩니다.</p>
+    <ul>
+      <li><strong>확인 위치</strong>: Azure AI Foundry 포털 → <em>Quotas</em>, 또는 Azure Portal → 구독 → <em>Usage + quotas</em></li>
+      <li>원하는 <strong>모델이 원하는 리전에 존재</strong>하고 TPM 여유가 있는지 확인</li>
+      <li>부족하면 <strong>Quota 증설 요청</strong> 제출 (또는 계정팀 경유)</li>
+      <li>대규모/일정 트래픽이면 <strong>PTU(Provisioned)</strong> 또는 <strong>Global 배포 + 다중 리전 로드밸런싱</strong> 검토</li>
+    </ul>
+    <div class="note">TPM은 배포에 나눠 할당되므로, 배포를 여러 개 만들면 리전 쿼터를 서로 나눠 씁니다.</div>
+  </section>
+
+  <!-- 2 -->
+  <section class="card">
+    <div class="card-head">
+      <div class="num">2</div>
+      <h2>모델 배포 방식 (간략)</h2>
+    </div>
+    <p>OAI는 <code>model</code> 이름을 직접 쓰지만, AOAI는 모델을 <strong>배포(Deployment)</strong>로 만들고 <strong>배포 이름</strong>을 호출합니다.</p>
+    <ol class="steps">
+      <li>Foundry 포털 → <em>Deployments</em> → <em>Create</em></li>
+      <li>모델 + 버전 선택 → <strong>배포 유형</strong> 선택 (아래)</li>
+      <li>TPM 할당 → 배포 이름 지정 → 생성</li>
+      <li>코드에서 <code>model</code> 자리에 <strong>배포 이름</strong> 사용 + <code>api-version</code> 지정</li>
+    </ol>
+    <p class="muted"><strong>배포 유형</strong> — Standard(단일 리전) · Global Standard(광역·저비용) · DataZone(권역 내) · Provisioned/PTU(예약 처리량).</p>
+    <pre>endpoint = https://{resource}.openai.azure.com
+auth     = api-key  또는  Entra ID(Managed Identity)
+model    = &lt;deployment name&gt;   # 모델명 아님
+api-version = 2024-xx-xx</pre>
+  </section>
+
+  <!-- 2-2 -->
+  <section class="card">
+    <div class="card-head">
+      <div class="num sub">2-2</div>
+      <h2>네트워크 구성: Public vs Private</h2>
+    </div>
+    <p>배포 후 <strong>리소스 접근 경로</strong>를 어떻게 열지 결정합니다. 보통 AOAI 전환의 핵심 이유가 <strong>Private(사설망) 격리</strong>입니다.</p>
+    <div class="grid2">
+      <div class="mini">
+        <h3><span class="dot pub"></span>Public 배포</h3>
+        <ul>
+          <li>퍼블릭 엔드포인트로 인터넷에서 접근</li>
+          <li>키 또는 Entra ID 인증으로 보호</li>
+          <li><strong>방화벽 규칙</strong>으로 허용 IP/VNet 제한 가능</li>
+          <li>구성 간단 · PoC/개발에 적합</li>
+        </ul>
+      </div>
+      <div class="mini">
+        <h3><span class="dot pri"></span>Private 배포</h3>
+        <ul>
+          <li><strong>Private Endpoint</strong> + VNet 통합</li>
+          <li>퍼블릭 액세스 <strong>완전 차단</strong> (Disabled)</li>
+          <li><strong>Private DNS Zone</strong>로 사내망 해석</li>
+          <li>Managed Identity·CMK와 결합 → 프로덕션 권장</li>
+        </ul>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:0.7rem;">Public Network Access 설정: <code>Enabled</code> / <code>Enabled with rules</code>(IP·VNet 허용) / <code>Disabled</code>(Private Endpoint 전용).</p>
+    <div class="note">Private로 완전 격리하려면 Public access를 <strong>Disabled</strong>로 두고, Private Endpoint + Private DNS Zone(<code>privatelink.openai.azure.com</code>)을 반드시 함께 구성해야 사내 이름 해석이 됩니다.</div>
+  </section>
+
+  <!-- 3 -->
+  <section class="card">
+    <div class="card-head">
+      <div class="num">3</div>
+      <h2>콘텐츠 필터링 Off (Modified Guardrails)</h2>
+      <span class="tag">승인 필요</span>
+    </div>
+    <p>유해 콘텐츠(Hate·Sexual·Violence·Self-harm) <strong>실시간 차단 필터</strong>를 부분/완전히 끄는 신청입니다.</p>
+    <ul>
+      <li>severity <strong>임계값 조정은 신청 없이</strong> 가능 — 완전/부분 <strong>Off는 승인 필요</strong></li>
+      <li><strong>Microsoft 계정팀 관리(managed) 고객</strong>만 신청 가능</li>
+      <li>승인 후: 커스텀 필터 구성 생성 → <strong>각 배포에 연결</strong></li>
+    </ul>
+    <div class="note">Protected material(code) 필터를 끄면 <strong>Customer Copyright Commitment</strong> 커버리지에 영향 → 신중히 결정.</div>
+    <a class="btn" target="_blank" href="https://customervoice.microsoft.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbR7en2Ais5pxKtso_Pz4b1_xUMlBQNkZMR0lFRldORTdVQzQ0TEI5Q1ExOSQlQCN0PWcu">Modified Guardrails 신청 폼 →</a>
+  </section>
+
+  <!-- 4 -->
+  <section class="card">
+    <div class="card-head">
+      <div class="num">4</div>
+      <h2>Abuse Monitoring Off (Opt-out)</h2>
+      <span class="tag">승인 필요</span>
+    </div>
+    <p>abuse 탐지용 <strong>프롬프트/응답 저장 + Microsoft 직원 human review</strong>를 중단하는 신청입니다. (민감·기밀 데이터 고객)</p>
+    <ul>
+      <li>승인 후에도 <strong>자동(AI) 검토는 유지</strong> — 심각/반복 abuse 시 접근 제한 가능</li>
+      <li><strong>검증</strong>: 리소스 JSON view / CLI에서 <code>ContentLogging = false</code> 확인</li>
+    </ul>
+    <pre>az cognitiveservices account show \
+  --name &lt;RESOURCE&gt; --resource-group &lt;RG&gt; \
+  --query "properties.capabilities"   # ContentLogging: false</pre>
+    <a class="btn" target="_blank" href="https://customervoice.microsoft.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbR7en2Ais5pxKtso_Pz4b1_xUOE9MUTFMUlpBNk5IQlZWWkcyUEpWWEhGOCQlQCN0PWcu">Modified Abuse Monitoring 신청 폼 →</a>
+  </section>
+
+  <!-- 5 -->
+  <section class="card">
+    <div class="card-head">
+      <div class="num">5</div>
+      <h2>인증 · 보안</h2>
+      <span class="tag">권장</span>
+    </div>
+    <p>AOAI 전환의 핵심 강점. 키 기반에서 <strong>키리스(Managed Identity)</strong>로 넘어가는 것을 권장합니다.</p>
+    <ul>
+      <li><strong>Managed Identity + RBAC</strong> — 키 대신 <code>Cognitive Services OpenAI User / Contributor</code> 역할 부여</li>
+      <li>키를 쓴다면 <strong>Key Vault</strong>에 보관 (코드·환경변수 하드코딩 금지)</li>
+      <li><strong>CMK(고객 관리 키)</strong> 암호화 필요 여부 검토</li>
+      <li>저장 기능(Stored completions · Responses API data store) 사용 시 <strong>저장 위치·레지던시</strong> 인지</li>
+    </ul>
+    <div class="note">데이터 레지던시: Global/DataZone 배포는 <strong>처리(processing)</strong>가 광역일 수 있음. 저장(at rest)은 지정 geography 내.</div>
+  </section>
+
+  <!-- 6 -->
+  <section class="card">
+    <div class="card-head">
+      <div class="num">6</div>
+      <h2>안정성 · 관측성 · 비용</h2>
+      <span class="tag">프로덕션</span>
+    </div>
+    <div class="grid2">
+      <div class="mini">
+        <h3>안정성 (HA)</h3>
+        <ul>
+          <li><strong>다중 리전 + 로드밸런싱</strong> / failover</li>
+          <li><strong>APIM을 AI Gateway로</strong> — 토큰 제한·스로틀링·라우팅</li>
+          <li>지연·일정 트래픽이면 <strong>PTU</strong></li>
+          <li><mark class="hl">429: <code>Retry-After</code> + 지수 백오프</mark></li>
+        </ul>
+      </div>
+      <div class="mini">
+        <h3>관측성 · 비용</h3>
+        <ul>
+          <li><strong>Azure Monitor / App Insights</strong> + Diagnostic logs</li>
+          <li><strong>Cost Management + 태그</strong>로 배포별 토큰 추적</li>
+          <li><strong>PTU 예약</strong>으로 비용 최적화</li>
+          <li>모델 <strong>버전 retirement</strong> 일정 관리</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note">코드 이관 시 <code>seed</code>·<code>response_format</code>·tool calling 등 파라미터 차이로 <strong>회귀 테스트</strong> 필수. ⚠️ OAI 파인튜닝 모델은 이전 불가 → AOAI에서 재튜닝.</div>
+  </section>
+
+  <footer>
+    출처: Microsoft Learn — Limited access / Abuse monitoring / Data privacy for Azure OpenAI
+  </footer>
+</div>
+</body>
+</html>
