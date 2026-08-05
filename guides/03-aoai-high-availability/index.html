@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Azure OpenAI 고가용성(HA) 아키텍처 가이드</title>
+<script>
+  (() => {
+    const param = new URLSearchParams(window.location.search).get("scoutTheme");
+    const theme =
+      param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+<style>
+:root {
+  color-scheme: light;
+  --cp-bg: #f7f4ef;
+  --cp-bg-elevated: #fcfbf8;
+  --cp-surface: #ffffff;
+  --cp-surface-soft: #f5f5f5;
+  --cp-border: #dedede;
+  --cp-border-strong: #919191;
+  --cp-text: #242424;
+  --cp-text-muted: #5c5c5c;
+  --cp-text-soft: #6f6f6f;
+  --cp-accent: #b11f4b;
+  --cp-accent-hover: #9a1a41;
+  --cp-accent-soft: rgba(177, 31, 75, 0.08);
+  --cp-accent-fg: #ffffff;
+  --cp-success: #16a34a;
+  --cp-danger: #dc2626;
+  --cp-warning: #f59e0b;
+  --cp-link: #0078d4;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+  --cp-highlight: rgba(177, 31, 75, 0.12);
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --cp-bg: #3d3b3a;
+  --cp-bg-elevated: #343231;
+  --cp-surface: #292929;
+  --cp-surface-soft: #2e2e2e;
+  --cp-border: #474747;
+  --cp-border-strong: #5f5f5f;
+  --cp-text: #dedede;
+  --cp-text-muted: #919191;
+  --cp-text-soft: #b0b0b0;
+  --cp-accent: #fd8ea1;
+  --cp-accent-hover: #fb7b91;
+  --cp-accent-soft: rgba(253, 142, 161, 0.14);
+  --cp-accent-fg: #1a1a1a;
+  --cp-success: #4ade80;
+  --cp-danger: #f87171;
+  --cp-warning: #fbbf24;
+  --cp-link: #4da6ff;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+  --cp-highlight: rgba(253, 142, 161, 0.12);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--cp-bg);
+  color: var(--cp-text);
+  font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15.5px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+.layout { display: flex; align-items: flex-start; max-width: 1400px; margin: 0 auto; gap: 24px; padding: 24px; }
+
+.sidebar {
+  position: sticky; top: 24px; flex: 0 0 290px; max-height: calc(100vh - 48px);
+  overflow-y: auto; background: var(--cp-surface); border: 1px solid var(--cp-border);
+  border-radius: 16px; padding: 20px 18px;
+  box-shadow: 0 0 2px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.14);
+}
+.sidebar h2 {
+  margin: 0 0 12px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--cp-text-muted); border: none; padding: 0;
+}
+.sidebar h2::before { content: none; }
+.sidebar ul { list-style: none; margin: 0; padding: 0; }
+.sidebar ul ul { padding-left: 12px; }
+.sidebar li { margin: 2px 0; }
+.sidebar a {
+  display: block; padding: 5px 10px; border-radius: 0.625rem; font-size: 13.5px;
+  color: var(--cp-text-muted); text-decoration: none; border-left: 2px solid transparent;
+}
+.sidebar a:hover { background: var(--cp-accent-soft); color: var(--cp-accent); }
+.sidebar a.active { background: var(--cp-accent-soft); color: var(--cp-accent); border-left-color: var(--cp-accent); font-weight: 600; }
+
+main {
+  flex: 1 1 auto; min-width: 0; background: var(--cp-surface);
+  border: 1px solid var(--cp-border); border-radius: 16px; padding: 44px 52px;
+  box-shadow: 0 0 2px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.14);
+}
+
+h1, h2, h3, h4 { font-weight: 650; line-height: 1.35; scroll-margin-top: 24px; }
+h1 { font-size: 2.05rem; margin: 0 0 8px; letter-spacing: -0.02em; }
+h2 {
+  font-size: 1.45rem; margin: 2.6rem 0 1rem; padding-bottom: .5rem;
+  border-bottom: 2px solid var(--cp-border);
+}
+h2::before {
+  content: ""; display: inline-block; width: 6px; height: 1.05em; border-radius: 3px;
+  background: var(--cp-accent); margin-right: 10px; vertical-align: -0.16em;
+}
+h3 { font-size: 1.14rem; margin: 1.9rem 0 .6rem; }
+h4 { font-size: 1rem; margin: 1.4rem 0 .5rem; color: var(--cp-text-muted); }
+
+p { margin: .8rem 0; }
+a { color: var(--cp-link); text-decoration: none; word-break: break-word; }
+a:hover { text-decoration: underline; }
+hr { border: none; border-top: 1px solid var(--cp-border); margin: 2.4rem 0; }
+
+ul, ol { padding-left: 1.5rem; }
+li { margin: .3rem 0; }
+li::marker { color: var(--cp-accent); }
+strong { font-weight: 650; }
+
+table {
+  width: 100%; border-collapse: separate; border-spacing: 0; margin: 1.2rem 0;
+  font-size: 14px; border: 1px solid var(--cp-border); border-radius: 12px; overflow: hidden;
+}
+thead th {
+  background: var(--cp-surface-soft); color: var(--cp-text); font-weight: 650;
+  text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--cp-border);
+}
+tbody td { padding: 10px 14px; border-bottom: 1px solid var(--cp-border); vertical-align: top; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--cp-accent-soft); }
+
+code {
+  font-family: Consolas, "Courier New", Courier, monospace;
+  font-size: .88em; background: var(--cp-surface-soft); color: var(--cp-accent);
+  padding: .12em .38em; border-radius: 5px; border: 1px solid var(--cp-border);
+  white-space: nowrap;
+}
+pre {
+  background: var(--cp-bg-elevated); border: 1px solid var(--cp-border);
+  border-radius: 12px; padding: 16px 18px; overflow-x: auto; margin: 1.1rem 0;
+  line-height: 1.6;
+}
+html[data-theme="dark"] pre { background: #1f1f1f; }
+pre code {
+  background: none; border: none; padding: 0; color: var(--cp-text); font-size: 13px;
+  white-space: pre;
+}
+.codehilite { background: none !important; }
+
+blockquote {
+  margin: 1.2rem 0; padding: 12px 18px; background: var(--cp-accent-soft);
+  border-left: 4px solid var(--cp-accent); border-radius: 0 10px 10px 0;
+}
+blockquote p { margin: .35rem 0; }
+
+.mermaid {
+  text-align: center; margin: 1.4rem 0; background: var(--cp-bg-elevated);
+  border: 1px solid var(--cp-border); border-radius: 12px; padding: 18px; overflow-x: auto;
+}
+.mermaid svg { max-width: 100%; height: auto; }
+.mermaid-fallback {
+  text-align: left; font-family: Consolas, "Courier New", Courier, monospace;
+  font-size: 12.5px; white-space: pre; color: var(--cp-text-muted);
+}
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1px solid var(--cp-border);
+}
+.meta { color: var(--cp-text-soft); font-size: 13px; }
+.badge {
+  display: inline-block; background: var(--cp-accent); color: var(--cp-accent-fg);
+  font-size: 11px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 999px;
+}
+.toggle {
+  cursor: pointer; border: 1px solid var(--cp-border); background: var(--cp-surface-soft);
+  color: var(--cp-text); border-radius: 0.625rem; padding: 7px 14px; font-size: 13px;
+  font-family: inherit;
+}
+.toggle:hover { border-color: var(--cp-accent); color: var(--cp-accent); }
+
+@media (max-width: 1024px) {
+  .sidebar { display: none; }
+  main { padding: 28px 20px; }
+  .layout { padding: 14px; }
+}
+@media print {
+  .sidebar, .toggle { display: none; }
+  main { border: none; box-shadow: none; padding: 0; }
+}
+
+pre { line-height: 125%; }
+td.linenos .normal { color: #666666; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: #666666; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+.codehilite .hll { background-color: #ffffcc }
+.codehilite { background: #f0f0f0; }
+.codehilite .c { color: #60A0B0; font-style: italic } /* Comment */
+.codehilite .err { border: 1px solid #F00 } /* Error */
+.codehilite .k { color: #007020; font-weight: bold } /* Keyword */
+.codehilite .o { color: #666 } /* Operator */
+.codehilite .ch { color: #60A0B0; font-style: italic } /* Comment.Hashbang */
+.codehilite .cm { color: #60A0B0; font-style: italic } /* Comment.Multiline */
+.codehilite .cp { color: #007020 } /* Comment.Preproc */
+.codehilite .cpf { color: #60A0B0; font-style: italic } /* Comment.PreprocFile */
+.codehilite .c1 { color: #60A0B0; font-style: italic } /* Comment.Single */
+.codehilite .cs { color: #60A0B0; background-color: #FFF0F0 } /* Comment.Special */
+.codehilite .gd { color: #A00000 } /* Generic.Deleted */
+.codehilite .ge { font-style: italic } /* Generic.Emph */
+.codehilite .ges { font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.codehilite .gr { color: #F00 } /* Generic.Error */
+.codehilite .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.codehilite .gi { color: #00A000 } /* Generic.Inserted */
+.codehilite .go { color: #888 } /* Generic.Output */
+.codehilite .gp { color: #C65D09; font-weight: bold } /* Generic.Prompt */
+.codehilite .gs { font-weight: bold } /* Generic.Strong */
+.codehilite .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.codehilite .gt { color: #04D } /* Generic.Traceback */
+.codehilite .kc { color: #007020; font-weight: bold } /* Keyword.Constant */
+.codehilite .kd { color: #007020; font-weight: bold } /* Keyword.Declaration */
+.codehilite .kn { color: #007020; font-weight: bold } /* Keyword.Namespace */
+.codehilite .kp { color: #007020 } /* Keyword.Pseudo */
+.codehilite .kr { color: #007020; font-weight: bold } /* Keyword.Reserved */
+.codehilite .kt { color: #902000 } /* Keyword.Type */
+.codehilite .m { color: #40A070 } /* Literal.Number */
+.codehilite .s { color: #4070A0 } /* Literal.String */
+.codehilite .na { color: #4070A0 } /* Name.Attribute */
+.codehilite .nb { color: #007020 } /* Name.Builtin */
+.codehilite .nc { color: #0E84B5; font-weight: bold } /* Name.Class */
+.codehilite .no { color: #60ADD5 } /* Name.Constant */
+.codehilite .nd { color: #555; font-weight: bold } /* Name.Decorator */
+.codehilite .ni { color: #D55537; font-weight: bold } /* Name.Entity */
+.codehilite .ne { color: #007020 } /* Name.Exception */
+.codehilite .nf { color: #06287E } /* Name.Function */
+.codehilite .nl { color: #002070; font-weight: bold } /* Name.Label */
+.codehilite .nn { color: #0E84B5; font-weight: bold } /* Name.Namespace */
+.codehilite .nt { color: #062873; font-weight: bold } /* Name.Tag */
+.codehilite .nv { color: #BB60D5 } /* Name.Variable */
+.codehilite .ow { color: #007020; font-weight: bold } /* Operator.Word */
+.codehilite .w { color: #BBB } /* Text.Whitespace */
+.codehilite .mb { color: #40A070 } /* Literal.Number.Bin */
+.codehilite .mf { color: #40A070 } /* Literal.Number.Float */
+.codehilite .mh { color: #40A070 } /* Literal.Number.Hex */
+.codehilite .mi { color: #40A070 } /* Literal.Number.Integer */
+.codehilite .mo { color: #40A070 } /* Literal.Number.Oct */
+.codehilite .sa { color: #4070A0 } /* Literal.String.Affix */
+.codehilite .sb { color: #4070A0 } /* Literal.String.Backtick */
+.codehilite .sc { color: #4070A0 } /* Literal.String.Char */
+.codehilite .dl { color: #4070A0 } /* Literal.String.Delimiter */
+.codehilite .sd { color: #4070A0; font-style: italic } /* Literal.String.Doc */
+.codehilite .s2 { color: #4070A0 } /* Literal.String.Double */
+.codehilite .se { color: #4070A0; font-weight: bold } /* Literal.String.Escape */
+.codehilite .sh { color: #4070A0 } /* Literal.String.Heredoc */
+.codehilite .si { color: #70A0D0; font-style: italic } /* Literal.String.Interpol */
+.codehilite .sx { color: #C65D09 } /* Literal.String.Other */
+.codehilite .sr { color: #235388 } /* Literal.String.Regex */
+.codehilite .s1 { color: #4070A0 } /* Literal.String.Single */
+.codehilite .ss { color: #517918 } /* Literal.String.Symbol */
+.codehilite .bp { color: #007020 } /* Name.Builtin.Pseudo */
+.codehilite .fm { color: #06287E } /* Name.Function.Magic */
+.codehilite .vc { color: #BB60D5 } /* Name.Variable.Class */
+.codehilite .vg { color: #BB60D5 } /* Name.Variable.Global */
+.codehilite .vi { color: #BB60D5 } /* Name.Variable.Instance */
+.codehilite .vm { color: #BB60D5 } /* Name.Variable.Magic */
+.codehilite .il { color: #40A070 } /* Literal.Number.Integer.Long */
+pre { line-height: 125%; }
+td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+html[data-theme="dark"] .codehilite .hll { background-color: #49483e }
+html[data-theme="dark"] .codehilite { background: #272822; color: #F8F8F2 }
+html[data-theme="dark"] .codehilite .c { color: #959077 } /* Comment */
+html[data-theme="dark"] .codehilite .err { color: #ED007E; background-color: #1E0010 } /* Error */
+html[data-theme="dark"] .codehilite .esc { color: #F8F8F2 } /* Escape */
+html[data-theme="dark"] .codehilite .g { color: #F8F8F2 } /* Generic */
+html[data-theme="dark"] .codehilite .k { color: #66D9EF } /* Keyword */
+html[data-theme="dark"] .codehilite .l { color: #AE81FF } /* Literal */
+html[data-theme="dark"] .codehilite .n { color: #F8F8F2 } /* Name */
+html[data-theme="dark"] .codehilite .o { color: #FF4689 } /* Operator */
+html[data-theme="dark"] .codehilite .x { color: #F8F8F2 } /* Other */
+html[data-theme="dark"] .codehilite .p { color: #F8F8F2 } /* Punctuation */
+html[data-theme="dark"] .codehilite .ch { color: #959077 } /* Comment.Hashbang */
+html[data-theme="dark"] .codehilite .cm { color: #959077 } /* Comment.Multiline */
+html[data-theme="dark"] .codehilite .cp { color: #959077 } /* Comment.Preproc */
+html[data-theme="dark"] .codehilite .cpf { color: #959077 } /* Comment.PreprocFile */
+html[data-theme="dark"] .codehilite .c1 { color: #959077 } /* Comment.Single */
+html[data-theme="dark"] .codehilite .cs { color: #959077 } /* Comment.Special */
+html[data-theme="dark"] .codehilite .gd { color: #FF4689 } /* Generic.Deleted */
+html[data-theme="dark"] .codehilite .ge { color: #F8F8F2; font-style: italic } /* Generic.Emph */
+html[data-theme="dark"] .codehilite .ges { color: #F8F8F2; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+html[data-theme="dark"] .codehilite .gr { color: #F8F8F2 } /* Generic.Error */
+html[data-theme="dark"] .codehilite .gh { color: #F8F8F2 } /* Generic.Heading */
+html[data-theme="dark"] .codehilite .gi { color: #A6E22E } /* Generic.Inserted */
+html[data-theme="dark"] .codehilite .go { color: #66D9EF } /* Generic.Output */
+html[data-theme="dark"] .codehilite .gp { color: #FF4689; font-weight: bold } /* Generic.Prompt */
+html[data-theme="dark"] .codehilite .gs { color: #F8F8F2; font-weight: bold } /* Generic.Strong */
+html[data-theme="dark"] .codehilite .gu { color: #959077 } /* Generic.Subheading */
+html[data-theme="dark"] .codehilite .gt { color: #F8F8F2 } /* Generic.Traceback */
+html[data-theme="dark"] .codehilite .kc { color: #66D9EF } /* Keyword.Constant */
+html[data-theme="dark"] .codehilite .kd { color: #66D9EF } /* Keyword.Declaration */
+html[data-theme="dark"] .codehilite .kn { color: #FF4689 } /* Keyword.Namespace */
+html[data-theme="dark"] .codehilite .kp { color: #66D9EF } /* Keyword.Pseudo */
+html[data-theme="dark"] .codehilite .kr { color: #66D9EF } /* Keyword.Reserved */
+html[data-theme="dark"] .codehilite .kt { color: #66D9EF } /* Keyword.Type */
+html[data-theme="dark"] .codehilite .ld { color: #E6DB74 } /* Literal.Date */
+html[data-theme="dark"] .codehilite .m { color: #AE81FF } /* Literal.Number */
+html[data-theme="dark"] .codehilite .s { color: #E6DB74 } /* Literal.String */
+html[data-theme="dark"] .codehilite .na { color: #A6E22E } /* Name.Attribute */
+html[data-theme="dark"] .codehilite .nb { color: #F8F8F2 } /* Name.Builtin */
+html[data-theme="dark"] .codehilite .nc { color: #A6E22E } /* Name.Class */
+html[data-theme="dark"] .codehilite .no { color: #66D9EF } /* Name.Constant */
+html[data-theme="dark"] .codehilite .nd { color: #A6E22E } /* Name.Decorator */
+html[data-theme="dark"] .codehilite .ni { color: #F8F8F2 } /* Name.Entity */
+html[data-theme="dark"] .codehilite .ne { color: #A6E22E } /* Name.Exception */
+html[data-theme="dark"] .codehilite .nf { color: #A6E22E } /* Name.Function */
+html[data-theme="dark"] .codehilite .nl { color: #F8F8F2 } /* Name.Label */
+html[data-theme="dark"] .codehilite .nn { color: #F8F8F2 } /* Name.Namespace */
+html[data-theme="dark"] .codehilite .nx { color: #A6E22E } /* Name.Other */
+html[data-theme="dark"] .codehilite .py { color: #F8F8F2 } /* Name.Property */
+html[data-theme="dark"] .codehilite .nt { color: #FF4689 } /* Name.Tag */
+html[data-theme="dark"] .codehilite .nv { color: #F8F8F2 } /* Name.Variable */
+html[data-theme="dark"] .codehilite .ow { color: #FF4689 } /* Operator.Word */
+html[data-theme="dark"] .codehilite .pm { color: #F8F8F2 } /* Punctuation.Marker */
+html[data-theme="dark"] .codehilite .w { color: #F8F8F2 } /* Text.Whitespace */
+html[data-theme="dark"] .codehilite .mb { color: #AE81FF } /* Literal.Number.Bin */
+html[data-theme="dark"] .codehilite .mf { color: #AE81FF } /* Literal.Number.Float */
+html[data-theme="dark"] .codehilite .mh { color: #AE81FF } /* Literal.Number.Hex */
+html[data-theme="dark"] .codehilite .mi { color: #AE81FF } /* Literal.Number.Integer */
+html[data-theme="dark"] .codehilite .mo { color: #AE81FF } /* Literal.Number.Oct */
+html[data-theme="dark"] .codehilite .sa { color: #E6DB74 } /* Literal.String.Affix */
+html[data-theme="dark"] .codehilite .sb { color: #E6DB74 } /* Literal.String.Backtick */
+html[data-theme="dark"] .codehilite .sc { color: #E6DB74 } /* Literal.String.Char */
+html[data-theme="dark"] .codehilite .dl { color: #E6DB74 } /* Literal.String.Delimiter */
+html[data-theme="dark"] .codehilite .sd { color: #E6DB74 } /* Literal.String.Doc */
+html[data-theme="dark"] .codehilite .s2 { color: #E6DB74 } /* Literal.String.Double */
+html[data-theme="dark"] .codehilite .se { color: #AE81FF } /* Literal.String.Escape */
+html[data-theme="dark"] .codehilite .sh { color: #E6DB74 } /* Literal.String.Heredoc */
+html[data-theme="dark"] .codehilite .si { color: #E6DB74 } /* Literal.String.Interpol */
+html[data-theme="dark"] .codehilite .sx { color: #E6DB74 } /* Literal.String.Other */
+html[data-theme="dark"] .codehilite .sr { color: #E6DB74 } /* Literal.String.Regex */
+html[data-theme="dark"] .codehilite .s1 { color: #E6DB74 } /* Literal.String.Single */
+html[data-theme="dark"] .codehilite .ss { color: #E6DB74 } /* Literal.String.Symbol */
+html[data-theme="dark"] .codehilite .bp { color: #F8F8F2 } /* Name.Builtin.Pseudo */
+html[data-theme="dark"] .codehilite .fm { color: #A6E22E } /* Name.Function.Magic */
+html[data-theme="dark"] .codehilite .vc { color: #F8F8F2 } /* Name.Variable.Class */
+html[data-theme="dark"] .codehilite .vg { color: #F8F8F2 } /* Name.Variable.Global */
+html[data-theme="dark"] .codehilite .vi { color: #F8F8F2 } /* Name.Variable.Instance */
+html[data-theme="dark"] .codehilite .vm { color: #F8F8F2 } /* Name.Variable.Magic */
+html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Integer.Long */
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav class="sidebar">
+    <h2>목차</h2>
+    <div class="toc">
+<ul>
+<li><a href="#0-tldr">0. TL;DR</a><ul>
+<li><a href="#ha">HA 성숙도 레벨</a></li>
+<li><a href="#_1">최소 체크리스트</a></li>
+</ul>
+</li>
+<li><a href="#1-aoai">1. AOAI에서 "장애"란 무엇인가</a></li>
+<li><a href="#2-ha-4">2. HA 설계의 4개 축</a></li>
+<li><a href="#3">3. 배포 유형별 가용성 특성</a><ul>
+<li><a href="#31">3.1 설계 권장 조합</a></li>
+</ul>
+</li>
+<li><a href="#4-layer-1">4. Layer 1 — 클라이언트 복원력</a><ul>
+<li><a href="#41">4.1 재시도 설계</a></li>
+<li><a href="#42-retry-after">4.2 ⚠️ Retry-After를 반드시 확인해야 하는 이유</a></li>
+<li><a href="#43">4.3 타임아웃 정합성</a></li>
+<li><a href="#44">4.4 클라이언트 측 서킷 브레이커 &amp; 부하 차단</a></li>
+</ul>
+</li>
+<li><a href="#5-layer-2-spillover-ptu">5. Layer 2 — Spillover (PTU → 표준 배포)</a><ul>
+<li><a href="#51">5.1 전제 조건</a></li>
+<li><a href="#52">5.2 배포 단위로 켜기</a></li>
+<li><a href="#53">5.3 요청 단위로 켜기</a></li>
+<li><a href="#54-spillover">5.4 ⚠️ Spillover가 막지 못하는 것</a></li>
+<li><a href="#55-spillover">5.5 Spillover 관측</a></li>
+</ul>
+</li>
+<li><a href="#6-layer-3-apim-ai-gateway">6. Layer 3 — APIM AI Gateway (다중 백엔드)</a><ul>
+<li><a href="#61">6.1 백엔드 엔터티 구성</a></li>
+<li><a href="#62">6.2 백엔드 풀 &amp; 로드 밸런싱</a></li>
+<li><a href="#63">6.3 서킷 브레이커 (필수)</a></li>
+<li><a href="#64-failover">6.4 우선순위 기반 Failover 풀 예시</a></li>
+<li><a href="#65">6.5 정책 조합 예시</a></li>
+<li><a href="#66">6.6 시맨틱 캐싱 — 가용성 관점</a></li>
+</ul>
+</li>
+<li><a href="#7-layer-4">7. Layer 4 — 멀티 리전 설계</a><ul>
+<li><a href="#71">7.1 리전 선택 기준</a></li>
+<li><a href="#72-active-active-vs-active-passive">7.2 Active-Active vs Active-Passive</a></li>
+<li><a href="#73">7.3 리전 간 일관성 관리</a></li>
+<li><a href="#74">7.4 글로벌 진입 계층</a></li>
+</ul>
+</li>
+<li><a href="#8-ha">8. 용량 계획과 쿼터 관리 — HA의 숨은 실패 지점</a><ul>
+<li><a href="#81">8.1 반드시 확인할 것</a></li>
+<li><a href="#82">8.2 용량 시나리오 계산</a></li>
+</ul>
+</li>
+<li><a href="#9">9. 모델 수명주기 — 조용한 가용성 리스크</a></li>
+<li><a href="#10-layer-5-graceful-degradation">10. Layer 5 — 우아한 성능 저하 (Graceful Degradation)</a></li>
+<li><a href="#11">11. 검증 — 설계보다 중요한 것</a><ul>
+<li><a href="#111">11.1 정기 훈련 항목</a></li>
+<li><a href="#112">11.2 측정할 값</a></li>
+</ul>
+</li>
+<li><a href="#12">12. 참조 아키텍처</a><ul>
+<li><a href="#121-tier-2-production">12.1 Tier 2 — 일반 Production</a></li>
+<li><a href="#122-tier-3">12.2 Tier 3 — 미션 크리티컬</a></li>
+<li><a href="#123">12.3 구성 요소별 역할 요약</a></li>
+</ul>
+</li>
+<li><a href="#13-ha">13. HA 체크리스트</a><ul>
+<li><a href="#_2">설계</a></li>
+<li><a href="#_3">구현</a></li>
+<li><a href="#_4">운영</a></li>
+</ul>
+</li>
+<li><a href="#a">부록 A. 자주 하는 실수</a></li>
+<li><a href="#b">부록 B. 참고 문서</a></li>
+<li><a href="#_5">리뷰가 필요한 항목 (초안 메모)</a></li>
+</ul>
+</div>
+
+  </nav>
+  <main>
+    <div class="topbar">
+      <span class="badge">Azure OpenAI · HA Architecture · DRAFT</span>
+      <button class="toggle" id="themeToggle" type="button">테마 전환</button>
+    </div>
+    <h1 id="azure-openai-ha">Azure OpenAI 고가용성(HA) 아키텍처 가이드</h1>
+<blockquote>
+<p>대상: AOAI를 <strong>미션 크리티컬 워크로드</strong>에 사용하는 아키텍트, SRE, 플랫폼 팀
+범위: 장애 유형 분류 → 계층별 HA 설계 → Spillover/APIM/멀티 리전 → 용량·모델 수명주기 → 검증
+관련 가이드: <a href="../01-oai-to-aoai-onboarding/">01 온보딩</a> · <a href="../02-aoai-deployment-monitoring/">02 배포 &amp; 운영 모니터링</a>
+검증 기준: Azure OpenAI Spillover, API Management Backends(<code>2024-05-01</code>), Azure RBAC 기본 제공 역할 문서 (2026-08 확인)</p>
+<p><strong>⚠️ 초안(Draft)</strong> — 리뷰용으로 공개된 문서입니다. 조직 표준 확정 전까지 그대로 적용하지 마세요. 미확정 항목은 문서 말미의 <em>리뷰가 필요한 항목</em> 참고.</p>
+</blockquote>
+<hr />
+<h2 id="0-tldr">0. TL;DR</h2>
+<h3 id="ha">HA 성숙도 레벨</h3>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>구성</th>
+<th>견딜 수 있는 장애</th>
+<th>대상</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>L0</strong></td>
+<td>단일 리전 · 단일 배포 · 재시도 없음</td>
+<td>없음</td>
+<td>PoC</td>
+</tr>
+<tr>
+<td><strong>L1</strong></td>
+<td>+ 지수 백오프 재시도, <code>Retry-After</code> 준수, 타임아웃 정합성</td>
+<td>순간적 429/5xx</td>
+<td>내부 도구</td>
+</tr>
+<tr>
+<td><strong>L2</strong></td>
+<td>+ <strong>Spillover</strong> (PTU → 표준, 동일 리소스)</td>
+<td><strong>용량 포화(429)</strong></td>
+<td>일반 Production</td>
+</tr>
+<tr>
+<td><strong>L3</strong></td>
+<td>+ <strong>APIM 백엔드 풀</strong> (다중 리전, 우선순위 + 서킷 브레이커)</td>
+<td>용량 + <strong>리전 장애</strong></td>
+<td>중요 서비스</td>
+</tr>
+<tr>
+<td><strong>L4</strong></td>
+<td>+ Front Door 다중 APIM, 다중 구독/테넌트 쿼터 분산, 성능 저하 모드</td>
+<td>게이트웨이·구독 단위 장애</td>
+<td>미션 크리티컬</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 <strong>핵심 원칙</strong>: Spillover는 <strong>용량 장애</strong>만 해결하고, APIM 백엔드 풀은 <strong>리전 장애</strong>까지 해결합니다. 둘은 대체 관계가 아니라 <strong>보완 관계</strong>입니다(§5.4).</p>
+</blockquote>
+<h3 id="_1">최소 체크리스트</h3>
+<ul>
+<li>[ ] 모든 클라이언트가 <code>Retry-After</code> 헤더를 <strong>준수</strong>한다 (§4.2)</li>
+<li>[ ] PTU 배포에 <strong>Spillover 표준 배포</strong>가 연결되어 있다 (§5)</li>
+<li>[ ] 최소 <strong>2개 리전</strong>에 동일 모델·버전 배포가 존재한다 (§7)</li>
+<li>[ ] APIM 백엔드 풀에 <strong>서킷 브레이커 규칙</strong>이 설정되어 있다 (§6.3)</li>
+<li>[ ] 리전별 <strong>쿼터가 실제로 확보</strong>되어 있다 (Failover 시점에 없으면 무의미, §8)</li>
+<li>[ ] 모델 <strong>버전 은퇴(retirement) 일정</strong>을 추적하고 있다 (§9)</li>
+<li>[ ] <strong>성능 저하 모드(graceful degradation)</strong> 가 정의되어 있다 (§10)</li>
+<li>[ ] Failover를 <strong>정기적으로 테스트</strong>한다 (§11)</li>
+</ul>
+<hr />
+<h2 id="1-aoai">1. AOAI에서 "장애"란 무엇인가</h2>
+<p>HA 설계의 출발점은 <strong>무엇으로부터 보호할 것인가</strong>를 정확히 나누는 것입니다. AOAI 장애는 성격이 전혀 다른 5가지로 나뉘며, <strong>대응 수단이 각각 다릅니다.</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>장애 유형</th>
+<th>증상</th>
+<th>근본 원인</th>
+<th>유효한 대응</th>
+<th>무효한 대응</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>F1</strong></td>
+<td><strong>용량 포화</strong></td>
+<td>429 급증</td>
+<td>PTU 100% 도달, TPM/RPM 쿼터 초과</td>
+<td>Spillover, 용량 증설, 다른 배포로 라우팅</td>
+<td>재시도만 반복(오히려 악화)</td>
+</tr>
+<tr>
+<td><strong>F2</strong></td>
+<td><strong>서비스 오류</strong></td>
+<td>500/503</td>
+<td>백엔드 일시 오류</td>
+<td>재시도 + 다른 배포/리전</td>
+<td>용량 증설</td>
+</tr>
+<tr>
+<td><strong>F3</strong></td>
+<td><strong>리전 장애</strong></td>
+<td>특정 리전 전체 실패</td>
+<td>리전 인시던트</td>
+<td><strong>다른 리전 Failover</strong></td>
+<td>Spillover(같은 리소스이므로 무력)</td>
+</tr>
+<tr>
+<td><strong>F4</strong></td>
+<td><strong>클라이언트 단절</strong></td>
+<td>499</td>
+<td>타임아웃/사용자 취소</td>
+<td>스트리밍, 타임아웃 정합성</td>
+<td>리전 Failover</td>
+</tr>
+<tr>
+<td><strong>F5</strong></td>
+<td><strong>모델 수명주기</strong></td>
+<td>400/404, 품질 변화</td>
+<td>모델 버전 은퇴·업그레이드</td>
+<td>버전 고정 + 마이그레이션 계획</td>
+<td>인프라 이중화</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>가장 흔한 오설계</strong>: F1(용량)을 F3(리전 장애) 대응으로 막으려 하거나, 그 반대입니다.
+예를 들어 Spillover만 구성해 두고 "우리는 HA가 되어 있다"고 보는 경우, <strong>리전 인시던트에는 전혀 대비되어 있지 않습니다</strong>(§5.4).</p>
+</blockquote>
+<hr />
+<h2 id="2-ha-4">2. HA 설계의 4개 축</h2>
+<div class="mermaid" data-idx="0"></div>
+<table>
+<thead>
+<tr>
+<th>축</th>
+<th>질문</th>
+<th>대표 수단</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1. 용량</strong></td>
+<td>토큰을 처리할 여유가 있는가?</td>
+<td>PTU + Spillover, 다중 배포, 쿼터 확보</td>
+</tr>
+<tr>
+<td><strong>2. 위치</strong></td>
+<td>이 리전이 죽어도 되는가?</td>
+<td>멀티 리전, Global Standard</td>
+</tr>
+<tr>
+<td><strong>3. 경로</strong></td>
+<td>요청을 다른 곳으로 보낼 수 있는가?</td>
+<td>APIM 백엔드 풀, Front Door</td>
+</tr>
+<tr>
+<td><strong>4. 저하</strong></td>
+<td>완전 실패 대신 덜 좋은 응답이 가능한가?</td>
+<td>경량 모델, 캐시, 기능 축소</td>
+</tr>
+</tbody>
+</table>
+<p><strong>축 4를 빠뜨리는 경우가 매우 많습니다.</strong> 모든 백엔드가 포화된 상황에서 "느린 실패"보다 "빠른 대체 응답"이 사용자 경험상 훨씬 낫습니다.</p>
+<hr />
+<h2 id="3">3. 배포 유형별 가용성 특성</h2>
+<table>
+<thead>
+<tr>
+<th>배포 유형</th>
+<th>용량 예측성</th>
+<th>리전 종속</th>
+<th>429 특성</th>
+<th>HA 역할</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Provisioned (PTU)</strong></td>
+<td>높음(전용)</td>
+<td>리전 고정</td>
+<td>사용률 100% 도달 시 즉시 429</td>
+<td><strong>기저 부하 담당(Primary)</strong></td>
+</tr>
+<tr>
+<td><strong>Standard (PAYG)</strong></td>
+<td>낮음(공유)</td>
+<td>리전 고정</td>
+<td>리전 쿼터 혼잡 시 429</td>
+<td><strong>Spillover 대상 / 보조</strong></td>
+</tr>
+<tr>
+<td><strong>Global Standard</strong></td>
+<td>중간</td>
+<td>글로벌 라우팅</td>
+<td>상대적으로 여유</td>
+<td><strong>최종 Failover 후보</strong></td>
+</tr>
+<tr>
+<td><strong>Data Zone Standard</strong></td>
+<td>중간</td>
+<td>권역 내</td>
+<td>중간</td>
+<td>데이터 경계 요건 있는 Failover</td>
+</tr>
+<tr>
+<td><strong>Batch</strong></td>
+<td>—</td>
+<td>리전 고정</td>
+<td>비동기</td>
+<td>실시간 경로에서 분리(부하 감소)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="31">3.1 설계 권장 조합</h3>
+<div class="codehilite"><pre><span></span><code>[기저 부하]     PTU (Korea Central)
+      ↓ 포화 시
+[피크 흡수]     Standard (동일 리소스, Spillover)
+      ↓ 리전 장애 시
+[리전 Failover] Standard 또는 Global Standard (Japan East)
+      ↓ 광역 장애 시
+[최종 수단]     Global Standard (다른 지리)
+</code></pre></div>
+
+<blockquote>
+<p><strong>데이터 상주(residency) 주의</strong>: Global Standard는 <strong>처리(processing)</strong> 가 광역에서 일어날 수 있습니다. 규제 요건이 있는 워크로드는 Failover 후보를 <strong>Data Zone</strong> 또는 동일 지리 내 리전으로 제한해야 합니다. HA를 위해 컴플라이언스를 깨지 마세요.</p>
+</blockquote>
+<hr />
+<h2 id="4-layer-1">4. Layer 1 — 클라이언트 복원력</h2>
+<p><strong>가장 저렴하고 가장 효과가 큰 계층입니다.</strong> 인프라를 아무리 이중화해도 클라이언트가 잘못 재시도하면 장애를 스스로 만들어냅니다.</p>
+<h3 id="41">4.1 재시도 설계</h3>
+<table>
+<thead>
+<tr>
+<th>상태 코드</th>
+<th>재시도</th>
+<th>방식</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>429</td>
+<td>✅</td>
+<td><strong><code>Retry-After</code> 우선</strong>, 없으면 지수 백오프 + 지터</td>
+</tr>
+<tr>
+<td>500 / 502 / 503 / 504</td>
+<td>✅</td>
+<td>지수 백오프 + 지터, 2~3회</td>
+</tr>
+<tr>
+<td>408</td>
+<td>✅</td>
+<td>1~2회</td>
+</tr>
+<tr>
+<td>400 / 401 / 403 / 404</td>
+<td>❌</td>
+<td>재시도 무의미 (요청·권한·모델 문제)</td>
+</tr>
+<tr>
+<td>499</td>
+<td>❌</td>
+<td>클라이언트 측 단절 — 타임아웃/스트리밍으로 해결</td>
+</tr>
+</tbody>
+</table>
+<h3 id="42-retry-after">4.2 ⚠️ <code>Retry-After</code>를 반드시 확인해야 하는 이유</h3>
+<p>AOAI가 429와 함께 반환하는 <code>Retry-After</code> 값은 <strong>매우 클 수 있습니다(예: 1일 단위)</strong>. 이는 공식 문서에도 명시된 주의사항입니다.</p>
+<ul>
+<li>이 값을 <strong>무시하고 즉시 재시도</strong>하면 → 스로틀이 증폭되고 백엔드가 회복되지 않습니다.</li>
+<li>이 값을 <strong>그대로 대기</strong>하면 → 서비스가 사실상 멈춥니다.</li>
+</ul>
+<p><strong>따라서 실무 처리는 다음과 같아야 합니다.</strong></p>
+<div class="codehilite"><pre><span></span><code>if 429:
+    ra = Retry-After
+    if ra &lt;= 상한(예: 30초):
+        해당 시간만큼 대기 후 재시도
+    else:
+        재시도하지 않고 즉시 다음 백엔드로 전환(Failover)
+        + 해당 백엔드를 일정 시간 라우팅 대상에서 제외
+</code></pre></div>
+
+<p>즉 <strong>"긴 <code>Retry-After</code> = 이 백엔드는 지금 포기하라는 신호"</strong> 로 해석하고, 대기가 아니라 <strong>경로 전환</strong>으로 대응합니다. APIM 서킷 브레이커도 동일한 사고방식으로 동작합니다(§6.3).</p>
+<h3 id="43">4.3 타임아웃 정합성</h3>
+<div class="codehilite"><pre><span></span><code>클라이언트 타임아웃  ≥  게이트웨이(APIM) 백엔드 타임아웃  ≥  예상 최대 생성 시간
+</code></pre></div>
+
+<ul>
+<li>역전되면 상위 계층이 먼저 끊어 <strong>499</strong>가 발생하고, 재시도가 중첩되어 부하가 배가됩니다.</li>
+<li>스트리밍(SSE)을 사용하면 첫 토큰이 즉시 도착해 유휴 타임아웃 문제 대부분이 사라집니다.</li>
+</ul>
+<h3 id="44">4.4 클라이언트 측 서킷 브레이커 &amp; 부하 차단</h3>
+<ul>
+<li>연속 실패한 엔드포인트는 일정 시간 <strong>격리(open)</strong> 후 half-open으로 복귀</li>
+<li><strong>Bulkhead</strong>: 배포별 동시 요청 수 상한 → 한 배포의 지연이 전체 스레드를 잠식하지 않도록</li>
+<li><strong>큐잉/우선순위</strong>: 대화형 요청 우선, 배치성 요청은 지연 허용 큐로 분리</li>
+</ul>
+<hr />
+<h2 id="5-layer-2-spillover-ptu">5. Layer 2 — Spillover (PTU → 표준 배포)</h2>
+<p>PTU 배포가 포화되어 비(非)200 응답(예: PTU 소진 시 429)을 반환할 때, <strong>오버플로 요청을 대응되는 표준 배포로 자동 라우팅</strong>하는 기능입니다.</p>
+<h3 id="51">5.1 전제 조건</h3>
+<ul>
+<li><strong>동일한 Foundry/AOAI 리소스 안에</strong> 프로비저닝 배포와 표준 배포가 함께 존재해야 합니다.</li>
+<li>Spillover 대상 표준 배포는 <strong>같은 모델·같은 버전</strong>이어야 합니다.</li>
+<li>구성에는 <strong>Cognitive Services Contributor</strong> 이상 권한이 필요합니다.</li>
+</ul>
+<h3 id="52">5.2 배포 단위로 켜기</h3>
+<p>배포 속성 <code>spilloverDeploymentName</code>에 표준 배포 이름을 지정합니다. 신규 생성 시 또는 기존 배포에 추가할 수 있습니다.</p>
+<div class="codehilite"><pre><span></span><code>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="s2">&quot;https://management.azure.com/subscriptions/</span><span class="nv">$SUB</span><span class="s2">/resourceGroups/</span><span class="nv">$RG</span><span class="s2">/providers/Microsoft.CognitiveServices/accounts/</span><span class="nv">$ACCOUNT</span><span class="s2">/deployments/ptu-gpt4o?api-version=2024-10-01&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{</span>
+<span class="s1">        &quot;sku&quot;: { &quot;name&quot;: &quot;GlobalProvisionedManaged&quot;, &quot;capacity&quot;: 100 },</span>
+<span class="s1">        &quot;properties&quot;: {</span>
+<span class="s1">          &quot;spilloverDeploymentName&quot;: &quot;std-gpt4o&quot;,</span>
+<span class="s1">          &quot;model&quot;: { &quot;format&quot;: &quot;OpenAI&quot;, &quot;name&quot;: &quot;gpt-4o&quot;, &quot;version&quot;: &quot;2024-11-20&quot; }</span>
+<span class="s1">        }</span>
+<span class="s1">      }&#39;</span>
+</code></pre></div>
+
+<h3 id="53">5.3 요청 단위로 켜기</h3>
+<p>요청 헤더 <code>x-ms-spillover-deployment</code>에 표준 배포 이름을 지정하면 <strong>해당 요청만</strong> Spillover 대상이 됩니다.</p>
+<div class="codehilite"><pre><span></span><code>curl<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$AZURE_OPENAI_ENDPOINT</span><span class="s2">/openai/deployments/ptu-gpt4o/chat/completions?api-version=2024-10-21&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;x-ms-spillover-deployment: std-gpt4o&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{ &quot;messages&quot;: [ { &quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;...&quot; } ] }&#39;</span>
+</code></pre></div>
+
+<blockquote>
+<p><strong>우선순위 규칙</strong>: 배포 속성(<code>spilloverDeploymentName</code>)과 요청 헤더가 둘 다 설정되면 <strong>배포 속성이 우선</strong>합니다.
+요청 단위로만 제어하고 싶다면 배포 속성을 설정하지 말고 헤더만 사용하세요.</p>
+</blockquote>
+<p><strong>활용 예</strong> — 워크로드별 차등 정책:</p>
+<table>
+<thead>
+<tr>
+<th>워크로드</th>
+<th>Spillover</th>
+<th>이유</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>대화형 UI</td>
+<td>✅ 켬</td>
+<td>지연이 늘더라도 실패보다 낫다</td>
+</tr>
+<tr>
+<td>실시간 저지연 API</td>
+<td>❌ 끔</td>
+<td>표준 배포의 지연 변동을 허용할 수 없다</td>
+</tr>
+<tr>
+<td>배치·백그라운드</td>
+<td>✅ 켬</td>
+<td>지연 허용</td>
+</tr>
+</tbody>
+</table>
+<h3 id="54-spillover">5.4 ⚠️ Spillover가 <strong>막지 못하는</strong> 것</h3>
+<p>Spillover는 <strong>동일 리소스 내부</strong>의 표준 배포로 넘기는 기능입니다. 따라서:</p>
+<table>
+<thead>
+<tr>
+<th>장애</th>
+<th>Spillover로 대응 가능?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PTU 용량 포화 (429)</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>PTU 배포의 일시적 5xx</td>
+<td>✅ (비200 응답 시 라우팅)</td>
+</tr>
+<tr>
+<td><strong>리전 전체 장애</strong></td>
+<td>❌ 표준 배포도 같은 리전에 있음</td>
+</tr>
+<tr>
+<td><strong>리소스/구독 단위 문제</strong></td>
+<td>❌</td>
+</tr>
+<tr>
+<td>표준 배포 쿼터까지 소진</td>
+<td>❌ 최종 실패</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>즉 <strong>Spillover는 HA의 시작이지 완성이 아닙니다.</strong> 리전 장애 대비는 §6~7의 다중 리전 경로가 필요합니다.</p>
+</blockquote>
+<h3 id="55-spillover">5.5 Spillover 관측</h3>
+<p>응답 헤더로 판별합니다.</p>
+<table>
+<thead>
+<tr>
+<th>헤더</th>
+<th>의미</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>x-ms-spillover-from-deployment</code></td>
+<td>값이 있으면 <strong>이 요청은 Spillover된 요청</strong> (PTU 배포명 포함)</td>
+</tr>
+<tr>
+<td><code>x-ms-deployment-name</code></td>
+<td>실제로 요청을 처리한 배포 이름</td>
+</tr>
+<tr>
+<td><code>x-ms-spillover-error</code></td>
+<td>Spillover를 유발한 프로비저닝 배포의 응답 코드(429/500/503 등). <strong>성공 여부와 무관하게 존재</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Spillover된 요청을 표준 배포도 처리하지 못하면, <strong>표준 배포의 응답(상태 코드·본문)이 그대로 반환</strong>됩니다. 이때도 위 헤더가 남아 있으므로 "Spillover 실패"와 "표준 배포 직접 실패"를 구분할 수 있습니다.</p>
+</blockquote>
+<p>메트릭 측면에서는 <code>AzureOpenAIRequests</code> 메트릭의 <strong><code>IsSpillover</code> 차원</strong>으로 분리해 추이를 봅니다.</p>
+<ul>
+<li>Spillover 비율이 지속적으로 높다 → <strong>PTU 증설 신호</strong></li>
+<li>Spillover 비율 급증 + 지연 증가 → 피크 부하 또는 특정 테넌트 폭주</li>
+</ul>
+<blockquote>
+<p>자세한 메트릭·KQL은 <a href="../02-aoai-deployment-monitoring/">가이드 02</a> 참고.</p>
+</blockquote>
+<hr />
+<h2 id="6-layer-3-apim-ai-gateway">6. Layer 3 — APIM AI Gateway (다중 백엔드)</h2>
+<p>리전 장애까지 흡수하려면 <strong>요청 경로를 바꿀 수 있는 계층</strong>이 필요합니다. APIM 백엔드 풀이 그 역할을 합니다.</p>
+<h3 id="61">6.1 백엔드 엔터티 구성</h3>
+<ul>
+<li>Runtime URL에 각 AOAI 엔드포인트 지정</li>
+<li><strong>Managed Identity로 인증</strong> 권장 (키 관리·순환 부담 제거, 키 유출로 인한 가용성 사고 예방)</li>
+<li><strong>Resource ID</strong>: <code>https://cognitiveservices.azure.com</code> (후행 슬래시 없음, <code>/.default</code> 불필요)</li>
+<li>APIM의 관리 ID에 <strong><code>Cognitive Services OpenAI User</code></strong> 역할 부여</li>
+</ul>
+<blockquote>
+<p>⚠️ <strong>역할 선택 주의 — 공식 문서 간 불일치가 있습니다.</strong>
+APIM <em>Backends</em> 문서는 AOAI 백엔드에 <strong><code>Cognitive Services User</code></strong> 를 부여하라고 안내합니다. 기능적으로는 동작하지만, 이 역할은 <code>Microsoft.CognitiveServices/accounts/listkeys/action</code> 권한을 포함해 <strong>관리 ID가 AOAI 계정 키를 조회할 수 있습니다.</strong> 또한 DataActions가 <code>Microsoft.CognitiveServices/*</code> 와일드카드라 Speech·Vision 등 다른 서비스까지 열립니다.</p>
+<p>반면 AOAI RBAC 문서가 추론 호출용으로 제시하는 역할은 <strong><code>Cognitive Services OpenAI User</code></strong>(<code>5e0bd9bd-7b93-4f28-af87-19fc36ad61bd</code>)이며, 키 조회 권한이 <strong>없고</strong> 데이터 액션이 <code>accounts/OpenAI/...</code> 범위로 한정됩니다.</p>
+<p><strong>최소 권한 원칙상 <code>Cognitive Services OpenAI User</code>를 사용하세요.</strong></p>
+</blockquote>
+<div class="codehilite"><pre><span></span><code>az<span class="w"> </span>role<span class="w"> </span>assignment<span class="w"> </span>create<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--assignee-object-id<span class="w"> </span><span class="nv">$APIM_PRINCIPAL_ID</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--assignee-principal-type<span class="w"> </span>ServicePrincipal<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--role<span class="w"> </span><span class="s2">&quot;Cognitive Services OpenAI User&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--scope<span class="w"> </span><span class="nv">$AOAI_RESOURCE_ID</span>
+</code></pre></div>
+
+<h3 id="62">6.2 백엔드 풀 &amp; 로드 밸런싱</h3>
+<table>
+<thead>
+<tr>
+<th>옵션</th>
+<th>동작</th>
+<th>HA 활용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Round-robin</strong></td>
+<td>균등 분배(기본)</td>
+<td>동급 리전 간 분산</td>
+</tr>
+<tr>
+<td><strong>Weighted</strong></td>
+<td>상대 가중치 기반 분배</td>
+<td>리전별 용량 비율 반영, 블루-그린</td>
+</tr>
+<tr>
+<td><strong>Priority-based</strong></td>
+<td>우선순위 그룹 순으로 전송</td>
+<td><strong>Primary → Failover 구조에 최적</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>핵심 동작</strong>: 낮은 우선순위 그룹은 <strong>상위 그룹의 모든 백엔드가 서킷 브레이커로 차단되었을 때에만</strong> 사용됩니다.
+즉 <strong>우선순위 기반 라우팅은 서킷 브레이커와 반드시 함께 구성해야 의미가 있습니다.</strong></p>
+</blockquote>
+<p>제약 사항:
+- 풀 하나에 <strong>최대 30개 백엔드</strong>
+- APIM은 분산 아키텍처이므로 로드 밸런싱과 서킷 브레이커 판정은 <strong>게이트웨이 인스턴스 간 동기화되지 않는 근사(approximate) 동작</strong></p>
+<p><strong>세션 인식(session awareness)</strong>: 쿠키 기반으로 동일 세션의 요청을 같은 백엔드로 보냅니다. 대화형 어시스턴트처럼 상태가 백엔드에 묶이는 시나리오에 사용하되, <strong>HA 관점에서는 Failover 유연성을 떨어뜨리므로 꼭 필요한 경우에만</strong> 사용합니다.</p>
+<h3 id="63">6.3 서킷 브레이커 (필수)</h3>
+<ul>
+<li>정의한 기간 동안 실패 조건(개수/비율, 상태 코드 범위)을 넘으면 회로가 <strong>trip</strong></li>
+<li>Trip 되면 APIM은 해당 백엔드로의 전송을 멈추고 클라이언트에 <strong>503</strong>을 반환</li>
+<li>지정한 trip 기간 후 회로가 리셋되어 트래픽 재개</li>
+</ul>
+<p>제약 사항:
+- <strong>Consumption 티어 미지원</strong>
+- 백엔드당 <strong>규칙 1개만</strong> 구성 가능
+- 게이트웨이 인스턴스 간 비동기 → 근사 동작</p>
+<p><strong>AOAI 백엔드에 대한 공식 주의사항</strong>: 요청이 과도하면 AOAI는 429와 함께 <strong>매우 큰 <code>Retry-After</code> 값(예: 1일)</strong> 을 반환할 수 있습니다. 따라서 <strong>429를 처리하고 <code>Retry-After</code>를 수용하는 서킷 브레이커 규칙을 반드시 구성</strong>해야 합니다.</p>
+<div class="codehilite"><pre><span></span><code>resource backend &#39;Microsoft.ApiManagement/service/backends@2024-05-01&#39; = {
+  name: &#39;${apimName}/aoai-krc&#39;
+  properties: {
+    url: &#39;https://aoai-prod-krc-01.openai.azure.com/openai&#39;
+    protocol: &#39;http&#39;
+    circuitBreaker: {
+      rules: [
+        {
+          name: &#39;aoai-throttle-and-errors&#39;
+          failureCondition: {
+            count: 3
+            interval: &#39;PT1M&#39;
+            statusCodeRanges: [
+              { min: 429, max: 429 }
+              { min: 500, max: 599 }
+            ]
+          }
+          tripDuration: &#39;PT1M&#39;
+          acceptRetryAfter: true   // Retry-After 헤더 값을 수용
+        }
+      ]
+    }
+  }
+}
+</code></pre></div>
+
+<blockquote>
+<ul>
+<li><code>acceptRetryAfter: true</code>로 두면 응답에 <code>Retry-After</code>가 있을 때 그 시간만큼 기다린 뒤 해당 백엔드로 다시 보냅니다. 이것이 §4.2에서 설명한 "긴 <code>Retry-After</code> = 경로 전환" 원칙의 게이트웨이 구현입니다. (포털에서는 <strong>Check 'Retry-After' header in HTTP response → True (Accept)</strong>)</li>
+<li>위 <code>count</code> / <code>interval</code> / <code>tripDuration</code> 값은 <strong>예시</strong>입니다. 문서 기본값은 실패 간격·차단 기간 모두 1시간이며, AOAI처럼 회복이 빠른 백엔드에는 분 단위가 더 적합한 경우가 많습니다. <strong>반드시 부하 테스트로 튜닝</strong>하세요(§11).</li>
+</ul>
+</blockquote>
+<h3 id="64-failover">6.4 우선순위 기반 Failover 풀 예시</h3>
+<div class="codehilite"><pre><span></span><code>resource pool &#39;Microsoft.ApiManagement/service/backends@2024-05-01&#39; = {
+  name: &#39;${apimName}/aoai-pool&#39;
+  properties: {
+    description: &#39;AOAI multi-region failover pool&#39;
+    type: &#39;Pool&#39;
+    pool: {
+      services: [
+        // 우선순위 1: 국내 PTU (기저 부하)
+        { id: backendKrcId, priority: 1, weight: 1 }
+        // 우선순위 2: 인접 리전 표준 (리전 장애 시)
+        { id: backendJpeId, priority: 2, weight: 1 }
+        // 우선순위 3: Global Standard (최종 수단)
+        { id: backendGlobalId, priority: 3, weight: 1 }
+      ]
+    }
+  }
+}
+</code></pre></div>
+
+<blockquote>
+<p>풀 타입 백엔드는 <code>url</code> / <code>protocol</code>을 지정하지 않습니다(<code>type: 'Pool'</code>). 우선순위 그룹이 실제로 작동하려면 <strong>풀에 속한 각 백엔드에 서킷 브레이커가 설정되어 있어야 합니다</strong>(§6.3).</p>
+</blockquote>
+<h3 id="65">6.5 정책 조합 예시</h3>
+<div class="codehilite"><pre><span></span><code><span class="nt">&lt;policies&gt;</span>
+<span class="w">  </span><span class="nt">&lt;inbound&gt;</span>
+<span class="w">    </span><span class="nt">&lt;base</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;set-backend-service</span><span class="w"> </span><span class="na">backend-id=</span><span class="s">&quot;aoai-pool&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+
+<span class="w">    </span><span class="cm">&lt;!-- 테넌트별 토큰 쿼터: 한 테넌트가 전체 용량을 잠식하지 못하게 --&gt;</span>
+<span class="w">    </span><span class="nt">&lt;llm-token-limit</span>
+<span class="w">        </span><span class="na">counter-key=</span><span class="s">&quot;@(context.Subscription?.Id ?? &quot;</span><span class="err">anonymous&quot;)&quot;</span>
+<span class="w">        </span><span class="na">tokens-per-minute=</span><span class="s">&quot;60000&quot;</span>
+<span class="w">        </span><span class="na">estimate-prompt-tokens=</span><span class="s">&quot;true&quot;</span>
+<span class="w">        </span><span class="na">remaining-tokens-header-name=</span><span class="s">&quot;x-remaining-tokens&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+
+<span class="w">    </span><span class="nt">&lt;llm-emit-token-metric</span><span class="w"> </span><span class="na">namespace=</span><span class="s">&quot;aoai-gateway&quot;</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;dimension</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Backend&quot;</span><span class="w">  </span><span class="na">value=</span><span class="s">&quot;@(context.Request.Url.Host)&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">      </span><span class="nt">&lt;dimension</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;TenantId&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;@(context.Subscription?.Id ?? &quot;</span><span class="err">anonymous&quot;)&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/llm-emit-token-metric&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/inbound&gt;</span>
+
+<span class="w">  </span><span class="nt">&lt;backend&gt;</span>
+<span class="w">    </span><span class="cm">&lt;!-- 풀 내 전환은 서킷 브레이커가 담당. 여기서는 짧은 재시도만 --&gt;</span>
+<span class="w">    </span><span class="nt">&lt;retry</span><span class="w"> </span><span class="na">condition=</span><span class="s">&quot;@(context.Response.StatusCode == 429 || context.Response.StatusCode &gt;= 500)&quot;</span>
+<span class="w">           </span><span class="na">count=</span><span class="s">&quot;2&quot;</span><span class="w"> </span><span class="na">interval=</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="na">max-interval=</span><span class="s">&quot;5&quot;</span><span class="w"> </span><span class="na">delta=</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="na">first-fast-retry=</span><span class="s">&quot;true&quot;</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;forward-request</span><span class="w"> </span><span class="na">buffer-request-body=</span><span class="s">&quot;true&quot;</span><span class="w"> </span><span class="na">timeout=</span><span class="s">&quot;120&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/retry&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/backend&gt;</span>
+
+<span class="w">  </span><span class="nt">&lt;outbound&gt;</span>
+<span class="w">    </span><span class="nt">&lt;base</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="cm">&lt;!-- 어느 백엔드가 응답했는지 노출: 장애 분석에 필수 --&gt;</span>
+<span class="w">    </span><span class="nt">&lt;set-header</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;x-served-by&quot;</span><span class="w"> </span><span class="na">exists-action=</span><span class="s">&quot;override&quot;</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;value&gt;</span>@(context.Request.Url.Host)<span class="nt">&lt;/value&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/set-header&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/outbound&gt;</span>
+
+<span class="w">  </span><span class="nt">&lt;on-error&gt;</span>
+<span class="w">    </span><span class="nt">&lt;base</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/on-error&gt;</span>
+<span class="nt">&lt;/policies&gt;</span>
+</code></pre></div>
+
+<blockquote>
+<p>⚠️ <strong>재시도와 서킷 브레이커의 역할 분리</strong>: 게이트웨이에서 재시도 횟수를 크게 잡으면 서킷 브레이커가 열리기 전에 부하를 계속 밀어 넣게 됩니다. <strong>짧은 재시도 + 명확한 서킷 브레이커</strong> 조합이 원칙입니다.</p>
+</blockquote>
+<h3 id="66">6.6 시맨틱 캐싱 — 가용성 관점</h3>
+<p><code>llm-semantic-cache-lookup</code> / <code>llm-semantic-cache-store</code>는 비용 절감 기능으로 알려져 있지만, <strong>HA 관점에서는 "백엔드 부하를 줄여 429 자체를 예방"하는 수단</strong>입니다. 반복 질의 비중이 높은 워크로드(FAQ, 사내 지식 검색)에서 효과가 큽니다.</p>
+<hr />
+<h2 id="7-layer-4">7. Layer 4 — 멀티 리전 설계</h2>
+<h3 id="71">7.1 리전 선택 기준</h3>
+<table>
+<thead>
+<tr>
+<th>기준</th>
+<th>확인 사항</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>모델 가용성</strong></td>
+<td>대상 모델·<strong>버전</strong>이 해당 리전에 존재하는가</td>
+</tr>
+<tr>
+<td><strong>쿼터</strong></td>
+<td>Failover 시점에 실제로 쓸 수 있는 TPM이 확보되어 있는가 (§8)</td>
+</tr>
+<tr>
+<td><strong>지연</strong></td>
+<td>사용자↔리전 RTT가 허용 범위인가</td>
+</tr>
+<tr>
+<td><strong>데이터 경계</strong></td>
+<td>규제상 허용되는 지리인가</td>
+</tr>
+<tr>
+<td><strong>기능 동등성</strong></td>
+<td>콘텐츠 필터 구성, Batch, 파인튜닝 등 필요한 기능이 동일하게 되는가</td>
+</tr>
+</tbody>
+</table>
+<h3 id="72-active-active-vs-active-passive">7.2 Active-Active vs Active-Passive</h3>
+<table>
+<thead>
+<tr>
+<th>방식</th>
+<th>장점</th>
+<th>단점</th>
+<th>권장</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Active-Passive</strong> (우선순위 라우팅)</td>
+<td>비용 효율, PTU 집중</td>
+<td>Failover 경로가 <strong>평소에 검증되지 않음</strong></td>
+<td>정기 훈련 필수</td>
+</tr>
+<tr>
+<td><strong>Active-Active</strong> (가중치 라우팅)</td>
+<td>경로가 상시 검증됨, 전환 즉시성</td>
+<td>비용 증가, 용량 분산</td>
+<td>미션 크리티컬</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 <strong>가장 위험한 구성은 "한 번도 트래픽이 흘러본 적 없는 Failover 경로"</strong> 입니다.
+Active-Passive를 택하더라도 <strong>소량의 상시 트래픽(예: 1~5%)을 백업 리전에 흘려</strong> 경로를 살아 있게 유지하세요(카나리 트래픽).</p>
+</blockquote>
+<h3 id="73">7.3 리전 간 일관성 관리</h3>
+<p>Failover가 "동작은 하는데 결과가 다른" 상황을 막기 위해 다음을 IaC로 동기화합니다.</p>
+<ul>
+<li>[ ] 모델 <strong>이름 + 버전</strong> 동일</li>
+<li>[ ] <strong>배포 이름 동일</strong> (라우팅 로직 단순화)</li>
+<li>[ ] 콘텐츠 필터 구성 동일 (한쪽만 커스텀 필터면 결과가 달라짐)</li>
+<li>[ ] RBAC / 네트워크(Private Endpoint, DNS) 구성 동일</li>
+<li>[ ] 진단 설정 동일 (장애 시 로그가 없는 리전이 생기지 않도록)</li>
+</ul>
+<h3 id="74">7.4 글로벌 진입 계층</h3>
+<p>APIM 자체의 가용성까지 고려한다면:</p>
+<div class="mermaid" data-idx="1"></div>
+<ul>
+<li><strong>Front Door</strong>: 전역 애니캐스트 진입, 상태 프로브 기반 자동 우회, WAF</li>
+<li><strong>APIM Premium 다중 리전 배포</strong>: 단일 APIM 인스턴스를 여러 리전 게이트웨이로 확장</li>
+<li><strong>Traffic Manager</strong>: DNS 기반 — 전환이 TTL에 종속되므로 <strong>빠른 Failover에는 Front Door 우선</strong></li>
+</ul>
+<hr />
+<h2 id="8-ha">8. 용량 계획과 쿼터 관리 — HA의 숨은 실패 지점</h2>
+<blockquote>
+<p><strong>Failover 대상 리전에 쿼터가 없으면, 아키텍처 다이어그램이 아무리 훌륭해도 장애 시 아무 일도 일어나지 않습니다.</strong></p>
+</blockquote>
+<p>이것이 실제 장애 상황에서 가장 자주 드러나는 맹점입니다.</p>
+<h3 id="81">8.1 반드시 확인할 것</h3>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>확인 방법</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Failover 리전의 <strong>실제 TPM 쿼터</strong></td>
+<td>Foundry 포털 → Quotas / Azure Portal → Usage + quotas</td>
+</tr>
+<tr>
+<td>쿼터가 <strong>다른 배포에 이미 소진</strong>되지 않았는지</td>
+<td>리전 쿼터는 배포들이 나눠 씀</td>
+</tr>
+<tr>
+<td>PTU <strong>예약 단위</strong>와 최소 배포 크기</td>
+<td>모델별 최소 PTU 상이</td>
+</tr>
+<tr>
+<td>구독 한도</td>
+<td>필요 시 <strong>구독 분리</strong>로 쿼터 리스크 분산</td>
+</tr>
+</tbody>
+</table>
+<h3 id="82">8.2 용량 시나리오 계산</h3>
+<p>Failover 설계 시 최소한 다음 3가지를 계산해 둡니다.</p>
+<table>
+<thead>
+<tr>
+<th>시나리오</th>
+<th>필요 용량</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>정상</td>
+<td>Primary가 100% 처리</td>
+</tr>
+<tr>
+<td>Primary 포화</td>
+<td>Spillover 표준 배포가 <strong>피크 초과분</strong> 흡수 가능한가</td>
+</tr>
+<tr>
+<td><strong>Primary 리전 상실</strong></td>
+<td>Secondary가 <strong>평상시 트래픽 100%</strong> 를 받을 수 있는가</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ 세 번째가 핵심입니다. "Secondary는 소규모로 두고 나중에 늘리면 된다"는 계획은 <strong>쿼터 증설에 시간이 걸리므로 장애 시점에는 실행 불가능</strong>한 경우가 많습니다.</p>
+</blockquote>
+<hr />
+<h2 id="9">9. 모델 수명주기 — 조용한 가용성 리스크</h2>
+<p>인프라 이중화로는 막을 수 없는 유형(F5)입니다.</p>
+<table>
+<thead>
+<tr>
+<th>리스크</th>
+<th>영향</th>
+<th>대응</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>모델 <strong>버전 은퇴(retirement)</strong></td>
+<td>특정 시점 이후 호출 실패</td>
+<td>은퇴 일정 추적, 마이그레이션 기한 설정</td>
+</tr>
+<tr>
+<td><strong>자동 업그레이드</strong> 설정</td>
+<td>예고 없이 모델 동작 변화</td>
+<td>프로덕션은 <strong>버전 고정</strong> 권장</td>
+</tr>
+<tr>
+<td>리전별 <strong>버전 편차</strong></td>
+<td>Failover 시 다른 버전이 응답</td>
+<td>리전 간 버전 동기화(§7.3)</td>
+</tr>
+<tr>
+<td>API 버전 변경</td>
+<td>파라미터 호환성 문제</td>
+<td><code>api-version</code> 고정 + 회귀 테스트</td>
+</tr>
+</tbody>
+</table>
+<p><strong>권장 운영 루틴</strong></p>
+<ol>
+<li>분기별로 배포 중인 모델·버전의 은퇴 일정 점검</li>
+<li>신규 버전은 <strong>카나리 배포</strong>(가중치 5~10%)로 먼저 검증</li>
+<li>승격 전 <strong>회귀 테스트</strong>: 출력 포맷, tool calling, <code>response_format</code>, 토큰 사용량 변화</li>
+</ol>
+<hr />
+<h2 id="10-layer-5-graceful-degradation">10. Layer 5 — 우아한 성능 저하 (Graceful Degradation)</h2>
+<p>모든 백엔드가 실패했을 때 <strong>"에러 화면" 대신 무엇을 보여줄 것인가</strong>를 미리 정의합니다.</p>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>전략</th>
+<th>사용자 경험</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>동급 모델의 다른 배포/리전</td>
+<td>변화 없음</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>경량 모델로 다운그레이드</strong> (예: mini 계열)</td>
+<td>품질 소폭 저하, 응답은 유지</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>시맨틱 캐시 응답</strong> 재사용</td>
+<td>최신성 저하</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>규칙 기반/템플릿 응답</strong> 또는 검색 결과만 제공</td>
+<td>AI 기능 축소</td>
+</tr>
+<tr>
+<td>5</td>
+<td>명시적 안내 + 재시도 유도</td>
+<td>실패하되 예측 가능</td>
+</tr>
+</tbody>
+</table>
+<p><strong>구현 힌트</strong></p>
+<ul>
+<li>요청에 <code>criticality</code>(critical/normal/low) 태그를 부여하고, 용량 압박 시 낮은 등급부터 2~4단계로 강등</li>
+<li>스트리밍 중 백엔드가 끊긴 경우, 이미 전송된 부분을 살리고 "일시적 오류" 메시지를 이어 붙이는 UX 처리</li>
+</ul>
+<hr />
+<h2 id="11">11. 검증 — 설계보다 중요한 것</h2>
+<blockquote>
+<p><strong>테스트하지 않은 Failover는 없는 것과 같습니다.</strong></p>
+</blockquote>
+<h3 id="111">11.1 정기 훈련 항목</h3>
+<table>
+<thead>
+<tr>
+<th>훈련</th>
+<th>방법</th>
+<th>확인 지표</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PTU 포화</td>
+<td>부하 도구로 PTU 사용률 100% 유도</td>
+<td>Spillover 발생(<code>IsSpillover</code>), 사용자 실패율</td>
+</tr>
+<tr>
+<td>Primary 리전 상실</td>
+<td>백엔드 URL을 잘못된 값으로 변경 / NSG 차단</td>
+<td>서킷 브레이커 trip 시간, Failover 소요 시간</td>
+</tr>
+<tr>
+<td>긴 <code>Retry-After</code></td>
+<td>429 + 큰 <code>Retry-After</code> 모의 응답</td>
+<td>클라이언트가 대기하지 않고 전환하는지</td>
+</tr>
+<tr>
+<td>게이트웨이 장애</td>
+<td>APIM 리전 하나 차단</td>
+<td>Front Door 우회 동작</td>
+</tr>
+<tr>
+<td>모델 버전 부재</td>
+<td>존재하지 않는 배포명 호출</td>
+<td>오류 분류·알림 동작</td>
+</tr>
+</tbody>
+</table>
+<h3 id="112">11.2 측정할 값</h3>
+<table>
+<thead>
+<tr>
+<th>지표</th>
+<th>의미</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>MTTD</strong></td>
+<td>장애 감지까지 걸린 시간 (알림 설정 품질)</td>
+</tr>
+<tr>
+<td><strong>Failover 소요 시간</strong></td>
+<td>첫 실패 → 정상 응답 복귀까지</td>
+</tr>
+<tr>
+<td><strong>실효 성공률</strong></td>
+<td>재시도·Failover 포함, 사용자가 실제로 성공한 비율</td>
+</tr>
+<tr>
+<td>성능 저하 지속 시간</td>
+<td>강등 모드로 운영된 시간</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>실효 성공률 산출 KQL은 <a href="../02-aoai-deployment-monitoring/">가이드 02 §7.8</a> 참고.</p>
+</blockquote>
+<hr />
+<h2 id="12">12. 참조 아키텍처</h2>
+<h3 id="121-tier-2-production">12.1 Tier 2 — 일반 Production</h3>
+<div class="codehilite"><pre><span></span><code>Client → APIM (단일 리전)
+           ├─ [P1] AOAI KRC : PTU  ──Spillover──▶ AOAI KRC : Standard
+           └─ [P2] AOAI JPE : Standard
+</code></pre></div>
+
+<ul>
+<li>용량 장애: Spillover</li>
+<li>리전 장애: 우선순위 2 백엔드</li>
+<li>비용: 중</li>
+</ul>
+<h3 id="122-tier-3">12.2 Tier 3 — 미션 크리티컬</h3>
+<div class="codehilite"><pre><span></span><code>Client → Front Door
+           ├─ APIM (KRC) ─┬─ [P1] AOAI KRC : PTU ──Spillover──▶ KRC : Standard
+           │              ├─ [P2] AOAI JPE : Standard
+           │              └─ [P3] AOAI Global Standard
+           └─ APIM (JPE) ─┴─ (동일 풀 구성)
+</code></pre></div>
+
+<ul>
+<li>게이트웨이 이중화 + 3단 백엔드 우선순위</li>
+<li>상시 카나리 트래픽으로 Failover 경로 검증</li>
+<li>성능 저하 모드 정의</li>
+</ul>
+<h3 id="123">12.3 구성 요소별 역할 요약</h3>
+<table>
+<thead>
+<tr>
+<th>구성 요소</th>
+<th>담당 장애</th>
+<th>없으면 생기는 일</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>클라이언트 재시도/백오프</td>
+<td>순간 429·5xx</td>
+<td>작은 장애가 큰 장애로 증폭</td>
+</tr>
+<tr>
+<td>Spillover</td>
+<td>PTU 포화</td>
+<td>피크마다 사용자 실패</td>
+</tr>
+<tr>
+<td>APIM 서킷 브레이커</td>
+<td>지속 실패 백엔드</td>
+<td>죽은 백엔드로 계속 전송</td>
+</tr>
+<tr>
+<td>APIM 우선순위 풀</td>
+<td>리전 장애</td>
+<td>리전 인시던트 = 서비스 중단</td>
+</tr>
+<tr>
+<td>Front Door</td>
+<td>게이트웨이 장애</td>
+<td>APIM이 SPOF</td>
+</tr>
+<tr>
+<td>쿼터 사전 확보</td>
+<td>Failover 시 용량 부족</td>
+<td><strong>Failover가 실패</strong></td>
+</tr>
+<tr>
+<td>성능 저하 모드</td>
+<td>전면 포화</td>
+<td>완전 실패</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="13-ha">13. HA 체크리스트</h2>
+<h3 id="_2">설계</h3>
+<ul>
+<li>[ ] 장애 유형(F1~F5)별로 대응 수단이 매핑되어 있다</li>
+<li>[ ] RTO/RPO에 준하는 목표(Failover 소요 시간 목표)가 문서화되어 있다</li>
+<li>[ ] Failover 후보 리전이 데이터 상주 요건을 만족한다</li>
+</ul>
+<h3 id="_3">구현</h3>
+<ul>
+<li>[ ] 클라이언트가 <code>Retry-After</code>를 해석하고, 과도한 값이면 경로를 전환한다</li>
+<li>[ ] 타임아웃이 계층 간 정합적이다</li>
+<li>[ ] PTU 배포에 Spillover 표준 배포가 연결되어 있다</li>
+<li>[ ] APIM 백엔드가 Managed Identity로 인증하며, 역할은 <strong><code>Cognitive Services OpenAI User</code></strong>(키 조회 권한 없음)이다</li>
+<li>[ ] 백엔드 풀이 우선순위 기반이고, <strong>모든 백엔드에 서킷 브레이커</strong>가 있다</li>
+<li>[ ] 서킷 브레이커가 <strong>429와 <code>Retry-After</code>를 수용</strong>하도록 설정되어 있다</li>
+<li>[ ] 응답에 처리 백엔드 식별 헤더가 포함된다</li>
+</ul>
+<h3 id="_4">운영</h3>
+<ul>
+<li>[ ] Failover 리전 쿼터가 <strong>평상시 트래픽 100%</strong> 를 감당한다</li>
+<li>[ ] 리전 간 모델 버전·필터·네트워크 구성이 동기화되어 있다</li>
+<li>[ ] 모델 은퇴 일정을 분기별로 점검한다</li>
+<li>[ ] <code>IsSpillover</code>, <code>AzureOpenAIAvailabilityRate</code>, 429/5xx 알림이 설정되어 있다</li>
+<li>[ ] 분기 1회 이상 Failover 훈련을 수행한다</li>
+<li>[ ] 성능 저하 모드가 구현되어 있고 테스트되었다</li>
+</ul>
+<hr />
+<h2 id="a">부록 A. 자주 하는 실수</h2>
+<ol>
+<li><strong>Spillover만 구성하고 "HA 완료"로 간주</strong> — 리전 장애에는 무력</li>
+<li><strong>긴 <code>Retry-After</code>를 그대로 대기</strong> — 서비스가 사실상 정지</li>
+<li><strong><code>Retry-After</code>를 무시하고 즉시 재시도</strong> — 스로틀 증폭</li>
+<li><strong>서킷 브레이커 없이 우선순위 풀만 구성</strong> — 하위 우선순위가 절대 사용되지 않음</li>
+<li><strong>Failover 리전 쿼터 미확보</strong> — 전환은 되지만 즉시 429</li>
+<li><strong>한 번도 트래픽이 흐르지 않은 Failover 경로</strong> — 장애 시 처음 실행되어 실패</li>
+<li><strong>리전 간 모델 버전 불일치</strong> — Failover 후 결과가 달라짐</li>
+<li><strong>게이트웨이 재시도 과다</strong> — 서킷 브레이커가 열리기 전에 부하 가중</li>
+<li><strong>APIM 단일 리전</strong> — 게이트웨이가 SPOF</li>
+<li><strong>성능 저하 모드 부재</strong> — 전면 포화 시 완전 실패</li>
+<li><strong>APIM 관리 ID에 <code>Cognitive Services User</code> 부여</strong> — 게이트웨이가 AOAI 계정 키를 조회할 수 있게 됨 (§6.1)</li>
+</ol>
+<h2 id="b">부록 B. 참고 문서</h2>
+<ul>
+<li>Spillover for provisioned deployments: https://learn.microsoft.com/azure/foundry/openai/how-to/spillover-traffic-management</li>
+<li>API Management backends (풀·서킷 브레이커·로드 밸런싱): https://learn.microsoft.com/azure/api-management/backends</li>
+<li>Backend - Create Or Update (REST, <code>2024-05-01</code>): https://learn.microsoft.com/rest/api/apimanagement/backend/create-or-update</li>
+<li>APIM <code>authentication-managed-identity</code> 정책: https://learn.microsoft.com/azure/api-management/authentication-managed-identity-policy</li>
+<li>Azure OpenAI RBAC: https://learn.microsoft.com/azure/ai-services/openai/how-to/role-based-access-control</li>
+<li>Azure 기본 제공 역할 (AI + Machine Learning): https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/ai-machine-learning</li>
+<li>APIM GenAI gateway capabilities: https://learn.microsoft.com/azure/api-management/genai-gateway-capabilities</li>
+<li>Azure OpenAI gateway 아키텍처 가이드: https://learn.microsoft.com/azure/architecture/ai-ml/guide/azure-openai-gateway-guide</li>
+<li>Provisioned throughput (PTU): https://learn.microsoft.com/azure/ai-services/openai/concepts/provisioned-throughput</li>
+<li>모델 은퇴 및 버전 관리: https://learn.microsoft.com/azure/ai-services/openai/concepts/model-retirements</li>
+<li>Supported metrics (Microsoft.CognitiveServices/accounts): https://learn.microsoft.com/azure/azure-monitor/reference/supported-metrics/microsoft-cognitiveservices-accounts-metrics</li>
+<li>회로 차단기 패턴: https://learn.microsoft.com/azure/architecture/patterns/circuit-breaker</li>
+</ul>
+<hr />
+<h2 id="_5">리뷰가 필요한 항목 (초안 메모)</h2>
+<ul>
+<li>[ ] 고객 환경 기준 <strong>RTO 목표치</strong> 확정 → §13에 반영</li>
+<li>[ ] Tier 2 / Tier 3 중 표준 권고안을 무엇으로 할지 결정</li>
+<li>[ ] Front Door vs APIM 다중 리전만으로 충분한지 비용 검토</li>
+<li>[ ] 성능 저하 모드의 구체적 대체 모델 지정 (조직 표준 필요)</li>
+<li>[ ] 사내 부하 테스트 도구 및 카오스 훈련 절차 연결</li>
+</ul>
+    <hr>
+    <p class="meta">생성일 2026-08-05 · Microsoft Scout</p>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+(function () {
+  var DIAGRAMS = ["flowchart TB\n    subgraph A[\"축 1. 용량 다중화\"]\n        A1[\"PTU + 표준 Spillover\"]\n        A2[\"다중 배포 / 다중 구독 쿼터\"]\n    end\n    subgraph B[\"축 2. 위치 다중화\"]\n        B1[\"멀티 리전 배포\"]\n        B2[\"Global / Data Zone 배포\"]\n    end\n    subgraph C[\"축 3. 경로 다중화\"]\n        C1[\"APIM 백엔드 풀 + 서킷 브레이커\"]\n        C2[\"Front Door / Traffic Manager\"]\n    end\n    subgraph D[\"축 4. 우아한 성능 저하\"]\n        D1[\"경량 모델 대체\"]\n        D2[\"캐시 응답 / 기능 축소\"]\n    end\n    A --> C\n    B --> C\n    C --> D", "flowchart LR\n    U[\"Client\"] --> FD[\"Front Door<br/>(전역 진입 · WAF)\"]\n    FD --> P1[\"APIM (Korea Central)\"]\n    FD --> P2[\"APIM (Japan East)\"]\n    P1 --> K1[\"AOAI KRC (PTU)\"]\n    P1 --> K2[\"AOAI KRC (Std, Spillover)\"]\n    P2 --> J1[\"AOAI JPE (Std)\"]\n    P1 --> G1[\"AOAI Global Standard\"]\n    P2 --> G1"];
+  var toggle = document.getElementById("themeToggle");
+
+  function currentTheme() { return document.documentElement.getAttribute("data-theme"); }
+
+  function renderMermaid() {
+    var nodes = document.querySelectorAll(".mermaid");
+    if (!window.mermaid) {
+      nodes.forEach(function (el) {
+        var i = parseInt(el.getAttribute("data-idx"), 10);
+        el.classList.add("mermaid-fallback");
+        el.textContent = DIAGRAMS[i];
+      });
+      return;
+    }
+    window.mermaid.initialize({
+      startOnLoad: false,
+      theme: currentTheme() === "dark" ? "dark" : "default",
+      securityLevel: "loose",
+      flowchart: { htmlLabels: true, curve: "basis" }
+    });
+    nodes.forEach(function (el, n) {
+      var i = parseInt(el.getAttribute("data-idx"), 10);
+      var def = DIAGRAMS[i];
+      var id = "mmd-" + i + "-" + Date.now() + "-" + n;
+      try {
+        window.mermaid.render(id, def).then(function (res) {
+          el.innerHTML = res.svg;
+          el.classList.remove("mermaid-fallback");
+        }).catch(function (err) {
+          el.classList.add("mermaid-fallback");
+          el.textContent = def;
+          console.error("mermaid render failed", err);
+        });
+      } catch (err) {
+        el.classList.add("mermaid-fallback");
+        el.textContent = def;
+        console.error("mermaid threw", err);
+      }
+    });
+  }
+
+  toggle.addEventListener("click", function () {
+    document.documentElement.setAttribute("data-theme", currentTheme() === "dark" ? "light" : "dark");
+    renderMermaid();
+  });
+
+  window.addEventListener("load", renderMermaid);
+
+  var links = Array.prototype.slice.call(document.querySelectorAll(".sidebar a"));
+  var targets = links.map(function (a) {
+    try { return document.querySelector(a.getAttribute("href")); } catch (e) { return null; }
+  });
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      var i = targets.indexOf(e.target);
+      if (i < 0) return;
+      links.forEach(function (l) { l.classList.remove("active"); });
+      links[i].classList.add("active");
+    });
+  }, { rootMargin: "-8% 0px -80% 0px" });
+  targets.forEach(function (t) { if (t) obs.observe(t); });
+})();
+</script>
+<script src="../../assets/guide-nav.js"></script>
+</body>
+</html>

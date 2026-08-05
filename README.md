@@ -12,6 +12,7 @@
 |----|--------|------|------|
 | 01 | OAI → Azure OpenAI 온보딩 가이드 | 온보딩, 마이그레이션, 인증, 네트워크 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/01-oai-to-aoai-onboarding/) |
 | 02 | Azure OpenAI 배포 & 운영 모니터링 가이드 | 모니터링, PTU, KQL, Alert, APIM | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/02-aoai-deployment-monitoring/) |
+| 03 | Azure OpenAI 고가용성(HA) 아키텍처 가이드 *(draft)* | HA, Failover, Spillover, 멀티 리전 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/03-aoai-high-availability/) |
 
 > 목록의 **정본(Single Source of Truth)은 [`guides.js`](guides.js)** 입니다.
 > 루트 `index.html`(허브)은 이 파일을 읽어 카드를 자동 생성하므로, 허브 HTML을 직접 수정할 필요가 없습니다.
@@ -32,6 +33,9 @@
 │   ├── 02-aoai-deployment-monitoring/
 │   │   ├── index.html
 │   │   └── source.md           # 마크다운 원본 (선택)
+│   ├── 03-aoai-high-availability/
+│   │   ├── index.html
+│   │   └── source.md
 │   └── _template/
 │       └── index.html          # 새 가이드 시작용 빈 템플릿
 └── README.md
