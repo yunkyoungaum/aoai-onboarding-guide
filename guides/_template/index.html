@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- TODO: 문서 제목으로 변경 -->
+<title>새 가이드 제목</title>
+<script>
+  (() => {
+    const param = new URLSearchParams(window.location.search).get("scoutTheme");
+    const theme =
+      param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+<style>
+:root {
+  color-scheme: light;
+  --cp-bg: #f7f4ef;
+  --cp-bg-elevated: #fcfbf8;
+  --cp-surface: #ffffff;
+  --cp-surface-soft: #f5f5f5;
+  --cp-border: #dedede;
+  --cp-border-strong: #919191;
+  --cp-text: #242424;
+  --cp-text-muted: #5c5c5c;
+  --cp-text-soft: #6f6f6f;
+  --cp-accent: #b11f4b;
+  --cp-accent-hover: #9a1a41;
+  --cp-accent-soft: rgba(177, 31, 75, 0.08);
+  --cp-accent-fg: #ffffff;
+  --cp-success: #16a34a;
+  --cp-danger: #dc2626;
+  --cp-warning: #f59e0b;
+  --cp-link: #0078d4;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+  --cp-highlight: rgba(177, 31, 75, 0.12);
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --cp-bg: #3d3b3a;
+  --cp-bg-elevated: #343231;
+  --cp-surface: #292929;
+  --cp-surface-soft: #2e2e2e;
+  --cp-border: #474747;
+  --cp-border-strong: #5f5f5f;
+  --cp-text: #dedede;
+  --cp-text-muted: #919191;
+  --cp-text-soft: #b0b0b0;
+  --cp-accent: #fd8ea1;
+  --cp-accent-hover: #fb7b91;
+  --cp-accent-soft: rgba(253, 142, 161, 0.14);
+  --cp-accent-fg: #1a1a1a;
+  --cp-success: #4ade80;
+  --cp-danger: #f87171;
+  --cp-warning: #fbbf24;
+  --cp-link: #4da6ff;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+  --cp-highlight: rgba(253, 142, 161, 0.12);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  padding: 3.2rem 1rem 4rem;
+  background: var(--cp-bg);
+  color: var(--cp-text);
+  font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15.5px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+main {
+  max-width: 900px; margin: 0 auto;
+  background: var(--cp-surface);
+  border: 1px solid var(--cp-border);
+  border-radius: 16px;
+  padding: 40px 46px;
+  box-shadow: 0 0 2px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.14);
+}
+h1, h2, h3 { font-weight: 650; line-height: 1.35; }
+h1 { font-size: 2rem; margin: 0 0 .6rem; letter-spacing: -0.02em; }
+h2 {
+  font-size: 1.4rem; margin: 2.4rem 0 1rem;
+  padding-bottom: .5rem; border-bottom: 2px solid var(--cp-border);
+}
+h2::before {
+  content: ""; display: inline-block; width: 6px; height: 1.05em; border-radius: 3px;
+  background: var(--cp-accent); margin-right: 10px; vertical-align: -0.16em;
+}
+h3 { font-size: 1.12rem; margin: 1.8rem 0 .5rem; }
+p { margin: .8rem 0; }
+a { color: var(--cp-link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+hr { border: none; border-top: 1px solid var(--cp-border); margin: 2.2rem 0; }
+ul, ol { padding-left: 1.5rem; }
+li { margin: .3rem 0; }
+li::marker { color: var(--cp-accent); }
+table {
+  width: 100%; border-collapse: separate; border-spacing: 0; margin: 1.2rem 0;
+  font-size: 14px; border: 1px solid var(--cp-border); border-radius: 12px; overflow: hidden;
+}
+thead th {
+  background: var(--cp-surface-soft); font-weight: 650; text-align: left;
+  padding: 11px 14px; border-bottom: 1px solid var(--cp-border);
+}
+tbody td { padding: 10px 14px; border-bottom: 1px solid var(--cp-border); vertical-align: top; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--cp-accent-soft); }
+code {
+  font-family: Consolas, "Courier New", Courier, monospace;
+  font-size: .88em; background: var(--cp-surface-soft); color: var(--cp-accent);
+  padding: .12em .38em; border-radius: 5px; border: 1px solid var(--cp-border);
+}
+pre {
+  background: var(--cp-bg-elevated); border: 1px solid var(--cp-border);
+  border-radius: 12px; padding: 16px 18px; overflow-x: auto; margin: 1.1rem 0;
+}
+html[data-theme="dark"] pre { background: #1f1f1f; }
+pre code { background: none; border: none; padding: 0; color: var(--cp-text); font-size: 13px; }
+blockquote {
+  margin: 1.2rem 0; padding: 12px 18px; background: var(--cp-accent-soft);
+  border-left: 4px solid var(--cp-accent); border-radius: 0 10px 10px 0;
+}
+blockquote p { margin: .35rem 0; }
+.topbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--cp-border);
+}
+.badge {
+  display: inline-block; background: var(--cp-accent); color: var(--cp-accent-fg);
+  font-size: 11px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 999px;
+}
+.toggle {
+  cursor: pointer; border: 1px solid var(--cp-border); background: var(--cp-surface-soft);
+  color: var(--cp-text); border-radius: 0.625rem; padding: 7px 14px;
+  font-size: 13px; font-family: inherit;
+}
+.toggle:hover { border-color: var(--cp-accent); color: var(--cp-accent); }
+.meta { color: var(--cp-text-soft); font-size: 13px; }
+@media (max-width: 640px) { main { padding: 26px 18px; } }
+@media print { .toggle { display: none; } main { border: none; box-shadow: none; padding: 0; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="topbar">
+    <!-- TODO: 배지 문구 변경 -->
+    <span class="badge">Azure OpenAI · Guide</span>
+    <button class="toggle" id="themeToggle" type="button">테마 전환</button>
+  </div>
+
+  <!-- TODO: 여기부터 본문 작성 -->
+  <h1>새 가이드 제목</h1>
+  <p class="meta">한 줄 요약을 적습니다.</p>
+
+  <h2>1. 첫 번째 섹션</h2>
+  <p>내용을 작성하세요.</p>
+
+  <hr />
+  <p class="meta">최종 수정 YYYY-MM-DD</p>
+</main>
+
+<script>
+  document.getElementById("themeToggle").addEventListener("click", function () {
+    var cur = document.documentElement.getAttribute("data-theme");
+    document.documentElement.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+  });
+</script>
+<!-- 삭제하지 마세요: 가이드 목록으로 돌아가는 공통 링크 -->
+<script src="../../assets/guide-nav.js"></script>
+</body>
+</html>
