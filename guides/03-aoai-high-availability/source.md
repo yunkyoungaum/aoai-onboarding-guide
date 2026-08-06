@@ -21,14 +21,17 @@
 | **L3** | + **APIM 백엔드 풀** (다중 리전, 우선순위 + 서킷 브레이커) | 용량 + **리전 장애** | 중요 서비스 |
 | **L4** | + Front Door 다중 APIM, 다중 구독/테넌트 쿼터 분산, 성능 저하 모드 | 게이트웨이·구독 단위 장애 | 미션 크리티컬 |
 
-> 💡 **핵심 원칙**: Spillover는 **용량 장애**만 해결하고, APIM 백엔드 풀은 **리전 장애**까지 해결합니다. 둘은 대체 관계가 아니라 **보완 관계**입니다(§5.4).
+> 💡 **핵심 원칙**: Spillover는 **용량 장애**만 해결하고, APIM 백엔드 풀은 **리전 장애**까지 해결합니다. 둘은 대체 관계가 아니라 **보완 관계**입니다(§5.5).
 
 ### 최소 체크리스트
 
 - [ ] 모든 클라이언트가 `Retry-After` 헤더를 **준수**한다 (§4.2)
 - [ ] PTU 배포에 **Spillover 표준 배포**가 연결되어 있다 (§5)
+- [ ] Spillover 응답 헤더(`x-ms-spillover-*`)를 **로깅**한다 (§5.7)
+- [ ] PTU 포화를 **429가 아니라 `IsSpillover` / PTU 사용률**로 판단한다 (§5.7)
 - [ ] 최소 **2개 리전**에 동일 모델·버전 배포가 존재한다 (§7)
 - [ ] APIM 백엔드 풀에 **서킷 브레이커 규칙**이 설정되어 있다 (§6.3)
+- [ ] **타임아웃 총 예산**(재시도 포함)이 클라이언트 타임아웃 이내다 (§6.6)
 - [ ] 리전별 **쿼터가 실제로 확보**되어 있다 (Failover 시점에 없으면 무의미, §8)
 - [ ] 모델 **버전 은퇴(retirement) 일정**을 추적하고 있다 (§9)
 - [ ] **성능 저하 모드(graceful degradation)** 가 정의되어 있다 (§10)
@@ -38,7 +41,7 @@
 
 ## 1. AOAI에서 "장애"란 무엇인가
 
-HA 설계의 출발점은 **무엇으로부터 보호할 것인가**를 정확히 나누는 것입니다. AOAI 장애는 성격이 전혀 다른 5가지로 나뉘며, **대응 수단이 각각 다릅니다.**
+HA 설계의 출발점은 **무엇으로부터 보호할 것인가**를 정확히 나누는 것입니다. AOAI 장애는 성격이 전혀 다른 6가지로 나뉘며, **대응 수단이 각각 다릅니다.**
 
 | # | 장애 유형 | 증상 | 근본 원인 | 유효한 대응 | 무효한 대응 |
 |---|---|---|---|---|---|
@@ -47,9 +50,10 @@ HA 설계의 출발점은 **무엇으로부터 보호할 것인가**를 정확�
 | **F3** | **리전 장애** | 특정 리전 전체 실패 | 리전 인시던트 | **다른 리전 Failover** | Spillover(같은 리소스이므로 무력) |
 | **F4** | **클라이언트 단절** | 499 | 타임아웃/사용자 취소 | 스트리밍, 타임아웃 정합성 | 리전 Failover |
 | **F5** | **모델 수명주기** | 400/404, 품질 변화 | 모델 버전 은퇴·업그레이드 | 버전 고정 + 마이그레이션 계획 | 인프라 이중화 |
+| **F6** | **요청 한계 초과** | 400 | **PTU 컨텍스트 길이 상한 초과** | Spillover(표준 배포), 프롬프트 압축 | PTU 증설(무의미) |
 
 > **가장 흔한 오설계**: F1(용량)을 F3(리전 장애) 대응으로 막으려 하거나, 그 반대입니다.
-> 예를 들어 Spillover만 구성해 두고 "우리는 HA가 되어 있다"고 보는 경우, **리전 인시던트에는 전혀 대비되어 있지 않습니다**(§5.4).
+> 예를 들어 Spillover만 구성해 두고 "우리는 HA가 되어 있다"고 보는 경우, **리전 인시던트에는 전혀 대비되어 있지 않습니다**(§5.5).
 
 ---
 
@@ -153,11 +157,13 @@ if 429:
 ### 4.3 타임아웃 정합성
 
 ```
-클라이언트 타임아웃  ≥  게이트웨이(APIM) 백엔드 타임아웃  ≥  예상 최대 생성 시간
+클라이언트 타임아웃  ≥  게이트웨이(APIM) 총 소요 시간  ≥  예상 최대 생성 시간
+                          └─ (시도 횟수 × 백엔드 timeout) + 재시도 간격 합
 ```
 
-- 역전되면 상위 계층이 먼저 끊어 **499**가 발생하고, 재시도가 중첩되어 부하가 배가됩니다.
-- 스트리밍(SSE)을 사용하면 첫 토큰이 즉시 도착해 유휴 타임아웃 문제 대부분이 사라집니다.
+- **안쪽 계층이 먼저 실패해야** 바깥 계층이 그 실패를 처리할 수 있습니다. 역전되면 클라이언트가 먼저 끊어 **499**가 발생하고, 백엔드에는 아무도 읽지 않을 **고아 작업**이 남으며, 클라이언트 재시도가 겹쳐 부하가 배가됩니다.
+- 게이트웨이의 타임아웃은 **시도 1회당** 적용되므로, 재시도 횟수를 곱해 총 예산을 계산해야 합니다. 계산법과 흔한 오류는 **§6.6** 참고.
+- 스트리밍(SSE)을 사용하면 첫 토큰이 즉시 도착해 유휴 타임아웃 문제 대부분이 사라집니다. 다만 **게이트웨이의 `timeout`은 스트리밍에서 TTFT만 제한**하고 전체 생성 시간은 제한하지 않습니다(§6.6).
 
 ### 4.4 클라이언트 측 서킷 브레이커 & 부하 차단
 
@@ -169,15 +175,47 @@ if 429:
 
 ## 5. Layer 2 — Spillover (PTU → 표준 배포)
 
-PTU 배포가 포화되어 비(非)200 응답(예: PTU 소진 시 429)을 반환할 때, **오버플로 요청을 대응되는 표준 배포로 자동 라우팅**하는 기능입니다.
+PTU 배포가 비(非)200 응답을 반환할 때, **오버플로 요청을 대응되는 표준 배포로 자동 라우팅**하는 기능입니다.
 
-### 5.1 전제 조건
+### 5.0 누가 재시도하는가 — 서버 측 자동 전환
+
+가장 많이 오해하는 부분입니다. **재시도 주체는 Azure OpenAI 서비스 자신**입니다. 클라이언트도, APIM도 아닙니다.
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant P as PTU 배포
+    participant S as 표준 배포
+    C->>P: 요청 1건 (HTTP 1회)
+    P-->>P: 429 / 400 / 500 / 503
+    Note over P,S: AOAI 서비스가 자동 전달<br/>(클라이언트는 모름)
+    P->>S: 내부 라우팅
+    S-->>C: 200 (같은 응답으로 반환)
+```
+
+- **HTTP 요청은 처음부터 끝까지 1건**입니다. 클라이언트는 한 번 호출하고 200을 받습니다.
+- Spillover가 성공하면 **클라이언트는 429를 받지 않습니다.** 원래의 429는 `x-ms-spillover-error` 헤더에만 남습니다.
+- 따라서 클라이언트 재시도 로직이 발동하지 않으며, 이 전환은 **재시도 횟수에 포함되지 않습니다.**
+
+> 문서 원문: *"When a request results in one of these non-`200` response codes, **Azure OpenAI automatically sends the request** from your provisioned deployment to your standard deployment to be processed."*
+
+### 5.1 Spillover를 유발하는 응답 코드 — 429만이 아닙니다
+
+| 코드 | 상황 |
+|---|---|
+| **429** | PTU 완전 소진 |
+| **400** | **긴 컨텍스트 요청** — 예: gpt-4.1 계열 PTU는 128K 미만 컨텍스트만 지원 |
+| **500 / 503** | 처리 중 서버 오류 |
+
+> 💡 **400이 포함된다는 점이 중요합니다.** PTU는 모델별로 지원 컨텍스트 길이 상한이 있어, 긴 프롬프트가 용량과 무관하게 400으로 실패한 뒤 표준 배포로 넘어갑니다. 이 경우 근본 원인은 "용량"이 아니라 "컨텍스트 길이"이므로 PTU를 증설해도 해결되지 않습니다.
+
+### 5.2 전제 조건
 
 - **동일한 Foundry/AOAI 리소스 안에** 프로비저닝 배포와 표준 배포가 함께 존재해야 합니다.
 - Spillover 대상 표준 배포는 **같은 모델·같은 버전**이어야 합니다.
 - 구성에는 **Cognitive Services Contributor** 이상 권한이 필요합니다.
 
-### 5.2 배포 단위로 켜기
+### 5.3 배포 단위로 켜기
 
 배포 속성 `spilloverDeploymentName`에 표준 배포 이름을 지정합니다. 신규 생성 시 또는 기존 배포에 추가할 수 있습니다.
 
@@ -194,7 +232,7 @@ curl -X PUT "https://management.azure.com/subscriptions/$SUB/resourceGroups/$RG/
       }'
 ```
 
-### 5.3 요청 단위로 켜기
+### 5.4 요청 단위로 켜기
 
 요청 헤더 `x-ms-spillover-deployment`에 표준 배포 이름을 지정하면 **해당 요청만** Spillover 대상이 됩니다.
 
@@ -217,21 +255,50 @@ curl "$AZURE_OPENAI_ENDPOINT/openai/deployments/ptu-gpt4o/chat/completions?api-v
 | 실시간 저지연 API | ❌ 끔 | 표준 배포의 지연 변동을 허용할 수 없다 |
 | 배치·백그라운드 | ✅ 켬 | 지연 허용 |
 
-### 5.4 ⚠️ Spillover가 **막지 못하는** 것
+### 5.5 ⚠️ Spillover가 **막지 못하는** 것
 
 Spillover는 **동일 리소스 내부**의 표준 배포로 넘기는 기능입니다. 따라서:
 
 | 장애 | Spillover로 대응 가능? |
 |---|---|
 | PTU 용량 포화 (429) | ✅ |
-| PTU 배포의 일시적 5xx | ✅ (비200 응답 시 라우팅) |
+| PTU 컨텍스트 길이 초과 (400) | ✅ |
+| PTU 배포의 일시적 5xx | ✅ |
 | **리전 전체 장애** | ❌ 표준 배포도 같은 리전에 있음 |
 | **리소스/구독 단위 문제** | ❌ |
-| 표준 배포 쿼터까지 소진 | ❌ 최종 실패 |
+| 표준 배포 쿼터까지 소진 | ❌ **최종 실패 → 클라이언트가 오류 수신**(§5.6) |
 
 > 즉 **Spillover는 HA의 시작이지 완성이 아닙니다.** 리전 장애 대비는 §6~7의 다중 리전 경로가 필요합니다.
 
-### 5.5 Spillover 관측
+### 5.6 표준 배포도 실패하면 클라이언트는 무엇을 받는가
+
+**규칙: 클라이언트는 "마지막으로 시도한 백엔드"의 응답을 그대로 받습니다.**
+
+> 문서 원문: *"if the standard deployment also fails to serve it, **the standard deployment's response (including status code and body) is returned to the caller.** The `x-ms-spillover-from-deployment` and `x-ms-spillover-error` headers are still present, so the caller can distinguish a spillover failure from a direct standard-deployment failure."*
+
+| PTU 결과 | 표준 배포 결과 | **클라이언트 수신** | `x-ms-spillover-error` |
+|---|---|---|---|
+| 429 | 200 | **200** ✅ | `429` |
+| 429 | **429** | **429** | `429` |
+| 429 | 500 | **500** | `429` |
+| **400** (긴 컨텍스트) | 429 | **429** | **`400`** |
+| 500 | 503 | **503** | `500` |
+
+> ⚠️ **4번째 행에 주의하세요.** 클라이언트가 본 코드(429)와 실제 근본 원인(400, 컨텍스트 길이)이 **다를 수 있습니다.** 429만 보고 "용량 부족"으로 진단해 PTU를 증설하면 문제가 해결되지 않습니다.
+
+**429를 받았을 때 세 가지 경우를 구분하는 법**
+
+| 케이스 | `x-ms-spillover-from-deployment` | `x-ms-spillover-error` | 의미 |
+|---|---|---|---|
+| **A** | 없음 | — | Spillover 미적용 → 호출한 배포가 직접 429 |
+| **B** | 있음 | `429` | PTU 포화 + **표준 배포까지 포화** — 가장 심각 |
+| **C** | 있음 | `400` | PTU 컨텍스트 초과 + 표준 포화 |
+
+> **케이스 B는 두 겹의 용량이 동시에 소진된 상태**입니다. 재시도로는 해결되지 않으므로 **다른 리전으로 경로 전환(§6~7) 또는 부하 차단**이 필요합니다.
+
+**따라서 Spillover가 있어도 클라이언트 재시도 로직은 반드시 유지해야 합니다.** 이때 받는 `Retry-After`는 **표준 배포가 준 값**이므로, §4.2의 "과도한 값이면 대기 대신 경로 전환" 원칙을 그대로 적용합니다.
+
+### 5.7 Spillover 관측
 
 응답 헤더로 판별합니다.
 
@@ -239,14 +306,55 @@ Spillover는 **동일 리소스 내부**의 표준 배포로 넘기는 기능입
 |---|---|
 | `x-ms-spillover-from-deployment` | 값이 있으면 **이 요청은 Spillover된 요청** (PTU 배포명 포함) |
 | `x-ms-deployment-name` | 실제로 요청을 처리한 배포 이름 |
-| `x-ms-spillover-error` | Spillover를 유발한 프로비저닝 배포의 응답 코드(429/500/503 등). **성공 여부와 무관하게 존재** |
+| `x-ms-spillover-error` | Spillover를 유발한 프로비저닝 배포의 응답 코드(429/400/500/503). **성공 여부와 무관하게 존재** |
 
-> Spillover된 요청을 표준 배포도 처리하지 못하면, **표준 배포의 응답(상태 코드·본문)이 그대로 반환**됩니다. 이때도 위 헤더가 남아 있으므로 "Spillover 실패"와 "표준 배포 직접 실패"를 구분할 수 있습니다.
+**애플리케이션 계측에 반드시 포함하세요.** 이 헤더들이 없으면 §5.6의 A/B/C를 사후에 구분할 수 없습니다.
 
-메트릭 측면에서는 `AzureOpenAIRequests` 메트릭의 **`IsSpillover` 차원**으로 분리해 추이를 봅니다.
+```python
+span.set_attribute("StatusCode", resp.status_code)
+span.set_attribute("SpilloverFrom",  headers.get("x-ms-spillover-from-deployment"))
+span.set_attribute("SpilloverError", headers.get("x-ms-spillover-error"))
+span.set_attribute("ServedBy",       headers.get("x-ms-deployment-name"))
+```
+
+#### 🔴 메트릭 해석의 함정 — PTU에 429가 찍히지 않습니다
+
+> 문서 원문: *"spilled-over requests are **not counted as `429`s on the provisioned deployment**"*
+
+Spillover된 요청은 **표준 배포 쪽에 `IsSpillover=True` + 최종 상태 코드(보통 200)** 로 기록됩니다. PTU 배포에는 자신이 직접 처리한 요청만 남습니다.
+
+문서의 실제 예시:
+
+| 배포 | 기록 |
+|---|---|
+| `gpt-4.1-ptum` (PTU) | 200 = **46** |
+| `gpt-4.1` (표준, `IsSpillover=True`) | 200 = **954** |
+
+> ⚠️ **429 카운트만 모니터링하면 954건이나 넘쳤는데도 "포화 없음"으로 오판합니다.**
+> PTU 포화 여부는 반드시 **`IsSpillover` 차원** 또는 **`Provisioned Utilization V2`** 로 판단하세요.
+
+**알림 설계**: 사용자에게 실제로 전달되는 실패는 **표준 배포의 429**입니다.
+→ `AzureOpenAIRequests` + `StatusCode=429` + `ModelDeploymentName=<표준 배포>` 조합이 **실사용자 영향 지표**입니다.
 
 - Spillover 비율이 지속적으로 높다 → **PTU 증설 신호**
 - Spillover 비율 급증 + 지연 증가 → 피크 부하 또는 특정 테넌트 폭주
+
+### 5.8 지연과 비용 — Spillover의 대가
+
+**① 지연 증가**
+
+> 문서 원문: *"the service prioritizes sending requests to the provisioned deployment before sending any overage requests to the standard deployment. **This prioritization might incur additional latency.**"*
+
+실패한 PTU 시도 + 표준 배포 처리가 **한 요청 안에 누적**됩니다. 클라이언트 타임아웃을 이 누적 지연 기준으로 잡아야 합니다.
+
+**② 과금 방식 전환**
+
+| 처리 배포 | 과금 |
+|---|---|
+| PTU 배포 | **시간당 프로비저닝 비용만** (요청당 추가 비용 없음) |
+| 표준 배포(Spillover) | **입력·캐시·출력 토큰 단가**로 과금 |
+
+> 즉 **Spillover 비율 급증 = 비용 급증**이기도 합니다. 용량 알림과 별개로 **비용 알림**도 함께 두세요.
 
 > 자세한 메트릭·KQL은 [가이드 02](../02-aoai-deployment-monitoring/) 참고.
 
@@ -387,7 +495,10 @@ resource pool 'Microsoft.ApiManagement/service/backends@2024-05-01' = {
     <!-- 풀 내 전환은 서킷 브레이커가 담당. 여기서는 짧은 재시도만 -->
     <retry condition="@(context.Response.StatusCode == 429 || context.Response.StatusCode >= 500)"
            count="2" interval="1" max-interval="5" delta="1" first-fast-retry="true">
-      <forward-request buffer-request-body="true" timeout="120" />
+      <forward-request
+          timeout="60"                  <!-- 시도 1회당 · 응답 헤더까지의 시간 -->
+          buffer-request-body="true"    <!-- 재시도 시 본문 재사용에 필수 -->
+          buffer-response="false" />    <!-- SSE 스트리밍에 필수 -->
     </retry>
   </backend>
 
@@ -407,7 +518,78 @@ resource pool 'Microsoft.ApiManagement/service/backends@2024-05-01' = {
 
 > ⚠️ **재시도와 서킷 브레이커의 역할 분리**: 게이트웨이에서 재시도 횟수를 크게 잡으면 서킷 브레이커가 열리기 전에 부하를 계속 밀어 넣게 됩니다. **짧은 재시도 + 명확한 서킷 브레이커** 조합이 원칙입니다.
 
-### 6.6 시맨틱 캐싱 — 가용성 관점
+### 6.6 타임아웃 예산 설계 — 가장 많이 틀리는 부분
+
+#### ① 왜 안쪽(APIM)이 바깥(클라이언트)보다 먼저 실패해야 하는가
+
+**바깥이 먼저 포기하면 안 됩니다.** 클라이언트 타임아웃 60초 · APIM 120초인 경우를 보면:
+
+```
+0s ──────── 60s ──────────── 120s
+클라이언트  │ 포기(연결 끊음)
+APIM        │ 계속 대기 ──────│ 그제서야 응답
+AOAI        │ 계속 생성 ──────│ (아무도 읽지 않을 결과)
+```
+
+동시에 네 가지 문제가 발생합니다.
+
+| 문제 | 내용 |
+|---|---|
+| **고아 작업** | 아무도 읽지 않을 응답을 위해 **PTU/TPM을 60초 더 소모** |
+| **부하 증폭** | 클라이언트가 60초에 재시도 → 1번 요청이 살아있는데 **2번째 요청 추가** |
+| **진단 불가** | 클라이언트는 HTTP 응답 없이 소켓 타임아웃만 받음 → correlation ID 없음 |
+| **서킷 브레이커 무력화** | APIM이 실패를 인지하기 전에 클라이언트가 사라짐 → **깨끗한 실패 신호 미수집** |
+
+반대로 안쪽이 짧으면 APIM이 먼저 실패를 감지해 **정상 HTTP 오류(504)** 를 반환하고, 서킷 브레이커가 작동하며, 클라이언트는 추적 가능한 오류를 받습니다.
+
+> **원칙: 안쪽이 먼저 실패해야 바깥이 그 실패를 처리할 수 있습니다.**
+
+#### ② `timeout`은 "전체 시간"이 아니라 **응답 헤더까지의 시간**입니다
+
+> 문서 원문: *"The amount of time in seconds to wait for **the HTTP response headers** to be returned by the backend service before a timeout error is raised."*
+
+| 모드 | `timeout`이 실제로 제한하는 것 |
+|---|---|
+| **비스트리밍** | 응답 완성까지 = 사실상 전체 시간 ✅ |
+| **스트리밍(SSE)** | **첫 바이트(TTFT)까지만** — 이후 생성이 10분 걸려도 걸리지 않음 ⚠️ |
+
+스트리밍을 쓰면서 "timeout으로 전체 시간을 통제했다"고 믿으면 **틀립니다.** 전체 생성 시간은 `max_tokens`와 클라이언트 측 총 시간 제한으로 통제해야 합니다.
+
+> 또한 문서에 **"240초를 넘는 값은 무시될 수 있다"**(유휴 연결이 끊길 수 있음)고 명시되어 있어, 240초가 사실상 상한입니다.
+
+#### ③ `timeout`은 **시도 1회당** 적용됩니다 — 총 예산 계산
+
+`<retry>`는 자식 정책을 재실행하므로 타임아웃은 매 시도마다 새로 적용됩니다.
+
+```
+총 소요 시간 ≈ (시도 횟수 × timeout) + 재시도 간격 합
+```
+
+위 예시(`count="2"` = 총 3회 시도, `timeout="60"`, `first-fast-retry="true"`):
+
+```
+60s + 0s(즉시) + 60s + 2s + 60s ≈ 182초
+```
+
+> ⚠️ 만약 `timeout="120"`으로 두면 최악 **약 362초(6분)** 가 됩니다. 클라이언트 타임아웃이 120초라면 APIM이 2번째 시도 중일 때 이미 클라이언트가 포기해 ①의 문제가 그대로 발생합니다.
+
+**따라서 올바른 정합성 공식은 다음과 같습니다.**
+
+```
+클라이언트 타임아웃  ≥  (시도 횟수 × APIM timeout) + 재시도 간격 합
+```
+
+위 설정 기준 **클라이언트 타임아웃은 200초 이상**으로 잡아야 합니다.
+
+#### ④ 스트리밍에는 `buffer-response="false"` 가 필수
+
+> 문서 원문: *"Set to **`false`** with backends such as those implementing **server-sent events (SSE)** that require content to be returned or streamed immediately to the caller."*
+
+기본값 `true`는 응답을 **8KB 단위로 버퍼링**합니다. AOAI 스트리밍을 APIM 뒤에서 그대로 쓰면 토큰이 뭉쳐서 전달되어 **스트리밍 UX가 사실상 사라지고 TTFT 이점도 없어집니다.**
+
+한편 `buffer-request-body="true"`는 **재시도 시 요청 본문을 재사용하기 위해 필요**하므로 유지합니다.
+
+### 6.7 시맨틱 캐싱 — 가용성 관점
 
 `llm-semantic-cache-lookup` / `llm-semantic-cache-store`는 비용 절감 기능으로 알려져 있지만, **HA 관점에서는 "백엔드 부하를 줄여 429 자체를 예방"하는 수단**입니다. 반복 질의 비중이 높은 워크로드(FAQ, 사내 지식 검색)에서 효과가 큽니다.
 
@@ -604,24 +786,30 @@ Client → Front Door
 ## 13. HA 체크리스트
 
 ### 설계
-- [ ] 장애 유형(F1~F5)별로 대응 수단이 매핑되어 있다
+- [ ] 장애 유형(F1~F6)별로 대응 수단이 매핑되어 있다
 - [ ] RTO/RPO에 준하는 목표(Failover 소요 시간 목표)가 문서화되어 있다
 - [ ] Failover 후보 리전이 데이터 상주 요건을 만족한다
 
 ### 구현
 - [ ] 클라이언트가 `Retry-After`를 해석하고, 과도한 값이면 경로를 전환한다
-- [ ] 타임아웃이 계층 간 정합적이다
+- [ ] **Spillover가 있어도 클라이언트 재시도 로직을 유지**한다 (표준 배포도 실패하면 오류가 그대로 전달됨, §5.6)
+- [ ] 타임아웃 총 예산 = **(시도 횟수 × 백엔드 timeout) + 재시도 간격 합** 이 클라이언트 타임아웃 이내다 (§6.6)
+- [ ] 스트리밍을 쓴다면 APIM에 **`buffer-response="false"`** 가 설정되어 있다 (§6.6)
+- [ ] 재시도를 쓴다면 **`buffer-request-body="true"`** 가 설정되어 있다 (§6.6)
 - [ ] PTU 배포에 Spillover 표준 배포가 연결되어 있다
 - [ ] APIM 백엔드가 Managed Identity로 인증하며, 역할은 **`Cognitive Services OpenAI User`**(키 조회 권한 없음)이다
 - [ ] 백엔드 풀이 우선순위 기반이고, **모든 백엔드에 서킷 브레이커**가 있다
 - [ ] 서킷 브레이커가 **429와 `Retry-After`를 수용**하도록 설정되어 있다
 - [ ] 응답에 처리 백엔드 식별 헤더가 포함된다
+- [ ] 애플리케이션이 `x-ms-spillover-from-deployment` / `x-ms-spillover-error` / `x-ms-deployment-name`을 기록한다
 
 ### 운영
 - [ ] Failover 리전 쿼터가 **평상시 트래픽 100%** 를 감당한다
 - [ ] 리전 간 모델 버전·필터·네트워크 구성이 동기화되어 있다
 - [ ] 모델 은퇴 일정을 분기별로 점검한다
 - [ ] `IsSpillover`, `AzureOpenAIAvailabilityRate`, 429/5xx 알림이 설정되어 있다
+- [ ] **표준 배포의 429**에 알림이 걸려 있다 (실사용자 영향 지표, §5.7)
+- [ ] Spillover 비율에 **비용 알림**도 함께 걸려 있다 (과금 방식 전환, §5.8)
 - [ ] 분기 1회 이상 Failover 훈련을 수행한다
 - [ ] 성능 저하 모드가 구현되어 있고 테스트되었다
 
@@ -640,6 +828,10 @@ Client → Front Door
 9. **APIM 단일 리전** — 게이트웨이가 SPOF
 10. **성능 저하 모드 부재** — 전면 포화 시 완전 실패
 11. **APIM 관리 ID에 `Cognitive Services User` 부여** — 게이트웨이가 AOAI 계정 키를 조회할 수 있게 됨 (§6.1)
+12. **PTU 포화를 429 카운트로 판단** — Spillover된 요청은 PTU에 429로 기록되지 않아 **포화를 놓침** (§5.7)
+13. **Spillover가 있으니 클라이언트 재시도는 불필요하다고 판단** — 표준 배포도 실패하면 오류가 그대로 전달됨 (§5.6)
+14. **게이트웨이 `timeout`을 총 예산으로 오해** — 시도 1회당 값이므로 재시도 횟수만큼 곱해야 함 (§6.6)
+15. **스트리밍인데 `buffer-response="false"` 미설정** — 토큰이 8KB 단위로 뭉쳐 스트리밍 이점 소멸 (§6.6)
 
 ## 부록 B. 참고 문서
 
@@ -647,6 +839,9 @@ Client → Front Door
 - API Management backends (풀·서킷 브레이커·로드 밸런싱): https://learn.microsoft.com/azure/api-management/backends
 - Backend - Create Or Update (REST, `2024-05-01`): https://learn.microsoft.com/rest/api/apimanagement/backend/create-or-update
 - APIM `authentication-managed-identity` 정책: https://learn.microsoft.com/azure/api-management/authentication-managed-identity-policy
+- APIM `forward-request` 정책 (timeout·buffer-response 의미): https://learn.microsoft.com/azure/api-management/forward-request-policy
+- APIM `retry` 정책: https://learn.microsoft.com/azure/api-management/retry-policy
+- APIM Server-sent events(SSE) 처리: https://learn.microsoft.com/azure/api-management/how-to-server-sent-events
 - Azure OpenAI RBAC: https://learn.microsoft.com/azure/ai-services/openai/how-to/role-based-access-control
 - Azure 기본 제공 역할 (AI + Machine Learning): https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/ai-machine-learning
 - APIM GenAI gateway capabilities: https://learn.microsoft.com/azure/api-management/genai-gateway-capabilities
