@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Azure OpenAI 배포 &amp; 운영 모니터링 가이드</title>
+<title>Azure OpenAI 배포 & 운영 모니터링 가이드</title>
 <script>
   (() => {
     const param = new URLSearchParams(window.location.search).get("scoutTheme");
@@ -33,10 +33,6 @@
   --cp-warning: #f59e0b;
   --cp-link: #0078d4;
   --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
-  --cp-overlay: rgba(255, 255, 255, 0.8);
-  --cp-panel: rgba(255, 255, 255, 0.86);
-  --cp-panel-strong: rgba(255, 255, 255, 0.96);
-  --cp-sheen: rgba(255, 255, 255, 0.55);
   --cp-highlight: rgba(177, 31, 75, 0.12);
 }
 html[data-theme="dark"] {
@@ -59,10 +55,6 @@ html[data-theme="dark"] {
   --cp-warning: #fbbf24;
   --cp-link: #4da6ff;
   --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
-  --cp-overlay: rgba(41, 41, 41, 0.88);
-  --cp-panel: rgba(41, 41, 41, 0.72);
-  --cp-panel-strong: rgba(41, 41, 41, 0.96);
-  --cp-sheen: rgba(255, 255, 255, 0.04);
   --cp-highlight: rgba(253, 142, 161, 0.12);
 }
 
@@ -165,6 +157,7 @@ blockquote {
   border-left: 4px solid var(--cp-accent); border-radius: 0 10px 10px 0;
 }
 blockquote p { margin: .35rem 0; }
+blockquote table { background: var(--cp-surface); }
 
 .mermaid {
   text-align: center; margin: 1.4rem 0; background: var(--cp-bg-elevated);
@@ -383,7 +376,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li><a href="#21">2.1 로그 카테고리</a></li>
 <li><a href="#22-bicep">2.2 Bicep 예시</a></li>
 <li><a href="#23">2.3 ⚠️ 반드시 알아야 할 두 가지 한계</a></li>
-<li><a href="#24">2.4 보존 정책 권장</a></li>
+<li><a href="#24">2.4 보존 정책 및 비용 관리</a></li>
 </ul>
 </li>
 <li><a href="#3-azure-monitor-metric">3. Azure Monitor에서 꼭 봐야 할 Metric</a><ul>
@@ -609,7 +602,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <th>카테고리 (표시명)</th>
 <th>카테고리 명</th>
 <th>적재 테이블</th>
-<th>내보내기 비용</th>
+<th>추가 내보내기 과금</th>
 <th>권장</th>
 </tr>
 </thead>
@@ -618,35 +611,35 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <td>Audit Logs</td>
 <td><code>Audit</code></td>
 <td><code>AzureDiagnostics</code></td>
-<td>무료</td>
+<td>없음</td>
 <td>✅</td>
 </tr>
 <tr>
 <td>Request and Response Logs</td>
 <td><code>RequestResponse</code></td>
 <td><code>AzureDiagnostics</code></td>
-<td>무료</td>
+<td>없음</td>
 <td>✅</td>
 </tr>
 <tr>
 <td>Trace Logs</td>
 <td><code>Trace</code></td>
 <td><code>AzureDiagnostics</code></td>
-<td>무료</td>
+<td>없음</td>
 <td>✅</td>
 </tr>
 <tr>
 <td>Azure OpenAI Request Usage</td>
 <td><code>AzureOpenAIRequestUsage</code></td>
 <td><code>AzureDiagnostics</code></td>
-<td><strong>유료</strong></td>
+<td><strong>있음</strong></td>
 <td>⭕ 토큰 단위 사용량 추적 시</td>
 </tr>
 <tr>
 <td>Managed Network Events</td>
 <td><code>ManagedNetworkEvents</code></td>
 <td><code>AzureDiagnostics</code></td>
-<td><strong>유료</strong></td>
+<td><strong>있음</strong></td>
 <td>⭕ VNet/Private Endpoint 운영 시</td>
 </tr>
 <tr>
@@ -658,6 +651,34 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </tr>
 </tbody>
 </table>
+<blockquote>
+<p>⚠️ <strong>"추가 내보내기 과금 = 없음"은 무료라는 뜻이 아닙니다.</strong>
+AOAI 로그 비용은 <strong>두 겹</strong>으로 발생합니다.</p>
+<table>
+<thead>
+<tr>
+<th>비용</th>
+<th>대상</th>
+<th>과금 주체</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① <strong>수집·보존(ingestion / retention)</strong></td>
+<td><strong>모든 카테고리</strong> (Audit·Trace 포함)</td>
+<td>Log Analytics (GB 단위)</td>
+</tr>
+<tr>
+<td>② <strong>플랫폼 로그 내보내기(export)</strong></td>
+<td>위 표에서 "있음"인 카테고리만</td>
+<td>Azure Monitor <strong>Platform Logs</strong> 미터</td>
+</tr>
+</tbody>
+</table>
+<p>즉 <code>Audit</code> · <code>Trace</code> · <code>RequestResponse</code>는 <strong>①은 발생하고 ②만 면제</strong>됩니다.
+위 표의 컬럼은 Azure Monitor 레퍼런스의 <em>Costs to export</em> 값으로, <strong>①에 더해 추가로 붙는 과금이 있는지</strong>만 나타냅니다.
+특히 <code>RequestResponse</code>는 호출량에 비례해 수집량이 커지므로, 과금 표시가 "없음"이더라도 <strong>비용에 가장 큰 영향을 주는 카테고리</strong>인 경우가 많습니다. 트래픽이 많다면 수집 볼륨을 먼저 측정하세요(§2.4).</p>
+</blockquote>
 <h3 id="22-bicep">2.2 Bicep 예시</h3>
 <div class="codehilite"><pre><span></span><code>resource aoai &#39;Microsoft.CognitiveServices/accounts@2024-10-01&#39; existing = {
   name: aoaiName
@@ -727,7 +748,7 @@ resource diag &#39;Microsoft.Insights/diagnosticSettings@2021-05-01-preview&#39;
 <li>❌ <code>AzureMetrics | where MetricName == "Requests" | where ResponseCode == "429"</code> → <strong>동작하지 않음</strong> (해당 컬럼 자체가 없음)</li>
 <li>✅ 차원 분리가 필요하면 → <strong>Metrics Explorer / 메트릭 알림의 Dimension 필터</strong>, 또는 <strong><code>AzureDiagnostics</code>(RequestResponse) 로그</strong>, 또는 <strong>APIM/App Insights</strong> 사용</li>
 </ul>
-<h3 id="24">2.4 보존 정책 권장</h3>
+<h3 id="24">2.4 보존 정책 및 비용 관리</h3>
 <table>
 <thead>
 <tr>
@@ -756,6 +777,52 @@ resource diag &#39;Microsoft.Insights/diagnosticSettings@2021-05-01-preview&#39;
 <td>LLM Message Log(APIM)</td>
 <td>30일 (민감정보 검토 후)</td>
 <td>품질/사고 분석</td>
+</tr>
+</tbody>
+</table>
+<p><strong>수집 볼륨을 먼저 측정하세요.</strong> 어떤 카테고리가 실제 비용을 만드는지는 트래픽 패턴에 따라 다릅니다.</p>
+<div class="codehilite"><pre><span></span><code><span class="c">// 카테고리별 실제 청구 볼륨 (최근 7일)</span>
+<span class="n">AzureDiagnostics</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">ResourceProvider</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">&quot;MICROSOFT.COGNITIVESERVICES&quot;</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">TimeGenerated</span><span class="w"> </span><span class="p">&gt;</span><span class="w"> </span><span class="n">ago</span><span class="p">(</span><span class="mi">7</span><span class="n">d</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">BillableGB</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">_BilledSize</span><span class="p">)</span><span class="w"> </span><span class="p">/</span><span class="w"> </span><span class="mf">1024.0</span><span class="w"> </span><span class="p">/</span><span class="w"> </span><span class="mf">1024.0</span><span class="w"> </span><span class="p">/</span><span class="w"> </span><span class="mf">1024.0</span><span class="p">,</span>
+<span class="w">            </span><span class="n">Records</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">count</span><span class="p">()</span>
+<span class="w">        </span><span class="k">by</span><span class="w"> </span><span class="n">Category</span>
+<span class="p">|</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">BillableGB</span><span class="w"> </span><span class="n">desc</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="c">// 워크스페이스 전체에서 AOAI가 차지하는 비중</span>
+<span class="n">Usage</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">TimeGenerated</span><span class="w"> </span><span class="p">&gt;</span><span class="w"> </span><span class="n">ago</span><span class="p">(</span><span class="mi">30</span><span class="n">d</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">IsBillable</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="n">true</span>
+<span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">GB</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">Quantity</span><span class="p">)</span><span class="w"> </span><span class="p">/</span><span class="w"> </span><span class="mf">1024.0</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">DataType</span>
+<span class="p">|</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">GB</span><span class="w"> </span><span class="n">desc</span>
+</code></pre></div>
+
+<p><strong>비용 절감 수단</strong></p>
+<table>
+<thead>
+<tr>
+<th>수단</th>
+<th>효과</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>수집 시 변환(ingestion-time transformation)</td>
+<td>불필요한 컬럼·레코드 제거</td>
+</tr>
+<tr>
+<td>카테고리 선별 활성화</td>
+<td><code>RequestResponse</code>는 트래픽 비례로 커짐</td>
+</tr>
+<tr>
+<td>보존 기간 단축 + Archive 전환</td>
+<td>장기 보관 단가 절감</td>
+</tr>
+<tr>
+<td>커밋 티어(Commitment Tier)</td>
+<td>100GB/일 이상이면 최대 30% 절감</td>
 </tr>
 </tbody>
 </table>
@@ -1652,7 +1719,8 @@ AzureOpenAITimeToResponse                   증가
 <li>[ ] Prompt/Completion 로깅 시 <strong>PII 마스킹 + 보존기간 정책</strong></li>
 <li>[ ] Log Analytics 접근 RBAC 분리 (운영자 vs 감사자)</li>
 <li>[ ] Azure Policy로 진단 설정 강제 적용 (<code>DeployIfNotExists</code>)</li>
-<li>[ ] <code>AzureOpenAIRequestUsage</code> / <code>ManagedNetworkEvents</code>는 <strong>유료 내보내기</strong>이므로 비용 검토 후 활성화</li>
+<li>[ ] <code>AzureOpenAIRequestUsage</code> / <code>ManagedNetworkEvents</code>는 <strong>플랫폼 로그 내보내기 과금이 추가</strong>되므로 비용 검토 후 활성화</li>
+<li>[ ] 로그 <strong>수집·보존 비용은 모든 카테고리에 발생</strong>하므로, <code>_BilledSize</code> 기준으로 실제 볼륨을 주기적으로 점검 (§2.4)</li>
 </ul>
 <hr />
 <h2 id="a-top-10">부록 A. 자주 하는 실수 Top 10</h2>
@@ -1672,6 +1740,9 @@ AzureOpenAITimeToResponse                   증가
 <ul>
 <li>Supported metrics — Microsoft.CognitiveServices/accounts: https://learn.microsoft.com/azure/azure-monitor/reference/supported-metrics/microsoft-cognitiveservices-accounts-metrics</li>
 <li>Supported logs — Microsoft.CognitiveServices/accounts: https://learn.microsoft.com/azure/azure-monitor/reference/supported-logs/microsoft-cognitiveservices-accounts-logs</li>
+<li>Supported resource log categories (내보내기 비용 설명): https://learn.microsoft.com/azure/azure-monitor/reference/logs-index</li>
+<li>Azure Monitor Logs 비용 계산: https://learn.microsoft.com/azure/azure-monitor/logs/cost-logs</li>
+<li>Azure Monitor 가격 (Platform Logs 섹션): https://azure.microsoft.com/pricing/details/monitor/</li>
 <li>Monitor Azure OpenAI: https://learn.microsoft.com/azure/ai-services/openai/how-to/monitor-openai</li>
 <li>Provisioned Throughput (PTU): https://learn.microsoft.com/azure/ai-services/openai/concepts/provisioned-throughput</li>
 <li>Provisioned spillover: https://learn.microsoft.com/azure/ai-services/openai/how-to/spillover-traffic-management</li>
@@ -1680,7 +1751,7 @@ AzureOpenAITimeToResponse                   증가
 <li>Azure Monitor Workbooks: https://learn.microsoft.com/azure/azure-monitor/visualize/workbooks-overview</li>
 </ul>
     <hr>
-    <p class="meta">생성일 2026-08-05 · Microsoft Scout</p>
+    <p class="meta">최종 수정 2026-08-06 · Microsoft Scout</p>
   </main>
 </div>
 

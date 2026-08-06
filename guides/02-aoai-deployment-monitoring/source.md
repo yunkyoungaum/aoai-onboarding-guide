@@ -86,14 +86,26 @@ flowchart LR
 
 `Microsoft.CognitiveServices/accounts`가 지원하는 로그 카테고리와 적재 테이블은 다음과 같습니다. **모든 카테고리가 `AzureDiagnostics` 테이블로 들어갑니다**(전용 테이블 없음).
 
-| 카테고리 (표시명) | 카테고리 명 | 적재 테이블 | 내보내기 비용 | 권장 |
+| 카테고리 (표시명) | 카테고리 명 | 적재 테이블 | 추가 내보내기 과금 | 권장 |
 |---|---|---|---|---|
-| Audit Logs | `Audit` | `AzureDiagnostics` | 무료 | ✅ |
-| Request and Response Logs | `RequestResponse` | `AzureDiagnostics` | 무료 | ✅ |
-| Trace Logs | `Trace` | `AzureDiagnostics` | 무료 | ✅ |
-| Azure OpenAI Request Usage | `AzureOpenAIRequestUsage` | `AzureDiagnostics` | **유료** | ⭕ 토큰 단위 사용량 추적 시 |
-| Managed Network Events | `ManagedNetworkEvents` | `AzureDiagnostics` | **유료** | ⭕ VNet/Private Endpoint 운영 시 |
+| Audit Logs | `Audit` | `AzureDiagnostics` | 없음 | ✅ |
+| Request and Response Logs | `RequestResponse` | `AzureDiagnostics` | 없음 | ✅ |
+| Trace Logs | `Trace` | `AzureDiagnostics` | 없음 | ✅ |
+| Azure OpenAI Request Usage | `AzureOpenAIRequestUsage` | `AzureDiagnostics` | **있음** | ⭕ 토큰 단위 사용량 추적 시 |
+| Managed Network Events | `ManagedNetworkEvents` | `AzureDiagnostics` | **있음** | ⭕ VNet/Private Endpoint 운영 시 |
 | **All metrics** | `AllMetrics` | `AzureMetrics` | — | ✅ **필수** |
+
+> ⚠️ **"추가 내보내기 과금 = 없음"은 무료라는 뜻이 아닙니다.**
+> AOAI 로그 비용은 **두 겹**으로 발생합니다.
+>
+> | 비용 | 대상 | 과금 주체 |
+> |---|---|---|
+> | ① **수집·보존(ingestion / retention)** | **모든 카테고리** (Audit·Trace 포함) | Log Analytics (GB 단위) |
+> | ② **플랫폼 로그 내보내기(export)** | 위 표에서 "있음"인 카테고리만 | Azure Monitor **Platform Logs** 미터 |
+>
+> 즉 `Audit` · `Trace` · `RequestResponse`는 **①은 발생하고 ②만 면제**됩니다.
+> 위 표의 컬럼은 Azure Monitor 레퍼런스의 *Costs to export* 값으로, **①에 더해 추가로 붙는 과금이 있는지**만 나타냅니다.
+> 특히 `RequestResponse`는 호출량에 비례해 수집량이 커지므로, 과금 표시가 "없음"이더라도 **비용에 가장 큰 영향을 주는 카테고리**인 경우가 많습니다. 트래픽이 많다면 수집 볼륨을 먼저 측정하세요(§2.4).
 
 ### 2.2 Bicep 예시
 
@@ -153,7 +165,7 @@ az monitor diagnostic-settings create \
 - ❌ `AzureMetrics | where MetricName == "Requests" | where ResponseCode == "429"` → **동작하지 않음** (해당 컬럼 자체가 없음)
 - ✅ 차원 분리가 필요하면 → **Metrics Explorer / 메트릭 알림의 Dimension 필터**, 또는 **`AzureDiagnostics`(RequestResponse) 로그**, 또는 **APIM/App Insights** 사용
 
-### 2.4 보존 정책 권장
+### 2.4 보존 정책 및 비용 관리
 
 | 데이터 | 보존 | 목적 |
 |--------|------|------|
@@ -161,6 +173,37 @@ az monitor diagnostic-settings create \
 | Audit | 365일+ (Archive) | 컴플라이언스 |
 | RequestResponse / RequestUsage | 30~90일 | 장애·사용량 분석 |
 | LLM Message Log(APIM) | 30일 (민감정보 검토 후) | 품질/사고 분석 |
+
+**수집 볼륨을 먼저 측정하세요.** 어떤 카테고리가 실제 비용을 만드는지는 트래픽 패턴에 따라 다릅니다.
+
+```kusto
+// 카테고리별 실제 청구 볼륨 (최근 7일)
+AzureDiagnostics
+| where ResourceProvider == "MICROSOFT.COGNITIVESERVICES"
+| where TimeGenerated > ago(7d)
+| summarize BillableGB = sum(_BilledSize) / 1024.0 / 1024.0 / 1024.0,
+            Records = count()
+        by Category
+| order by BillableGB desc
+```
+
+```kusto
+// 워크스페이스 전체에서 AOAI가 차지하는 비중
+Usage
+| where TimeGenerated > ago(30d)
+| where IsBillable == true
+| summarize GB = sum(Quantity) / 1024.0 by DataType
+| order by GB desc
+```
+
+**비용 절감 수단**
+
+| 수단 | 효과 |
+|---|---|
+| 수집 시 변환(ingestion-time transformation) | 불필요한 컬럼·레코드 제거 |
+| 카테고리 선별 활성화 | `RequestResponse`는 트래픽 비례로 커짐 |
+| 보존 기간 단축 + Archive 전환 | 장기 보관 단가 절감 |
+| 커밋 티어(Commitment Tier) | 100GB/일 이상이면 최대 30% 절감 |
 
 ---
 
@@ -794,7 +837,8 @@ az monitor metrics alert create \
 - [ ] Prompt/Completion 로깅 시 **PII 마스킹 + 보존기간 정책**
 - [ ] Log Analytics 접근 RBAC 분리 (운영자 vs 감사자)
 - [ ] Azure Policy로 진단 설정 강제 적용 (`DeployIfNotExists`)
-- [ ] `AzureOpenAIRequestUsage` / `ManagedNetworkEvents`는 **유료 내보내기**이므로 비용 검토 후 활성화
+- [ ] `AzureOpenAIRequestUsage` / `ManagedNetworkEvents`는 **플랫폼 로그 내보내기 과금이 추가**되므로 비용 검토 후 활성화
+- [ ] 로그 **수집·보존 비용은 모든 카테고리에 발생**하므로, `_BilledSize` 기준으로 실제 볼륨을 주기적으로 점검 (§2.4)
 
 ---
 
@@ -815,6 +859,9 @@ az monitor metrics alert create \
 
 - Supported metrics — Microsoft.CognitiveServices/accounts: https://learn.microsoft.com/azure/azure-monitor/reference/supported-metrics/microsoft-cognitiveservices-accounts-metrics
 - Supported logs — Microsoft.CognitiveServices/accounts: https://learn.microsoft.com/azure/azure-monitor/reference/supported-logs/microsoft-cognitiveservices-accounts-logs
+- Supported resource log categories (내보내기 비용 설명): https://learn.microsoft.com/azure/azure-monitor/reference/logs-index
+- Azure Monitor Logs 비용 계산: https://learn.microsoft.com/azure/azure-monitor/logs/cost-logs
+- Azure Monitor 가격 (Platform Logs 섹션): https://azure.microsoft.com/pricing/details/monitor/
 - Monitor Azure OpenAI: https://learn.microsoft.com/azure/ai-services/openai/how-to/monitor-openai
 - Provisioned Throughput (PTU): https://learn.microsoft.com/azure/ai-services/openai/concepts/provisioned-throughput
 - Provisioned spillover: https://learn.microsoft.com/azure/ai-services/openai/how-to/spillover-traffic-management
