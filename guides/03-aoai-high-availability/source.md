@@ -22,8 +22,8 @@
 | **L4** | + Front Door 다중 APIM, **엔터프라이즈 PTU 풀 3단 체인**, 다중 구독 쿼터 분산, 성능 저하 모드 | 게이트웨이·구독 단위 장애 | 미션 크리티컬 |
 
 > 💡 **핵심 원칙 3가지**
-> 1. **Spillover는 용량 장애만** 해결하고, **APIM 백엔드 풀은 리전 장애까지** 해결합니다. 대체가 아니라 보완 관계입니다(§5.5).
-> 2. **Global 배포라도 엔드포인트는 리전 고정**입니다. 글로벌 라우팅은 용량 가용성을 높일 뿐 엔드포인트 가용성을 높이지 않습니다(§3.1).
+> 1. **Spillover는 용량 장애만** 해결하고, **APIM 백엔드 풀은 엔드포인트 장애까지** 해결합니다. 대체가 아니라 보완 관계입니다(§5.5).
+> 2. **Global 배포라도 엔드포인트는 리전 고정**입니다. 글로벌 라우팅은 **용량 가용성**을 높일 뿐 **엔드포인트 가용성**을 높이지 않습니다(§3.1).
 > 3. **PTU와 그 백업을 같은 리전에 두지 마세요.** 리전 장애 시 둘 다 사라집니다(§3.5 반상관 원칙).
 
 ### 최소 체크리스트
@@ -32,6 +32,7 @@
 - [ ] 배포 유형을 **Global / Data Zone / Regional 중 의식적으로 선택**했다 (§3.2)
 - [ ] **PTU와 백업 배포가 서로 다른 리전**에 있다 (§3.5)
 - [ ] PTU 배포에 **Spillover 표준 배포**가 연결되어 있다 (§5)
+- [ ] Spillover 대상 유형이 **PTU 유형과 페어링**되어 있다 (Data Zone PTU → Data Zone Standard, §5.2)
 - [ ] Spillover 응답 헤더(`x-ms-spillover-*`)를 **로깅**한다 (§5.7)
 - [ ] PTU 포화를 **429가 아니라 `IsSpillover` / PTU 사용률**로 판단한다 (§5.7)
 - [ ] 최소 **2개 리전**에 동일 모델·버전 배포가 존재한다 (§7)
@@ -112,15 +113,27 @@ Global 계열 배포를 "리전 장애에 자동으로 안전하다"고 이해�
 
 즉 처리 용량은 글로벌에서 끌어오더라도, **엔드포인트가 있는 리전이 장애를 겪으면 호출 자체가 도달하지 못합니다.**
 
-> 공식 문서: *"**Foundry itself doesn't provide automatic failover or disaster recovery.**"*
+> 공식 문서: *"**Foundry is a regional service** that stores data on the service side..."* — 플랫폼 인프라(컨트롤 플레인·프로젝트 메타데이터)는 *"**Regional**; no customer action for zone configuration."*
+>
+> *"**Foundry itself doesn't provide automatic failover or disaster recovery.**"*
 >
 > *"With Global Standard and Data Zone Standard deployment types, **if the primary region experiences an interruption in service, all traffic initially routed to this region is affected.**"*
+
+> 📌 **단일 AOAI 리소스의 엔드포인트에 자동 지역 Failover가 있다는 문서는 존재하지 않습니다.** 공식 문서는 리소스를 **자체 이중화가 없는 단일 리전 엔드포인트**로 다룹니다.
 
 공식 HA 가이드가 보조 배포를 두라고 권고하는 이유도 정확히 이것입니다.
 
 > *"The secondary deployment protects against **the primary Azure OpenAI endpoint being unreachable**."*
 
 **결론: Global 라우팅은 "용량 가용성"을 높이지 "엔드포인트 가용성"을 높이지 않습니다.** 리전 장애 대비는 여전히 **다중 리소스 + 게이트웨이**가 필요합니다(§6~7).
+
+| 무엇을 이중화했는가 | Global 배포 | Spillover | 다중 리소스 + 게이트웨이 |
+|---|---|---|---|
+| **처리 용량** | ✅ 글로벌 분산 | ✅ PTU→표준 | ✅ |
+| **배포(용량 풀)** | ❌ 단일 배포 | ✅ 2개 배포 | ✅ |
+| **엔드포인트** | ❌ 단일 | ❌ **단일**(동일 리소스) | ✅ **2개 이상** |
+
+> 세 가지는 **서로 다른 계층을 이중화**합니다. 하나로 나머지를 대체할 수 없습니다.
 
 ### 3.2 Provisioned(PTU)는 하나가 아니라 **세 가지**입니다
 
@@ -304,7 +317,31 @@ sequenceDiagram
 | **권한** | **Cognitive Services Contributor** 이상 |
 | **모델 지원** | AOAI 모델은 전부 지원. **Azure DeepSeek · Meta Llama 등 타 공급자 모델은 미지원** |
 
-> ⚠️ **"동일 리소스" 제약이 곧 Spillover의 한계입니다.** 동일 리소스는 곧 동일 리전이므로, **Spillover는 구조적으로 리전 Failover를 제공할 수 없습니다**(§5.5).
+> ⚠️ **Spillover의 제약은 "동일 리전"이 아니라 "동일 리소스 = 동일 엔드포인트"입니다.**
+>
+> 두 배포는 같은 `https://<resource>.openai.azure.com` 을 공유합니다. 따라서:
+> - **처리 용량**: PTU와 대상 배포가 모두 Global 유형이면 **양쪽 다 전 세계로 라우팅**되므로, 특정 리전의 용량 부족은 상당 부분 흡수됩니다.
+> - **엔드포인트**: 그러나 **리소스가 속한 리전의 장애**에는 두 배포 **모두 도달 불가**입니다. Foundry는 리전 서비스이며, 컨트롤 플레인이 리전 단위이기 때문입니다.
+>
+> **즉 Spillover는 용량 오버플로 장치이지 재해 복구 장치가 아닙니다.** 엔드포인트 이중화는 Spillover로 불가능하며 **별도 리소스 2개 + 게이트웨이**가 필요합니다(§7.2).
+
+#### Spillover 대상 유형 선택 — 페어링이 중요합니다
+
+문서상 대상은 **"standard(pay-as-you-go) 배포"** 이기만 하면 되고, **SKU 제한은 없습니다.** 즉 `Standard` / `GlobalStandard` / `DataZoneStandard` 모두 대상이 될 수 있습니다. 명시적 페어링 규칙도 없습니다.
+
+**그러나 어떤 유형을 고르느냐에 따라 결과가 크게 달라집니다.**
+
+| PTU 유형 | 권장 Spillover 대상 | 이유 |
+|---|---|---|
+| **Global Provisioned** | **Global Standard** | 오버플로도 글로벌 라우팅 → 리전 용량 편중 흡수. 규모가 큰 쿼터 |
+| **Data Zone Provisioned** | **Data Zone Standard**(동일 존) | ⚠️ **데이터 경계 유지** — 아래 경고 참조 |
+| **Regional Provisioned** | `Standard`(동일 리전) | 애초에 Spillover 권장 대상이 아님 |
+
+> 🚨 **컴플라이언스 함정**: **Data Zone Provisioned → Global Standard로 Spillover를 걸면, 오버플로 트래픽이 데이터 존 밖에서 처리될 수 있습니다.**
+> 데이터 경계를 지키려고 Data Zone PTU를 선택했는데, 피크 시간대에 조용히 그 경계를 벗어나게 됩니다. 기능적으로는 아무 오류도 나지 않으므로 **감사 시점에야 발견되는 유형의 사고**입니다.
+> Data Zone PTU의 Spillover 대상은 **반드시 같은 존의 Data Zone Standard**로 지정하세요.
+
+> 💡 반대로 **Global Provisioned → 리전 `Standard`** 로 걸면, 오버플로가 **단일 리전 공유 쿼터에 묶여** Global의 이점을 잃습니다. 피크 때 표준 배포까지 429가 나기 쉬워집니다.
 
 #### Regional Provisioned에는 권장되지 않습니다
 
@@ -369,11 +406,12 @@ Spillover는 **동일 리소스 내부**의 표준 배포로 넘기는 기능입
 | PTU 용량 포화 (429) | ✅ |
 | PTU 컨텍스트 길이 초과 (400) | ✅ |
 | PTU 배포의 일시적 5xx | ✅ |
-| **리전 전체 장애** | ❌ 표준 배포도 같은 리전에 있음 |
+| **특정 리전 용량 편중** | ⭕ **Global↔Global 페어링이면 상당 부분 흡수** (둘 다 글로벌 라우팅) |
+| **리소스 엔드포인트 리전 장애** | ❌ **두 배포가 같은 엔드포인트를 공유** → 동시 도달 불가 |
 | **리소스/구독 단위 문제** | ❌ |
 | 표준 배포 쿼터까지 소진 | ❌ **최종 실패 → 클라이언트가 오류 수신**(§5.6) |
 
-> 즉 **Spillover는 HA의 시작이지 완성이 아닙니다.** 리전 장애 대비는 §6~7의 다중 리전 경로가 필요합니다.
+> 즉 **Spillover는 HA의 시작이지 완성이 아닙니다.** 엔드포인트 장애 대비는 §6~7의 **다중 리소스 + 게이트웨이** 경로가 필요합니다.
 
 ### 5.6 표준 배포도 실패하면 클라이언트는 무엇을 받는가
 
@@ -1056,6 +1094,9 @@ Client → Front Door
 20. **비용 절감을 위해 PTU를 야간 축소** — 반납한 용량을 다시 확보하지 못할 수 있음 (§8.1)
 21. **Failover 시 배포 유형이 바뀌는데 해당 유형 쿼터·예약 미확보** — 전환은 되지만 할인 미적용 또는 배포 실패 (§8.2~8.3)
 22. **Regional Provisioned로 다중 리전 HA 시도** — 최소 PTU가 크고 리전마다 별도 예약 필요 → 비용 급증 (§3.2, §8.3)
+23. 🚨 **Data Zone PTU를 Global Standard로 Spillover** — 피크 때 오버플로가 **데이터 존 밖에서 처리**되어 상주 요건 위반. 오류가 나지 않아 감사 때 발견됨 (§5.2)
+24. **Global PTU를 리전 `Standard`로 Spillover** — 오버플로가 단일 리전 공유 쿼터에 묶여 Global의 이점 상실 (§5.2)
+25. **Spillover를 "리전 이중화"로 오해** — 두 배포가 **같은 엔드포인트**를 공유하므로 엔드포인트 장애에는 무력 (§5.2, §5.5)
 
 ## 부록 B. 참고 문서
 
