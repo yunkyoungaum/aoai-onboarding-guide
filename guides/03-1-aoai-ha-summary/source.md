@@ -55,11 +55,11 @@
 
 ### PTU는 세 가지입니다
 
-| 유형 | SKU | 처리 위치 | 최소 PTU | 증분 | Spillover 권장 |
-|---|---|---|---|---|---|
-| **Global Provisioned** | `GlobalProvisionedManaged` | 전 세계 | **15** | **5** | ✅ |
-| **Data Zone Provisioned** | `DataZoneProvisionedManaged` | **US / EU만** (⚠️ APAC 미지원) | **15** | **5** | ✅ |
-| **Regional Provisioned** | `ProvisionedManaged` | 단일 리전 | **25~50** | **25~50** | ⚠️ 권장 목록 제외 |
+| 유형 | SKU | 처리 위치 | 최소 PTU | 증분 |
+|---|---|---|---|---|
+| **Global Provisioned** | `GlobalProvisionedManaged` | 전 세계 | **15** | **5** |
+| **Data Zone Provisioned** | `DataZoneProvisionedManaged` | **US / EU만** (⚠️ APAC 미지원) | **15** | **5** |
+| **Regional Provisioned** | `ProvisionedManaged` | 단일 리전 | **25~50** | **25~50** |
 
 > 💰 Regional은 최소 PTU가 크고 **리전마다 별도 예약**이 필요해, 다중 리전 HA 비용이 급증합니다.
 
@@ -76,6 +76,7 @@
 | **PTU + APAC 존** | ❌ **불가** | — | — |
 
 > ⚠️ 한국에서 **"PTU + 데이터 상주"** 가 필요하면 답은 Data Zone이 아니라 **`Regional Provisioned`** 입니다. 비싼 최소 PTU와 리전별 예약을 감수해야 하며 **우회로가 없습니다.**
+> 💡 이 경우 피크 흡수는 **동일 리전 `Standard`로 Spillover**를 걸면 됩니다. 상주 요건을 지키면서 PAYG로 초과분을 처리할 수 있습니다.
 
 ### Standard 계열
 
@@ -116,8 +117,12 @@ Client ──1건──▶ PTU ──(429/400/500/503)──▶ [서비스가 �
 |---|---|---|
 | Global Provisioned | **Global Standard** | 리전 Standard → 단일 리전 쿼터에 묶여 이점 상실 |
 | Data Zone Provisioned | **Data Zone Standard**(동일 존) | 🚨 **Global Standard → 오버플로가 데이터 존 밖에서 처리** |
+| Regional Provisioned | **`Standard`(동일 리전)** | 🚨 Global/DZ Standard → 상주 요건 위반 |
 
 > **Data Zone PTU → Global Standard 조합은 오류가 나지 않습니다.** 감사 시점에야 발견됩니다.
+
+> 📌 **Regional Provisioned도 Spillover 유효합니다.** 공식 권장 문구는 *"global and data zone"* 만 열거하지만 **금지 조항은 없고**, 전제 조건은 "provisioned managed 배포 + 동일 리소스 내 standard 배포"뿐입니다.
+> **Regional PTU + 동일 리전 Standard** 는 상주 요건을 지키면서 피크를 PAYG로 흡수하는 자연스러운 구성입니다. 단 리전 Standard는 **기본 쿼터가 작으므로 사전 확보 필수**입니다.
 
 ### 표준 배포도 실패하면?
 
@@ -363,7 +368,7 @@ App → APIM ─┬─[P1] 워크로드 전용 PTU   (Region A)
 
 1. **Spillover만 구성하고 "HA 완료"** — 엔드포인트 장애에 무력
 2. **"Global이니까 리전 장애에 안전"** — 처리만 글로벌, 엔드포인트는 리전 고정
-3. **PTU를 하나의 유형으로 취급** — 최소 PTU·쿼터 풀·예약·Spillover 권장이 모두 다름
+3. **PTU를 하나의 유형으로 취급** — 최소 PTU·쿼터 풀·예약·리전 가용성이 모두 다름
 4. **APAC에서 Data Zone Provisioned를 계획** — 제공되지 않음. 개념 문서가 아니라 **가용성 표**로 확인할 것
 5. **PTU와 백업을 같은 리전에 배치** — 동시 소실
 6. 🚨 **Data Zone PTU → Global Standard Spillover** — 데이터 존 이탈, 오류 없이 감사 때 발견

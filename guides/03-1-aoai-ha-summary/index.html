@@ -427,6 +427,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 
 
 
+
   </nav>
   <main>
     <div class="topbar">
@@ -563,7 +564,6 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <th>처리 위치</th>
 <th>최소 PTU</th>
 <th>증분</th>
-<th>Spillover 권장</th>
 </tr>
 </thead>
 <tbody>
@@ -573,7 +573,6 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <td>전 세계</td>
 <td><strong>15</strong></td>
 <td><strong>5</strong></td>
-<td>✅</td>
 </tr>
 <tr>
 <td><strong>Data Zone Provisioned</strong></td>
@@ -581,7 +580,6 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <td><strong>US / EU만</strong> (⚠️ APAC 미지원)</td>
 <td><strong>15</strong></td>
 <td><strong>5</strong></td>
-<td>✅</td>
 </tr>
 <tr>
 <td><strong>Regional Provisioned</strong></td>
@@ -589,7 +587,6 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <td>단일 리전</td>
 <td><strong>25~50</strong></td>
 <td><strong>25~50</strong></td>
-<td>⚠️ 권장 목록 제외</td>
 </tr>
 </tbody>
 </table>
@@ -641,7 +638,8 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </tbody>
 </table>
 <blockquote>
-<p>⚠️ 한국에서 <strong>"PTU + 데이터 상주"</strong> 가 필요하면 답은 Data Zone이 아니라 <strong><code>Regional Provisioned</code></strong> 입니다. 비싼 최소 PTU와 리전별 예약을 감수해야 하며 <strong>우회로가 없습니다.</strong></p>
+<p>⚠️ 한국에서 <strong>"PTU + 데이터 상주"</strong> 가 필요하면 답은 Data Zone이 아니라 <strong><code>Regional Provisioned</code></strong> 입니다. 비싼 최소 PTU와 리전별 예약을 감수해야 하며 <strong>우회로가 없습니다.</strong>
+💡 이 경우 피크 흡수는 <strong>동일 리전 <code>Standard</code>로 Spillover</strong>를 걸면 됩니다. 상주 요건을 지키면서 PAYG로 초과분을 처리할 수 있습니다.</p>
 </blockquote>
 <h3 id="standard">Standard 계열</h3>
 <ul>
@@ -707,10 +705,17 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <td><strong>Data Zone Standard</strong>(동일 존)</td>
 <td>🚨 <strong>Global Standard → 오버플로가 데이터 존 밖에서 처리</strong></td>
 </tr>
+<tr>
+<td>Regional Provisioned</td>
+<td><strong><code>Standard</code>(동일 리전)</strong></td>
+<td>🚨 Global/DZ Standard → 상주 요건 위반</td>
+</tr>
 </tbody>
 </table>
 <blockquote>
 <p><strong>Data Zone PTU → Global Standard 조합은 오류가 나지 않습니다.</strong> 감사 시점에야 발견됩니다.</p>
+<p>📌 <strong>Regional Provisioned도 Spillover 유효합니다.</strong> 공식 권장 문구는 <em>"global and data zone"</em> 만 열거하지만 <strong>금지 조항은 없고</strong>, 전제 조건은 "provisioned managed 배포 + 동일 리소스 내 standard 배포"뿐입니다.
+<strong>Regional PTU + 동일 리전 Standard</strong> 는 상주 요건을 지키면서 피크를 PAYG로 흡수하는 자연스러운 구성입니다. 단 리전 Standard는 <strong>기본 쿼터가 작으므로 사전 확보 필수</strong>입니다.</p>
 </blockquote>
 <h3 id="_3">표준 배포도 실패하면?</h3>
 <p><strong>클라이언트는 "마지막 백엔드"의 응답을 그대로 받습니다.</strong></p>
@@ -1110,7 +1115,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <ol>
 <li><strong>Spillover만 구성하고 "HA 완료"</strong> — 엔드포인트 장애에 무력</li>
 <li><strong>"Global이니까 리전 장애에 안전"</strong> — 처리만 글로벌, 엔드포인트는 리전 고정</li>
-<li><strong>PTU를 하나의 유형으로 취급</strong> — 최소 PTU·쿼터 풀·예약·Spillover 권장이 모두 다름</li>
+<li><strong>PTU를 하나의 유형으로 취급</strong> — 최소 PTU·쿼터 풀·예약·리전 가용성이 모두 다름</li>
 <li><strong>APAC에서 Data Zone Provisioned를 계획</strong> — 제공되지 않음. 개념 문서가 아니라 <strong>가용성 표</strong>로 확인할 것</li>
 <li><strong>PTU와 백업을 같은 리전에 배치</strong> — 동시 소실</li>
 <li>🚨 <strong>Data Zone PTU → Global Standard Spillover</strong> — 데이터 존 이탈, 오류 없이 감사 때 발견</li>

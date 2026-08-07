@@ -368,27 +368,39 @@ sequenceDiagram
 |---|---|---|
 | **Global Provisioned** | **Global Standard** | 오버플로도 글로벌 라우팅 → 리전 용량 편중 흡수. 규모가 큰 쿼터 |
 | **Data Zone Provisioned** | **Data Zone Standard**(동일 존) | ⚠️ **데이터 경계 유지** — 아래 경고 참조 |
-| **Regional Provisioned** | `Standard`(동일 리전) | 애초에 Spillover 권장 대상이 아님 |
+| **Regional Provisioned** | **`Standard`(동일 리전)** | **상주 요건을 유지하면서 피크 흡수.** 유효한 구성 |
 
 > 🚨 **컴플라이언스 함정**: **Data Zone Provisioned → Global Standard로 Spillover를 걸면, 오버플로 트래픽이 데이터 존 밖에서 처리될 수 있습니다.**
 > 데이터 경계를 지키려고 Data Zone PTU를 선택했는데, 피크 시간대에 조용히 그 경계를 벗어나게 됩니다. 기능적으로는 아무 오류도 나지 않으므로 **감사 시점에야 발견되는 유형의 사고**입니다.
 > Data Zone PTU의 Spillover 대상은 **반드시 같은 존의 Data Zone Standard**로 지정하세요.
+> **Regional Provisioned도 마찬가지**입니다. 상주 요건 때문에 Regional을 선택했다면 대상도 **동일 리전 `Standard`** 여야 합니다.
 
-> 💡 반대로 **Global Provisioned → 리전 `Standard`** 로 걸면, 오버플로가 **단일 리전 공유 쿼터에 묶여** Global의 이점을 잃습니다. 피크 때 표준 배포까지 429가 나기 쉬워집니다.
+> 💡 반대로 **Global Provisioned → 리전 `Standard`** 로 걸면, 오버플로가 **단일 리전 쿼터에 묶여** Global의 이점을 잃습니다.
 
-#### Regional Provisioned에는 권장되지 않습니다
+#### 📌 Regional Provisioned와 Spillover — 오해 주의
 
-공식 문서의 권장 문구는 배포 유형을 **명시적으로 한정**합니다.
+공식 권장 문구는 배포 유형을 열거합니다.
 
 > *"To maximize the utilization of your provisioned deployment, enable spillover for **all global and data zone provisioned deployments**."*
 
-| 배포 유형 | Spillover 권장 |
-|---|---|
-| Global Provisioned | ✅ 명시적 권장 |
-| Data Zone Provisioned | ✅ 명시적 권장 |
-| **Regional Provisioned** | ⚠️ 기술적으로는 가능하나 **권장 목록에서 제외됨** |
+여기서 Regional이 빠져 있지만, **이는 금지가 아닙니다.** 확인된 사실은 다음과 같습니다.
 
-Regional Provisioned는 단일 리전 전용 용량이므로, 오버플로 대책을 같은 리전 안에서 찾는 것 자체가 한계가 있습니다. 이 경우 **§3.5의 엔터프라이즈 PTU 풀(다른 리전) + 게이트웨이 Failover**가 더 적합합니다.
+| 항목 | 문서 내용 |
+|---|---|
+| 전제 조건 | *"A **provisioned managed deployment** and a standard deployment in the same Foundry resource"* — **유형 제한 없음** |
+| 포털 절차 | *"Set the Deployment type to **one of the provisioned options**"* — 일반적 표현 |
+| 모델 지원 | *"**All** Azure OpenAI ... that support provisioned throughput **also support spillover**"* |
+| 금지 조항 | **없음** |
+
+**`Regional PTU` + `동일 리전 Standard` 조합은 유효하며, 오히려 자연스러운 구성입니다.**
+
+- PTU 사용률 100% 도달 → 피크를 PAYG로 흡수 (Spillover의 교과서적 용도)
+- **데이터가 해당 리전을 벗어나지 않음** → Regional을 선택한 이유가 그대로 유지됨
+- Global/Data Zone Standard로 넘기면 편하지만 **상주 요건이 깨집니다**
+
+> ⚠️ **단, 쿼터를 먼저 확보하세요.** 리전 `Standard`는 Global Standard보다 **기본 쿼터가 작습니다.** 피크 초과분을 감당할 TPM이 실제로 할당되어 있는지 §8 기준으로 확인해야 합니다. 쿼터가 없으면 Spillover 대상까지 429가 나고, 그 429는 **클라이언트에게 그대로 전달**됩니다(§5.6).
+
+> Regional Provisioned는 리전 단위 이중화가 어렵다는 별개의 약점이 있습니다(§3.2). **엔드포인트 장애 대비는 Spillover가 아니라 §3.5의 엔터프라이즈 PTU 풀 + 게이트웨이 Failover**로 해결하세요. Spillover(용량)와 게이트웨이(엔드포인트)는 서로 다른 계층입니다.
 
 ### 5.3 배포 단위로 켜기
 
@@ -1122,7 +1134,7 @@ Client → Front Door
 14. **게이트웨이 `timeout`을 총 예산으로 오해** — 시도 1회당 값이므로 재시도 횟수만큼 곱해야 함 (§6.6)
 15. **스트리밍인데 `buffer-response="false"` 미설정** — 토큰이 8KB 단위로 뭉쳐 스트리밍 이점 소멸 (§6.6)
 16. **"Global 배포니까 리전 장애에 안전하다"** — 처리는 글로벌이어도 **엔드포인트는 리전 고정** (§3.1)
-17. **PTU를 하나의 유형으로 취급** — Global/Data Zone/Regional은 최소 PTU·쿼터 풀·예약·Spillover 권장 여부가 모두 다름 (§3.2)
+17. **PTU를 하나의 유형으로 취급** — Global/Data Zone/Regional은 최소 PTU·쿼터 풀·예약·리전 가용성이 모두 다름 (§3.2)
 18. **PTU와 백업 Standard를 같은 리전에 배치** — 리전 장애 시 동시 소실 (§3.5 반상관 원칙)
 19. **쿼터만 확보하고 용량은 확인하지 않음** — 쿼터가 있어도 용량이 없으면 **배포 자체가 실패** (§8.1)
 20. **비용 절감을 위해 PTU를 야간 축소** — 반납한 용량을 다시 확보하지 못할 수 있음 (§8.1)

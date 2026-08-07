@@ -460,6 +460,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 
 
 
+
   </nav>
   <main>
     <div class="topbar">
@@ -1141,45 +1142,60 @@ US/EU 데이터 경계가 필요하면 <strong>Data Zone Provisioned</strong>를
 </tr>
 <tr>
 <td><strong>Regional Provisioned</strong></td>
-<td><code>Standard</code>(동일 리전)</td>
-<td>애초에 Spillover 권장 대상이 아님</td>
+<td><strong><code>Standard</code>(동일 리전)</strong></td>
+<td><strong>상주 요건을 유지하면서 피크 흡수.</strong> 유효한 구성</td>
 </tr>
 </tbody>
 </table>
 <blockquote>
 <p>🚨 <strong>컴플라이언스 함정</strong>: <strong>Data Zone Provisioned → Global Standard로 Spillover를 걸면, 오버플로 트래픽이 데이터 존 밖에서 처리될 수 있습니다.</strong>
 데이터 경계를 지키려고 Data Zone PTU를 선택했는데, 피크 시간대에 조용히 그 경계를 벗어나게 됩니다. 기능적으로는 아무 오류도 나지 않으므로 <strong>감사 시점에야 발견되는 유형의 사고</strong>입니다.
-Data Zone PTU의 Spillover 대상은 <strong>반드시 같은 존의 Data Zone Standard</strong>로 지정하세요.</p>
-<p>💡 반대로 <strong>Global Provisioned → 리전 <code>Standard</code></strong> 로 걸면, 오버플로가 <strong>단일 리전 공유 쿼터에 묶여</strong> Global의 이점을 잃습니다. 피크 때 표준 배포까지 429가 나기 쉬워집니다.</p>
+Data Zone PTU의 Spillover 대상은 <strong>반드시 같은 존의 Data Zone Standard</strong>로 지정하세요.
+<strong>Regional Provisioned도 마찬가지</strong>입니다. 상주 요건 때문에 Regional을 선택했다면 대상도 <strong>동일 리전 <code>Standard</code></strong> 여야 합니다.</p>
+<p>💡 반대로 <strong>Global Provisioned → 리전 <code>Standard</code></strong> 로 걸면, 오버플로가 <strong>단일 리전 쿼터에 묶여</strong> Global의 이점을 잃습니다.</p>
 </blockquote>
-<h4 id="regional-provisioned">Regional Provisioned에는 권장되지 않습니다</h4>
-<p>공식 문서의 권장 문구는 배포 유형을 <strong>명시적으로 한정</strong>합니다.</p>
+<h4 id="regional-provisioned-spillover">📌 Regional Provisioned와 Spillover — 오해 주의</h4>
+<p>공식 권장 문구는 배포 유형을 열거합니다.</p>
 <blockquote>
 <p><em>"To maximize the utilization of your provisioned deployment, enable spillover for </em><em>all global and data zone provisioned deployments</em><em>."</em></p>
 </blockquote>
+<p>여기서 Regional이 빠져 있지만, <strong>이는 금지가 아닙니다.</strong> 확인된 사실은 다음과 같습니다.</p>
 <table>
 <thead>
 <tr>
-<th>배포 유형</th>
-<th>Spillover 권장</th>
+<th>항목</th>
+<th>문서 내용</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Global Provisioned</td>
-<td>✅ 명시적 권장</td>
+<td>전제 조건</td>
+<td><em>"A </em><em>provisioned managed deployment</em><em> and a standard deployment in the same Foundry resource"</em> — <strong>유형 제한 없음</strong></td>
 </tr>
 <tr>
-<td>Data Zone Provisioned</td>
-<td>✅ 명시적 권장</td>
+<td>포털 절차</td>
+<td><em>"Set the Deployment type to </em><em>one of the provisioned options</em><em>"</em> — 일반적 표현</td>
 </tr>
 <tr>
-<td><strong>Regional Provisioned</strong></td>
-<td>⚠️ 기술적으로는 가능하나 <strong>권장 목록에서 제외됨</strong></td>
+<td>모델 지원</td>
+<td><em>"</em><em>All</em><em> Azure OpenAI ... that support provisioned throughput </em><em>also support spillover</em><em>"</em></td>
+</tr>
+<tr>
+<td>금지 조항</td>
+<td><strong>없음</strong></td>
 </tr>
 </tbody>
 </table>
-<p>Regional Provisioned는 단일 리전 전용 용량이므로, 오버플로 대책을 같은 리전 안에서 찾는 것 자체가 한계가 있습니다. 이 경우 <strong>§3.5의 엔터프라이즈 PTU 풀(다른 리전) + 게이트웨이 Failover</strong>가 더 적합합니다.</p>
+<p><strong><code>Regional PTU</code> + <code>동일 리전 Standard</code> 조합은 유효하며, 오히려 자연스러운 구성입니다.</strong></p>
+<ul>
+<li>PTU 사용률 100% 도달 → 피크를 PAYG로 흡수 (Spillover의 교과서적 용도)</li>
+<li><strong>데이터가 해당 리전을 벗어나지 않음</strong> → Regional을 선택한 이유가 그대로 유지됨</li>
+<li>Global/Data Zone Standard로 넘기면 편하지만 <strong>상주 요건이 깨집니다</strong></li>
+</ul>
+<blockquote>
+<p>⚠️ <strong>단, 쿼터를 먼저 확보하세요.</strong> 리전 <code>Standard</code>는 Global Standard보다 <strong>기본 쿼터가 작습니다.</strong> 피크 초과분을 감당할 TPM이 실제로 할당되어 있는지 §8 기준으로 확인해야 합니다. 쿼터가 없으면 Spillover 대상까지 429가 나고, 그 429는 <strong>클라이언트에게 그대로 전달</strong>됩니다(§5.6).</p>
+<p>Regional Provisioned는 리전 단위 이중화가 어렵다는 별개의 약점이 있습니다(§3.2). <strong>엔드포인트 장애 대비는 Spillover가 아니라 §3.5의 엔터프라이즈 PTU 풀 + 게이트웨이 Failover</strong>로 해결하세요. Spillover(용량)와 게이트웨이(엔드포인트)는 서로 다른 계층입니다.</p>
+</blockquote>
 <h3 id="53">5.3 배포 단위로 켜기</h3>
 <p>배포 속성 <code>spilloverDeploymentName</code>에 표준 배포 이름을 지정합니다. 신규 생성 시 또는 기존 배포에 추가할 수 있습니다.</p>
 <div class="codehilite"><pre><span></span><code>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="s2">&quot;https://management.azure.com/subscriptions/</span><span class="nv">$SUB</span><span class="s2">/resourceGroups/</span><span class="nv">$RG</span><span class="s2">/providers/Microsoft.CognitiveServices/accounts/</span><span class="nv">$ACCOUNT</span><span class="s2">/deployments/ptu-gpt4o?api-version=2024-10-01&quot;</span><span class="w"> </span><span class="se">\</span>
@@ -2340,7 +2356,7 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
 <li><strong>게이트웨이 <code>timeout</code>을 총 예산으로 오해</strong> — 시도 1회당 값이므로 재시도 횟수만큼 곱해야 함 (§6.6)</li>
 <li><strong>스트리밍인데 <code>buffer-response="false"</code> 미설정</strong> — 토큰이 8KB 단위로 뭉쳐 스트리밍 이점 소멸 (§6.6)</li>
 <li><strong>"Global 배포니까 리전 장애에 안전하다"</strong> — 처리는 글로벌이어도 <strong>엔드포인트는 리전 고정</strong> (§3.1)</li>
-<li><strong>PTU를 하나의 유형으로 취급</strong> — Global/Data Zone/Regional은 최소 PTU·쿼터 풀·예약·Spillover 권장 여부가 모두 다름 (§3.2)</li>
+<li><strong>PTU를 하나의 유형으로 취급</strong> — Global/Data Zone/Regional은 최소 PTU·쿼터 풀·예약·리전 가용성이 모두 다름 (§3.2)</li>
 <li><strong>PTU와 백업 Standard를 같은 리전에 배치</strong> — 리전 장애 시 동시 소실 (§3.5 반상관 원칙)</li>
 <li><strong>쿼터만 확보하고 용량은 확인하지 않음</strong> — 쿼터가 있어도 용량이 없으면 <strong>배포 자체가 실패</strong> (§8.1)</li>
 <li><strong>비용 절감을 위해 PTU를 야간 축소</strong> — 반납한 용량을 다시 확보하지 못할 수 있음 (§8.1)</li>
