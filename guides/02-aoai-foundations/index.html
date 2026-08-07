@@ -418,16 +418,16 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </ul>
 </li>
 <li><a href="#8">8. 자주 묻는 질문</a></li>
-<li><a href="#a">부록 A. 용어 대조표</a></li>
-<li><a href="#b">부록 B. 참고 문서</a><ul>
-<li><a href="#_5">개념</a></li>
-<li><a href="#_6">쿼터 · 용량</a></li>
-<li><a href="#_7">예약 · 청구</a></li>
-<li><a href="#_8">운영</a></li>
+<li><a href="#_5">부록. 참고 문서</a><ul>
+<li><a href="#_6">개념</a></li>
+<li><a href="#_7">쿼터 · 용량</a></li>
+<li><a href="#_8">예약 · 청구</a></li>
+<li><a href="#_9">운영</a></li>
 </ul>
 </li>
 </ul>
 </div>
+
 
 
 
@@ -1299,102 +1299,15 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <p><strong>Q. 쿼터 신청은 얼마나 걸리나요?</strong>
 <strong>수일</strong>이 소요됩니다. 프로젝트 일정에 반드시 선반영하세요.</p>
 <hr />
-<h2 id="a">부록 A. 용어 대조표</h2>
-<table>
-<thead>
-<tr>
-<th>한국어</th>
-<th>영어</th>
-<th>ARM/CLI 값</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>리소스</td>
-<td>Resource / Account</td>
-<td><code>Microsoft.CognitiveServices/accounts</code></td>
-</tr>
-<tr>
-<td>Foundry 리소스</td>
-<td>Foundry resource</td>
-<td><code>kind=AIServices</code></td>
-</tr>
-<tr>
-<td>Azure OpenAI 리소스</td>
-<td>Azure OpenAI resource</td>
-<td><code>kind=OpenAI</code></td>
-</tr>
-<tr>
-<td>배포</td>
-<td>Deployment</td>
-<td><code>deployments/&lt;name&gt;</code></td>
-</tr>
-<tr>
-<td>배포 유형</td>
-<td>Deployment type</td>
-<td><code>sku.name</code></td>
-</tr>
-<tr>
-<td>전 세계 표준</td>
-<td>Global Standard</td>
-<td><code>GlobalStandard</code></td>
-</tr>
-<tr>
-<td>데이터 존 표준</td>
-<td>Data Zone Standard</td>
-<td><code>DataZoneStandard</code></td>
-</tr>
-<tr>
-<td>리전 표준</td>
-<td>Standard</td>
-<td><code>Standard</code></td>
-</tr>
-<tr>
-<td>전 세계 프로비저닝</td>
-<td>Global Provisioned</td>
-<td><code>GlobalProvisionedManaged</code></td>
-</tr>
-<tr>
-<td>데이터 존 프로비저닝</td>
-<td>Data Zone Provisioned</td>
-<td><code>DataZoneProvisionedManaged</code></td>
-</tr>
-<tr>
-<td>리전 프로비저닝</td>
-<td>Regional Provisioned</td>
-<td><code>ProvisionedManaged</code></td>
-</tr>
-<tr>
-<td>프로비저닝 처리량 단위</td>
-<td>Provisioned Throughput Unit</td>
-<td>PTU</td>
-</tr>
-<tr>
-<td>쿼터</td>
-<td>Quota</td>
-<td>—</td>
-</tr>
-<tr>
-<td>용량</td>
-<td>Capacity</td>
-<td><code>availableCapacity</code></td>
-</tr>
-<tr>
-<td>예약</td>
-<td>Azure Reservation</td>
-<td>"Microsoft Foundry Provisioned Throughput"</td>
-</tr>
-</tbody>
-</table>
-<h2 id="b">부록 B. 참고 문서</h2>
-<h3 id="_5">개념</h3>
+<h2 id="_5">부록. 참고 문서</h2>
+<h3 id="_6">개념</h3>
 <ul>
 <li>Foundry란 무엇인가: https://learn.microsoft.com/azure/foundry/what-is-foundry</li>
 <li>리소스 유형: https://learn.microsoft.com/azure/foundry-classic/concepts/resource-types</li>
 <li>Foundry 리소스 생성: https://learn.microsoft.com/azure/ai-services/multi-service-resource</li>
 <li>배포 유형 비교: https://learn.microsoft.com/azure/foundry/foundry-models/concepts/deployment-types</li>
 </ul>
-<h3 id="_6">쿼터 · 용량</h3>
+<h3 id="_7">쿼터 · 용량</h3>
 <ul>
 <li>쿼터 및 제한(쿼터 티어 포함): https://learn.microsoft.com/azure/foundry/openai/quotas-limits</li>
 <li>PTU 개념: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput</li>
@@ -1404,13 +1317,13 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li>쿼터 신청 폼: https://aka.ms/oai/stuquotarequest</li>
 <li>용량 계산기: https://ai.azure.com/nextgen/goto/build/models/ptu-calculator</li>
 </ul>
-<h3 id="_7">예약 · 청구</h3>
+<h3 id="_8">예약 · 청구</h3>
 <ul>
 <li>PTU 청구 및 예약: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput-billing</li>
 <li>예약 구매(Cost Management): https://learn.microsoft.com/azure/cost-management-billing/reservations/microsoft-foundry</li>
 <li>예약 교환·환불: https://learn.microsoft.com/azure/cost-management-billing/reservations/exchange-and-refund-azure-reservations</li>
 </ul>
-<h3 id="_8">운영</h3>
+<h3 id="_9">운영</h3>
 <ul>
 <li>프로비저닝 배포 운영 시작: https://learn.microsoft.com/azure/foundry/openai/how-to/provisioned-get-started</li>
 </ul>

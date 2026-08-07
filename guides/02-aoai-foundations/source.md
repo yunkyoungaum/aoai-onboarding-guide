@@ -511,27 +511,7 @@ Azure 포털 → All services → Reservations
 
 ---
 
-## 부록 A. 용어 대조표
-
-| 한국어 | 영어 | ARM/CLI 값 |
-|---|---|---|
-| 리소스 | Resource / Account | `Microsoft.CognitiveServices/accounts` |
-| Foundry 리소스 | Foundry resource | `kind=AIServices` |
-| Azure OpenAI 리소스 | Azure OpenAI resource | `kind=OpenAI` |
-| 배포 | Deployment | `deployments/<name>` |
-| 배포 유형 | Deployment type | `sku.name` |
-| 전 세계 표준 | Global Standard | `GlobalStandard` |
-| 데이터 존 표준 | Data Zone Standard | `DataZoneStandard` |
-| 리전 표준 | Standard | `Standard` |
-| 전 세계 프로비저닝 | Global Provisioned | `GlobalProvisionedManaged` |
-| 데이터 존 프로비저닝 | Data Zone Provisioned | `DataZoneProvisionedManaged` |
-| 리전 프로비저닝 | Regional Provisioned | `ProvisionedManaged` |
-| 프로비저닝 처리량 단위 | Provisioned Throughput Unit | PTU |
-| 쿼터 | Quota | — |
-| 용량 | Capacity | `availableCapacity` |
-| 예약 | Azure Reservation | "Microsoft Foundry Provisioned Throughput" |
-
-## 부록 B. 참고 문서
+## 부록. 참고 문서
 
 ### 개념
 - Foundry란 무엇인가: https://learn.microsoft.com/azure/foundry/what-is-foundry
