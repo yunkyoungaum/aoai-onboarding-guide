@@ -58,11 +58,24 @@
 | 유형 | SKU | 처리 위치 | 최소 PTU | 증분 | Spillover 권장 |
 |---|---|---|---|---|---|
 | **Global Provisioned** | `GlobalProvisionedManaged` | 전 세계 | **15** | **5** | ✅ |
-| **Data Zone Provisioned** | `DataZoneProvisionedManaged` | US/EU/**APAC** | **15** | **5** | ✅ |
+| **Data Zone Provisioned** | `DataZoneProvisionedManaged` | **US / EU만** (⚠️ APAC 미지원) | **15** | **5** | ✅ |
 | **Regional Provisioned** | `ProvisionedManaged` | 단일 리전 | **25~50** | **25~50** | ⚠️ 권장 목록 제외 |
 
-> 💡 **APAC 데이터 존에 한국이 포함**됩니다(호주·일본·한국·싱가포르·인도).
 > 💰 Regional은 최소 PTU가 크고 **리전마다 별도 예약**이 필요해, 다중 리전 HA 비용이 급증합니다.
+
+> 🚨 **APAC에는 Data Zone Provisioned가 없습니다.** 개념 문서 일부가 "US/EU/APAC"이라 표기하지만, **모델 리전 가용성 표의 APAC 탭은 "Not available"** 입니다. 배포 유형 × 리전 가용성은 **반드시 가용성 표로 확인**하세요.
+
+### 🇰🇷 한국(Korea Central) 의사결정표
+
+| 요건 | 선택지 | 지원 모델 | 처리 위치 |
+|---|---|---|---|
+| **PTU + 한국 내 처리** | **`ProvisionedManaged`**(Regional) | 폭넓음 | Korea Central 고정 |
+| PTU + 위치 무관 | `GlobalProvisionedManaged` | 전 모델 | 전 세계 |
+| 토큰 과금 + APAC 내 | `DataZoneStandard` | ⚠️ **gpt-5.2 이상만** | APAC 내 |
+| 토큰 과금 + 한국 내 | `Standard` | 폭넓음 | Korea Central |
+| **PTU + APAC 존** | ❌ **불가** | — | — |
+
+> ⚠️ 한국에서 **"PTU + 데이터 상주"** 가 필요하면 답은 Data Zone이 아니라 **`Regional Provisioned`** 입니다. 비싼 최소 PTU와 리전별 예약을 감수해야 하며 **우회로가 없습니다.**
 
 ### Standard 계열
 
@@ -202,23 +215,29 @@ if 429:
 
 ---
 
-## 7. 멀티 리전 · 공식 권장 아키텍처
+## 7. 멀티 리전 · 권장 아키텍처
 
 ### 엔터프라이즈 PTU 풀 패턴
 
-> *"create a **single Data Zone PTU deployment** that serves as an **enterprise pool of PTU**"* — *"a **'private Standard deployment'** that protects against the **noisy-neighbor problem**"*
+조직 전체가 공유하는 **하나의 큰 PTU 풀**을 두고 게이트웨이가 앱별로 분배합니다. 일종의 **"우리 조직 전용 Standard 배포"** 로, 공용 Standard가 혼잡해도 전용 용량이 보장되고(노이지 네이버 차단), 워크로드를 합치면 스파이크가 평탄해져 **PTU 활용률이 올라갑니다.**
 
 ```
 App → APIM ─┬─[P1] 워크로드 전용 PTU   (Region A)
-            ├─[P2] 엔터프라이즈 PTU 풀  (Region B)  ← Data Zone PTU
+            ├─[P2] 엔터프라이즈 PTU 풀  (Region B)
             └─[P3] Standard            (Region C)
 ```
 
+- P1→P2 단계에서도 **PTU 엔드포인트가 처리** → 지연 SLA 유지
+- P3(Standard) 도달 시 **SLA가 best-effort로 하락** → 성능 저하 모드 발동 지점
+
+> ⚠️ 풀의 배포 유형: 상주 요건이 없으면 **Global Provisioned**가 가장 유연(예약 리전 무관). US/EU 경계가 필요하면 Data Zone Provisioned. **APAC은 Data Zone PTU가 없어 Regional Provisioned만 가능**합니다.
+
 ### 🔑 리전 반(反)상관 원칙
 
-> *"**Place your primary enterprise PTU deployment in a different region than your primary Standard Zone deployment.**"*
-
 **PTU와 그 백업을 같은 리전에 두면 리전 장애 시 둘 다 사라집니다.**
+
+- 워크로드 PTU ↔ 엔터프라이즈 PTU 풀 → 서로 다른 리전
+- 엔터프라이즈 PTU 풀 ↔ 주력 Standard → 서로 다른 리전
 
 ### 리소스 배치
 
@@ -345,13 +364,14 @@ App → APIM ─┬─[P1] 워크로드 전용 PTU   (Region A)
 1. **Spillover만 구성하고 "HA 완료"** — 엔드포인트 장애에 무력
 2. **"Global이니까 리전 장애에 안전"** — 처리만 글로벌, 엔드포인트는 리전 고정
 3. **PTU를 하나의 유형으로 취급** — 최소 PTU·쿼터 풀·예약·Spillover 권장이 모두 다름
-4. **PTU와 백업을 같은 리전에 배치** — 동시 소실
-5. 🚨 **Data Zone PTU → Global Standard Spillover** — 데이터 존 이탈, 오류 없이 감사 때 발견
-6. **PTU 포화를 429로 판단** — Spillover 시 PTU에 429가 안 찍힘
-7. **쿼터만 확보하고 용량 미확인** — 배포 자체가 실패
-8. **긴 `Retry-After`를 그대로 대기 / 무시하고 즉시 재시도** — 정지 또는 증폭
-9. **서킷 브레이커 없이 우선순위 풀만 구성** — 하위 우선순위가 절대 사용 안 됨
-10. **한 번도 트래픽이 흐른 적 없는 Failover 경로** — 장애 때 처음 실행되어 실패
+4. **APAC에서 Data Zone Provisioned를 계획** — 제공되지 않음. 개념 문서가 아니라 **가용성 표**로 확인할 것
+5. **PTU와 백업을 같은 리전에 배치** — 동시 소실
+6. 🚨 **Data Zone PTU → Global Standard Spillover** — 데이터 존 이탈, 오류 없이 감사 때 발견
+7. **PTU 포화를 429로 판단** — Spillover 시 PTU에 429가 안 찍힘
+8. **쿼터만 확보하고 용량 미확인** — 배포 자체가 실패
+9. **긴 `Retry-After`를 그대로 대기 / 무시하고 즉시 재시도** — 정지 또는 증폭
+10. **서킷 브레이커 없이 우선순위 풀만 구성** — 하위 우선순위가 절대 사용 안 됨
+11. **한 번도 트래픽이 흐른 적 없는 Failover 경로** — 장애 때 처음 실행되어 실패
 
 ---
 

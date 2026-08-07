@@ -372,6 +372,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li><a href="#2_1">2. 장애 유형별 대응 (오진 방지)</a></li>
 <li><a href="#3">3. 배포 유형 선택</a><ul>
 <li><a href="#ptu">PTU는 세 가지입니다</a></li>
+<li><a href="#korea-central">🇰🇷 한국(Korea Central) 의사결정표</a></li>
 <li><a href="#standard">Standard 계열</a></li>
 </ul>
 </li>
@@ -397,7 +398,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li><a href="#_7">기타</a></li>
 </ul>
 </li>
-<li><a href="#7">7. 멀티 리전 · 공식 권장 아키텍처</a><ul>
+<li><a href="#7">7. 멀티 리전 · 권장 아키텍처</a><ul>
 <li><a href="#ptu_1">엔터프라이즈 PTU 풀 패턴</a></li>
 <li><a href="#_8">🔑 리전 반(反)상관 원칙</a></li>
 <li><a href="#_9">리소스 배치</a></li>
@@ -420,6 +421,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li><a href="#top-10">자주 하는 실수 Top 10</a></li>
 </ul>
 </div>
+
 
 
 
@@ -576,7 +578,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <tr>
 <td><strong>Data Zone Provisioned</strong></td>
 <td><code>DataZoneProvisionedManaged</code></td>
-<td>US/EU/<strong>APAC</strong></td>
+<td><strong>US / EU만</strong> (⚠️ APAC 미지원)</td>
 <td><strong>15</strong></td>
 <td><strong>5</strong></td>
 <td>✅</td>
@@ -592,8 +594,54 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </tbody>
 </table>
 <blockquote>
-<p>💡 <strong>APAC 데이터 존에 한국이 포함</strong>됩니다(호주·일본·한국·싱가포르·인도).
-💰 Regional은 최소 PTU가 크고 <strong>리전마다 별도 예약</strong>이 필요해, 다중 리전 HA 비용이 급증합니다.</p>
+<p>💰 Regional은 최소 PTU가 크고 <strong>리전마다 별도 예약</strong>이 필요해, 다중 리전 HA 비용이 급증합니다.</p>
+<p>🚨 <strong>APAC에는 Data Zone Provisioned가 없습니다.</strong> 개념 문서 일부가 "US/EU/APAC"이라 표기하지만, <strong>모델 리전 가용성 표의 APAC 탭은 "Not available"</strong> 입니다. 배포 유형 × 리전 가용성은 <strong>반드시 가용성 표로 확인</strong>하세요.</p>
+</blockquote>
+<h3 id="korea-central">🇰🇷 한국(Korea Central) 의사결정표</h3>
+<table>
+<thead>
+<tr>
+<th>요건</th>
+<th>선택지</th>
+<th>지원 모델</th>
+<th>처리 위치</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>PTU + 한국 내 처리</strong></td>
+<td><strong><code>ProvisionedManaged</code></strong>(Regional)</td>
+<td>폭넓음</td>
+<td>Korea Central 고정</td>
+</tr>
+<tr>
+<td>PTU + 위치 무관</td>
+<td><code>GlobalProvisionedManaged</code></td>
+<td>전 모델</td>
+<td>전 세계</td>
+</tr>
+<tr>
+<td>토큰 과금 + APAC 내</td>
+<td><code>DataZoneStandard</code></td>
+<td>⚠️ <strong>gpt-5.2 이상만</strong></td>
+<td>APAC 내</td>
+</tr>
+<tr>
+<td>토큰 과금 + 한국 내</td>
+<td><code>Standard</code></td>
+<td>폭넓음</td>
+<td>Korea Central</td>
+</tr>
+<tr>
+<td><strong>PTU + APAC 존</strong></td>
+<td>❌ <strong>불가</strong></td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ 한국에서 <strong>"PTU + 데이터 상주"</strong> 가 필요하면 답은 Data Zone이 아니라 <strong><code>Regional Provisioned</code></strong> 입니다. 비싼 최소 PTU와 리전별 예약을 감수해야 하며 <strong>우회로가 없습니다.</strong></p>
 </blockquote>
 <h3 id="standard">Standard 계열</h3>
 <ul>
@@ -810,21 +858,27 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li>짧은 재시도 + 명확한 서킷 브레이커 (재시도 과다는 서킷 브레이커를 방해)</li>
 </ul>
 <hr />
-<h2 id="7">7. 멀티 리전 · 공식 권장 아키텍처</h2>
+<h2 id="7">7. 멀티 리전 · 권장 아키텍처</h2>
 <h3 id="ptu_1">엔터프라이즈 PTU 풀 패턴</h3>
-<blockquote>
-<p><em>"create a </em><em>single Data Zone PTU deployment</em><em> that serves as an </em><em>enterprise pool of PTU</em><em>"</em> — <em>"a </em><em>'private Standard deployment'</em><em> that protects against the </em><em>noisy-neighbor problem</em><em>"</em></p>
-</blockquote>
+<p>조직 전체가 공유하는 <strong>하나의 큰 PTU 풀</strong>을 두고 게이트웨이가 앱별로 분배합니다. 일종의 <strong>"우리 조직 전용 Standard 배포"</strong> 로, 공용 Standard가 혼잡해도 전용 용량이 보장되고(노이지 네이버 차단), 워크로드를 합치면 스파이크가 평탄해져 <strong>PTU 활용률이 올라갑니다.</strong></p>
 <div class="codehilite"><pre><span></span><code>App → APIM ─┬─[P1] 워크로드 전용 PTU   (Region A)
-            ├─[P2] 엔터프라이즈 PTU 풀  (Region B)  ← Data Zone PTU
+            ├─[P2] 엔터프라이즈 PTU 풀  (Region B)
             └─[P3] Standard            (Region C)
 </code></pre></div>
 
-<h3 id="_8">🔑 리전 반(反)상관 원칙</h3>
+<ul>
+<li>P1→P2 단계에서도 <strong>PTU 엔드포인트가 처리</strong> → 지연 SLA 유지</li>
+<li>P3(Standard) 도달 시 <strong>SLA가 best-effort로 하락</strong> → 성능 저하 모드 발동 지점</li>
+</ul>
 <blockquote>
-<p><em>"</em><em>Place your primary enterprise PTU deployment in a different region than your primary Standard Zone deployment.</em><em>"</em></p>
+<p>⚠️ 풀의 배포 유형: 상주 요건이 없으면 <strong>Global Provisioned</strong>가 가장 유연(예약 리전 무관). US/EU 경계가 필요하면 Data Zone Provisioned. <strong>APAC은 Data Zone PTU가 없어 Regional Provisioned만 가능</strong>합니다.</p>
 </blockquote>
+<h3 id="_8">🔑 리전 반(反)상관 원칙</h3>
 <p><strong>PTU와 그 백업을 같은 리전에 두면 리전 장애 시 둘 다 사라집니다.</strong></p>
+<ul>
+<li>워크로드 PTU ↔ 엔터프라이즈 PTU 풀 → 서로 다른 리전</li>
+<li>엔터프라이즈 PTU 풀 ↔ 주력 Standard → 서로 다른 리전</li>
+</ul>
 <h3 id="_9">리소스 배치</h3>
 <ul>
 <li><strong>동일 구독에 2개 리소스</strong>(주/보조 리전) — 쿼터는 <strong>구독+리전</strong> 단위라 상호 잠식 없음</li>
@@ -1057,6 +1111,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li><strong>Spillover만 구성하고 "HA 완료"</strong> — 엔드포인트 장애에 무력</li>
 <li><strong>"Global이니까 리전 장애에 안전"</strong> — 처리만 글로벌, 엔드포인트는 리전 고정</li>
 <li><strong>PTU를 하나의 유형으로 취급</strong> — 최소 PTU·쿼터 풀·예약·Spillover 권장이 모두 다름</li>
+<li><strong>APAC에서 Data Zone Provisioned를 계획</strong> — 제공되지 않음. 개념 문서가 아니라 <strong>가용성 표</strong>로 확인할 것</li>
 <li><strong>PTU와 백업을 같은 리전에 배치</strong> — 동시 소실</li>
 <li>🚨 <strong>Data Zone PTU → Global Standard Spillover</strong> — 데이터 존 이탈, 오류 없이 감사 때 발견</li>
 <li><strong>PTU 포화를 429로 판단</strong> — Spillover 시 PTU에 429가 안 찍힘</li>

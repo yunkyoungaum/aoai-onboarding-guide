@@ -141,13 +141,40 @@ Global 계열 배포를 "리전 장애에 자동으로 안전하다"고 이해�
 | 배포 유형 | SKU (`sku.name`) | 추론 처리 위치 | 최소 PTU | 증분 | HA 성격 |
 |---|---|---|---|---|---|
 | **Global Provisioned** | `GlobalProvisionedManaged` | **전 세계 리전으로 라우팅** | **15** | **5** | *"Highest availability"* — 라우팅 리전 제약이 없을 때 |
-| **Data Zone Provisioned** | `DataZoneProvisionedManaged` | **데이터 존 내부**(US / EU / APAC) | **15** | **5** | *"higher availability than regional"* + 데이터 경계 충족 |
+| **Data Zone Provisioned** | `DataZoneProvisionedManaged` | **데이터 존 내부** — **US / EU만** (⚠️ **APAC 미지원**) | **15** | **5** | 데이터 경계 충족 + Regional보다 높은 가용성 |
 | **Regional Provisioned** | `ProvisionedManaged` | **단일 리전 고정** | **25~50**(모델별) | **25~50** | 엄격한 단일 리전 상주 요건용. HA 확보가 가장 어려움 |
 
 > 💡 **최소 PTU 차이가 HA 설계에 직접 영향을 줍니다.**
 > Global/Data Zone은 15 PTU에서 시작해 5 단위로 조정할 수 있지만, Regional은 모델에 따라 **50 PTU 최소 · 50 단위 증분**입니다(예: gpt-4.1, gpt-5 계열). 즉 **Regional Provisioned로 다중 리전을 구성하면 최소 비용이 몇 배로 뜁니다.**
 
-**APAC 데이터 존**은 호주·일본·**한국**·싱가포르·인도를 포함합니다. 국내 데이터 경계 요건이 "한국 국내"가 아니라 "APAC 내"로 정의된다면 **Data Zone Provisioned가 유력한 선택지**입니다.
+#### 🚨 APAC에는 Data Zone Provisioned가 없습니다
+
+**문서 간 불일치가 있으니 주의하세요.**
+
+| 출처 | Data Zone Provisioned 지원 존 |
+|---|---|
+| `deployment-types` 페이지 | US / EU / **APAC** ← ❌ 부정확 |
+| `provisioned-throughput` 페이지 | **US / EU** ← ✅ |
+| **모델 리전 가용성 표** (실측) | APAC 탭 = **"Not available"** ← ✅ **정본** |
+
+쿼터 문서도 *"one quota pool per data zone (**for example, US or EU**)"* 로 이를 뒷받침합니다.
+
+> **📌 배포 유형 × 리전 가용성은 반드시 [모델 리전 가용성 표](https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure-region-availability?pivots=provisioned)로 확인하세요.** 개념 페이지의 서술이 실제 가용성과 어긋나는 경우가 있습니다.
+
+#### 🇰🇷 한국(Korea Central) 고객 의사결정표
+
+| 요건 | 선택지 | 지원 모델 | 데이터 처리 위치 |
+|---|---|---|---|
+| **PTU + 한국 내 처리** | **`ProvisionedManaged`**(Regional) | gpt-4.1·4o·5 계열 등 폭넓음 | **Korea Central 고정** |
+| PTU + 처리 위치 무관 | `GlobalProvisionedManaged` | 전 모델 | 전 세계 |
+| 토큰 과금 + APAC 내 | `DataZoneStandard` | ⚠️ **gpt-5.2 이상만** | APAC 내(호주·일본·한국·싱가포르·인도) |
+| 토큰 과금 + 한국 내 | `Standard` | 폭넓음 | Korea Central |
+| **PTU + APAC 존 처리** | ❌ **불가** | — | Data Zone Provisioned 미제공 |
+
+> ⚠️ **한국에서 "PTU + 데이터 상주"가 필요하면 답은 Data Zone이 아니라 `Regional Provisioned`입니다.**
+> 앞서 언급한 Regional의 단점(최소 PTU 50, 리전별 별도 예약)을 감수해야 하며, **Data Zone으로 우회할 수 없습니다.** HA 비용 산정 시 이 점을 먼저 반영하세요.
+>
+> `DataZoneStandard`도 APAC에서는 **gpt-5.2 이상 모델만** 지원합니다. gpt-4o·gpt-4.1·o 시리즈가 필요하면 `Standard`(Korea Central)를 써야 합니다.
 
 ### 3.3 Standard 계열
 
@@ -169,46 +196,51 @@ Global 계열 배포를 "리전 장애에 자동으로 안전하다"고 이해�
 
 ---
 
-### 3.5 Microsoft 공식 권장 아키텍처 — 엔터프라이즈 PTU 풀
+### 3.5 권장 아키텍처 — 엔터프라이즈 PTU 풀
 
-공식 HA 가이드는 다음 구조를 권장합니다. **개별 앱마다 PTU를 나눠 사는 방식보다 우수합니다.**
+**개별 앱마다 PTU를 따로 사는 방식보다 우수한 구조**입니다.
 
 ```mermaid
 flowchart TB
     APP["애플리케이션들"] --> GW["Generative AI Gateway<br/>(APIM)"]
     GW -->|"1순위"| W["워크로드 전용 PTU<br/>(Region A)"]
-    W -->|"사용률 100% 초과"| E["엔터프라이즈 PTU 풀<br/>Data Zone PTU (Region B)"]
+    W -->|"사용률 100% 초과"| E["엔터프라이즈 PTU 풀<br/>(Region B)"]
     E -->|"불가 시"| S["Standard 배포<br/>(Region C)"]
 ```
 
 #### 왜 "엔터프라이즈 PTU 풀"인가
 
-> *"Think of the enterprise PTU pool as a **'private Standard deployment'** that protects against the **noisy-neighbor problem**."*
+조직 전체가 공유하는 **하나의 큰 PTU 풀**을 두고, 게이트웨이가 앱별로 분배하는 구조입니다. 일종의 **"우리 조직 전용 Standard 배포"** 로 생각하면 됩니다.
 
 | 이점 | 설명 |
 |---|---|
-| **노이지 네이버 차단** | 공용 Standard가 혼잡해도 **조직 전용 용량**은 보장 |
-| **우선순위 제어** | *"control over which applications experience increased latency first"* — 중요 앱을 먼저 보호 |
-| **높은 활용률** | *"traffic is **smoothed across application workloads**"* — 개별 워크로드는 스파이크가 심하지만 합치면 평탄해져 PTU 낭비가 줄어듦 |
-| **지연 SLA 유지** | 워크로드 PTU가 100%를 넘어도 **PTU 엔드포인트가 처리** → 높은 지연 SLA 유지 |
+| **노이지 네이버 차단** | 공용 Standard가 혼잡해도 **조직 전용 용량**은 보장됨 |
+| **우선순위 제어** | 용량 경합 시 **어느 앱이 먼저 느려질지** 조직이 결정 |
+| **높은 활용률** | 개별 워크로드는 스파이크가 심하지만, **합치면 평탄해져** PTU 낭비가 줄어듦 |
+| **지연 SLA 유지** | 워크로드 PTU가 100%를 넘어도 **여전히 PTU 엔드포인트가 처리** → 높은 지연 SLA 유지 |
 
 #### 🔑 리전 반(反)상관 원칙
 
-> *"**Place your primary enterprise PTU deployment in a different region than your primary Standard Zone deployment.** If a regional outage occurs, **you don't lose access to both** your PTU deployment and Standard Zone deployment simultaneously."*
+**PTU와 그 백업을 같은 리전에 두면 리전 장애 시 둘 다 사라집니다.**
 
-> *"Place the **workload PTU pool in a different region than the enterprise PTU pool** to protect against regional failures."*
+- 워크로드 PTU와 엔터프라이즈 PTU 풀을 **서로 다른 리전**에
+- 엔터프라이즈 PTU 풀과 주력 Standard 배포도 **서로 다른 리전**에
 
-**PTU와 그 백업을 같은 리전에 두면 리전 장애 시 둘 다 사라집니다.** 이는 §5.5에서 다루는 "Spillover는 리전 장애를 못 막는다"와 같은 원리이며, 리전 배치 단계에서 미리 분산해야 합니다.
+§5.5의 "Spillover는 엔드포인트 장애를 못 막는다"와 같은 원리이며, **리전 배치 단계에서 미리 분산**해야 합니다.
 
 #### 권장 배치 예시
 
 | 계층 | 배포 유형 | 리전 | 역할 |
 |---|---|---|---|
 | 1순위 | 워크로드 전용 PTU | Region A | 해당 앱 기저 부하 |
-| 2순위 | **엔터프라이즈 PTU 풀 (Data Zone PTU)** | **Region B** | 조직 공용 · 오버플로 흡수 |
+| 2순위 | **엔터프라이즈 PTU 풀** | **Region B** | 조직 공용 · 오버플로 흡수 |
 | 3순위 | Standard (Global 또는 Data Zone) | **Region C** | 스파이크 흡수 · 최종 수단 |
 
-> *"Use **PTU for your baseline demand** across workloads and **Standard deployments for traffic spikes**."*
+**PTU는 기저 부하, Standard는 스파이크** — 이 역할 분담이 핵심입니다.
+
+> ⚠️ **엔터프라이즈 PTU 풀의 배포 유형 선택**
+> 상주 요건이 없다면 **Global Provisioned**가 가장 유연합니다(예약이 리전 무관, §8.3).
+> US/EU 데이터 경계가 필요하면 **Data Zone Provisioned**를 쓸 수 있지만, **APAC에서는 제공되지 않습니다**(§3.2). APAC 리전에서 데이터 상주가 필요하면 **Regional Provisioned**로 구성해야 하며, 이 경우 최소 PTU와 예약 비용이 크게 올라갑니다.
 
 #### 데이터 상주 주의
 
@@ -751,7 +783,7 @@ AOAI        │ 계속 생성 ──────│ (아무도 읽지 않을 결
 | **데이터 경계** | 규제상 허용되는 지리인가 |
 | **기능 동등성** | 콘텐츠 필터 구성, Batch, 파인튜닝 등 필요한 기능이 동일하게 되는가 |
 
-### 7.2 Microsoft 공식 리소스 배치 방식
+### 7.2 리소스 배치 방식
 
 > *"Deploy **two Azure OpenAI resources in the same Azure subscription.** Place one resource in your preferred region and the other in your secondary (failover) region. Azure OpenAI allocates quota at the **subscription-plus-region level**, so both resources can share a subscription without affecting quota."*
 
@@ -804,7 +836,7 @@ flowchart LR
     FD --> P1["APIM (Region A)"]
     FD --> P2["APIM (Region B)"]
     P1 --> W1["워크로드 PTU<br/>(Region A)"]
-    P1 --> E1["엔터프라이즈 PTU 풀<br/>Data Zone PTU (Region B)"]
+    P1 --> E1["엔터프라이즈 PTU 풀<br/>(Region B)"]
     P2 --> E1
     P1 --> S1["Standard<br/>(Region C)"]
     P2 --> S1
@@ -814,7 +846,7 @@ flowchart LR
 - **APIM Premium 다중 리전 배포**: 단일 APIM 인스턴스를 여러 리전 게이트웨이로 확장
 - **Traffic Manager**: DNS 기반 — 전환이 TTL에 종속되므로 **빠른 Failover에는 Front Door 우선**
 
-> 공식 가이드가 정의하는 **Generative AI Gateway**의 역할: 다중 엔드포인트 **로드 밸런싱**, **서킷 브레이커**, **레이트 리밋**, **중앙 로깅**, 그리고 **우선순위 라우팅**(*"mission-critical applications get capacity first during contention"*).
+> **Generative AI Gateway**(게이트웨이 계층)의 역할: 다중 엔드포인트 **로드 밸런싱**, **서킷 브레이커**, **레이트 리밋**, **중앙 로깅**, 그리고 **우선순위 라우팅**(*"mission-critical applications get capacity first during contention"*).
 
 ---
 
@@ -989,7 +1021,7 @@ Client → APIM
 
 ```
 Client → APIM
-           ├─ [P1] 엔터프라이즈 PTU 풀 : Data Zone PTU  (Region A)
+           ├─ [P1] 엔터프라이즈 PTU 풀            (Region A)
            │         └─ Spillover ─▶ 동일 리소스 Standard
            └─ [P2] Standard (Global/Data Zone)          (Region B)  ← 다른 리전
 ```
@@ -1002,12 +1034,12 @@ Client → APIM
 ```
 Client → Front Door
    ├─ APIM (Region A) ─┬─ [P1] 워크로드 전용 PTU      (Region A)
-   │                   ├─ [P2] 엔터프라이즈 PTU 풀     (Region B)  ← Data Zone PTU
+   │                   ├─ [P2] 엔터프라이즈 PTU 풀     (Region B)
    │                   └─ [P3] Standard               (Region C)
    └─ APIM (Region B) ─┴─ (동일 풀 구성)
 ```
 
-공식 가이드의 Failover 체인을 그대로 구현한 형태입니다.
+3단 Failover 체인을 구현한 형태입니다.
 
 > *"Configure the failover chain so the workload-dedicated deployment **fails over first to the enterprise PTU pool** and **then to the Standard deployment**."*
 
@@ -1039,6 +1071,7 @@ Client → Front Door
 - [ ] RTO/RPO에 준하는 목표(Failover 소요 시간 목표)가 문서화되어 있다
 - [ ] Failover 후보 리전이 데이터 상주 요건을 만족한다
 - [ ] **Global / Data Zone / Regional 중 어느 유형인지 의식적으로 결정**하고 근거가 문서화되어 있다
+- [ ] 선택한 배포 유형이 **대상 리전에서 실제로 제공되는지 가용성 표로 확인**했다 (예: APAC에는 Data Zone Provisioned 없음, §3.2)
 - [ ] **PTU · 엔터프라이즈 풀 · Standard가 서로 다른 리전**에 배치되어 있다(반상관)
 - [ ] "Global이니까 리전 장애에 안전하다"는 가정을 하지 않았다(엔드포인트는 리전 고정)
 
@@ -1097,7 +1130,8 @@ Client → Front Door
 22. **Regional Provisioned로 다중 리전 HA 시도** — 최소 PTU가 크고 리전마다 별도 예약 필요 → 비용 급증 (§3.2, §8.3)
 23. 🚨 **Data Zone PTU를 Global Standard로 Spillover** — 피크 때 오버플로가 **데이터 존 밖에서 처리**되어 상주 요건 위반. 오류가 나지 않아 감사 때 발견됨 (§5.2)
 24. **Global PTU를 리전 `Standard`로 Spillover** — 오버플로가 단일 리전 공유 쿼터에 묶여 Global의 이점 상실 (§5.2)
-25. **Spillover를 "리전 이중화"로 오해** — 두 배포가 **같은 엔드포인트**를 공유하므로 엔드포인트 장애에는 무력 (§5.2, §5.5)
+25. **APAC에서 Data Zone Provisioned를 계획** — 제공되지 않음. 개념 문서가 아니라 **가용성 표**로 확인해야 함 (§3.2)
+26. **Spillover를 "리전 이중화"로 오해** — 두 배포가 **같은 엔드포인트**를 공유하므로 엔드포인트 장애에는 무력 (§5.2, §5.5)
 
 ## 부록 B. 참고 문서
 
@@ -1110,6 +1144,8 @@ Client → Front Door
 ### 배포 유형 · 용량
 - **Provisioned throughput 개념(3가지 유형)**: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput
 - **Deployment types (전체 SKU 비교)**: https://learn.microsoft.com/azure/foundry/foundry-models/concepts/deployment-types
+- 🔑 **모델 리전 가용성 표(배포 유형 × 리전 정본)**: https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure-region-availability?pivots=provisioned
+- 모델별 컨텍스트 한도(배포 유형별): https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure
 - PTU 사이징(모델별 최소·증분): https://learn.microsoft.com/azure/foundry/openai/how-to/provisioned-throughput-sizing
 - **PTU 청구 및 Azure 예약**: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput-billing
 - Spillover 트래픽 관리: https://learn.microsoft.com/azure/foundry/openai/how-to/spillover-traffic-management
