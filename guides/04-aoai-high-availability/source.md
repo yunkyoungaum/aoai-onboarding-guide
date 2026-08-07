@@ -2,8 +2,8 @@
 
 > 대상: AOAI를 **미션 크리티컬 워크로드**에 사용하는 아키텍트, SRE, 플랫폼 팀
 > 범위: 장애 유형 분류 → 계층별 HA 설계 → Spillover/APIM/멀티 리전 → 용량·모델 수명주기 → 검증
-> 관련 가이드: [01 온보딩](../01-oai-to-aoai-onboarding/) · [02 배포 & 운영 모니터링](../02-aoai-deployment-monitoring/)
-> 📄 **바쁘시면 → [03-1 핵심 요약(5분)](../03-1-aoai-ha-summary/)**
+> 관련 가이드: [01 온보딩](../01-oai-to-aoai-onboarding/) · [02 기본 개념](../02-aoai-foundations/) · [03 배포 & 운영 모니터링](../03-aoai-deployment-monitoring/)
+> 📄 **바쁘시면 → [04-1 핵심 요약(5분)](../04-1-aoai-ha-summary/)**
 > 검증 기준: Foundry HA/resiliency 가이드, Provisioned throughput 개념·사이징·청구, Deployment types, Spillover, API Management Backends(`2024-05-01`), Azure RBAC 문서 (2026-08 확인)
 >
 > **⚠️ 초안(Draft)** — 리뷰용으로 공개된 문서입니다. 조직 표준 확정 전까지 그대로 적용하지 마세요. 미확정 항목은 문서 말미의 *리뷰가 필요한 항목* 참고.
@@ -506,7 +506,7 @@ Spillover된 요청은 **표준 배포 쪽에 `IsSpillover=True` + 최종 상태
 
 > 즉 **Spillover 비율 급증 = 비용 급증**이기도 합니다. 용량 알림과 별개로 **비용 알림**도 함께 두세요.
 
-> 자세한 메트릭·KQL은 [가이드 02](../02-aoai-deployment-monitoring/) 참고.
+> 자세한 메트릭·KQL은 [가이드 03](../03-aoai-deployment-monitoring/) 참고.
 
 ---
 
@@ -972,7 +972,7 @@ Failover 설계 시 최소한 다음 3가지를 계산해 둡니다.
 | **실효 성공률** | 재시도·Failover 포함, 사용자가 실제로 성공한 비율 |
 | 성능 저하 지속 시간 | 강등 모드로 운영된 시간 |
 
-> 실효 성공률 산출 KQL은 [가이드 02 §7.8](../02-aoai-deployment-monitoring/) 참고.
+> 실효 성공률 산출 KQL은 [가이드 03 §7.8](../03-aoai-deployment-monitoring/) 참고.
 
 ---
 

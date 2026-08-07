@@ -2,6 +2,7 @@
 
 > 대상: AOAI를 **Production**에서 운영하는 아키텍트, SRE, 플랫폼 팀
 > 범위: 배포 설계 → 관측(Observability) 구성 → Metric/Log → Alert → 대시보드 → 장애 대응 Runbook
+> 관련 가이드: [01 온보딩](../01-oai-to-aoai-onboarding/) · [02 기본 개념](../02-aoai-foundations/) · [04 고가용성](../04-aoai-high-availability/)
 > 검증 기준: Azure Monitor `Microsoft.CognitiveServices/accounts` 지원 메트릭/로그 레퍼런스 (2026-07 기준)
 
 ---

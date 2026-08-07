@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Azure OpenAI 기본 개념 — 리소스 · 배포 · 쿼터 · PTU</title>
+<script>
+  (() => {
+    const param = new URLSearchParams(window.location.search).get("scoutTheme");
+    const theme =
+      param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+<style>
+:root {
+  color-scheme: light;
+  --cp-bg: #f7f4ef;
+  --cp-bg-elevated: #fcfbf8;
+  --cp-surface: #ffffff;
+  --cp-surface-soft: #f5f5f5;
+  --cp-border: #dedede;
+  --cp-border-strong: #919191;
+  --cp-text: #242424;
+  --cp-text-muted: #5c5c5c;
+  --cp-text-soft: #6f6f6f;
+  --cp-accent: #b11f4b;
+  --cp-accent-hover: #9a1a41;
+  --cp-accent-soft: rgba(177, 31, 75, 0.08);
+  --cp-accent-fg: #ffffff;
+  --cp-success: #16a34a;
+  --cp-danger: #dc2626;
+  --cp-warning: #f59e0b;
+  --cp-link: #0078d4;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+  --cp-highlight: rgba(177, 31, 75, 0.12);
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --cp-bg: #3d3b3a;
+  --cp-bg-elevated: #343231;
+  --cp-surface: #292929;
+  --cp-surface-soft: #2e2e2e;
+  --cp-border: #474747;
+  --cp-border-strong: #5f5f5f;
+  --cp-text: #dedede;
+  --cp-text-muted: #919191;
+  --cp-text-soft: #b0b0b0;
+  --cp-accent: #fd8ea1;
+  --cp-accent-hover: #fb7b91;
+  --cp-accent-soft: rgba(253, 142, 161, 0.14);
+  --cp-accent-fg: #1a1a1a;
+  --cp-success: #4ade80;
+  --cp-danger: #f87171;
+  --cp-warning: #fbbf24;
+  --cp-link: #4da6ff;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+  --cp-highlight: rgba(253, 142, 161, 0.12);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--cp-bg);
+  color: var(--cp-text);
+  font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15.5px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+.layout { display: flex; align-items: flex-start; max-width: 1400px; margin: 0 auto; gap: 24px; padding: 24px; }
+
+.sidebar {
+  position: sticky; top: 24px; flex: 0 0 290px; max-height: calc(100vh - 48px);
+  overflow-y: auto; background: var(--cp-surface); border: 1px solid var(--cp-border);
+  border-radius: 16px; padding: 20px 18px;
+  box-shadow: 0 0 2px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.14);
+}
+.sidebar h2 {
+  margin: 0 0 12px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--cp-text-muted); border: none; padding: 0;
+}
+.sidebar h2::before { content: none; }
+.sidebar ul { list-style: none; margin: 0; padding: 0; }
+.sidebar ul ul { padding-left: 12px; }
+.sidebar li { margin: 2px 0; }
+.sidebar a {
+  display: block; padding: 5px 10px; border-radius: 0.625rem; font-size: 13.5px;
+  color: var(--cp-text-muted); text-decoration: none; border-left: 2px solid transparent;
+}
+.sidebar a:hover { background: var(--cp-accent-soft); color: var(--cp-accent); }
+.sidebar a.active { background: var(--cp-accent-soft); color: var(--cp-accent); border-left-color: var(--cp-accent); font-weight: 600; }
+
+main {
+  flex: 1 1 auto; min-width: 0; background: var(--cp-surface);
+  border: 1px solid var(--cp-border); border-radius: 16px; padding: 44px 52px;
+  box-shadow: 0 0 2px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.14);
+}
+
+h1, h2, h3, h4 { font-weight: 650; line-height: 1.35; scroll-margin-top: 24px; }
+h1 { font-size: 2.05rem; margin: 0 0 8px; letter-spacing: -0.02em; }
+h2 {
+  font-size: 1.45rem; margin: 2.6rem 0 1rem; padding-bottom: .5rem;
+  border-bottom: 2px solid var(--cp-border);
+}
+h2::before {
+  content: ""; display: inline-block; width: 6px; height: 1.05em; border-radius: 3px;
+  background: var(--cp-accent); margin-right: 10px; vertical-align: -0.16em;
+}
+h3 { font-size: 1.14rem; margin: 1.9rem 0 .6rem; }
+h4 { font-size: 1rem; margin: 1.4rem 0 .5rem; color: var(--cp-text-muted); }
+
+p { margin: .8rem 0; }
+a { color: var(--cp-link); text-decoration: none; word-break: break-word; }
+a:hover { text-decoration: underline; }
+hr { border: none; border-top: 1px solid var(--cp-border); margin: 2.4rem 0; }
+
+ul, ol { padding-left: 1.5rem; }
+li { margin: .3rem 0; }
+li::marker { color: var(--cp-accent); }
+strong { font-weight: 650; }
+
+table {
+  width: 100%; border-collapse: separate; border-spacing: 0; margin: 1.2rem 0;
+  font-size: 14px; border: 1px solid var(--cp-border); border-radius: 12px; overflow: hidden;
+}
+thead th {
+  background: var(--cp-surface-soft); color: var(--cp-text); font-weight: 650;
+  text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--cp-border);
+}
+tbody td { padding: 10px 14px; border-bottom: 1px solid var(--cp-border); vertical-align: top; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--cp-accent-soft); }
+
+code {
+  font-family: Consolas, "Courier New", Courier, monospace;
+  font-size: .88em; background: var(--cp-surface-soft); color: var(--cp-accent);
+  padding: .12em .38em; border-radius: 5px; border: 1px solid var(--cp-border);
+  white-space: nowrap;
+}
+pre {
+  background: var(--cp-bg-elevated); border: 1px solid var(--cp-border);
+  border-radius: 12px; padding: 16px 18px; overflow-x: auto; margin: 1.1rem 0;
+  line-height: 1.6;
+}
+html[data-theme="dark"] pre { background: #1f1f1f; }
+pre code {
+  background: none; border: none; padding: 0; color: var(--cp-text); font-size: 13px;
+  white-space: pre;
+}
+.codehilite { background: none !important; }
+
+blockquote {
+  margin: 1.2rem 0; padding: 12px 18px; background: var(--cp-accent-soft);
+  border-left: 4px solid var(--cp-accent); border-radius: 0 10px 10px 0;
+}
+blockquote p { margin: .35rem 0; }
+
+.mermaid {
+  text-align: center; margin: 1.4rem 0; background: var(--cp-bg-elevated);
+  border: 1px solid var(--cp-border); border-radius: 12px; padding: 18px; overflow-x: auto;
+}
+.mermaid svg { max-width: 100%; height: auto; }
+.mermaid-fallback {
+  text-align: left; font-family: Consolas, "Courier New", Courier, monospace;
+  font-size: 12.5px; white-space: pre; color: var(--cp-text-muted);
+}
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1px solid var(--cp-border);
+}
+.meta { color: var(--cp-text-soft); font-size: 13px; }
+.badge {
+  display: inline-block; background: var(--cp-accent); color: var(--cp-accent-fg);
+  font-size: 11px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 999px;
+}
+.toggle {
+  cursor: pointer; border: 1px solid var(--cp-border); background: var(--cp-surface-soft);
+  color: var(--cp-text); border-radius: 0.625rem; padding: 7px 14px; font-size: 13px;
+  font-family: inherit;
+}
+.toggle:hover { border-color: var(--cp-accent); color: var(--cp-accent); }
+
+@media (max-width: 1024px) {
+  .sidebar { display: none; }
+  main { padding: 28px 20px; }
+  .layout { padding: 14px; }
+}
+@media print {
+  .sidebar, .toggle { display: none; }
+  main { border: none; box-shadow: none; padding: 0; }
+}
+
+pre { line-height: 125%; }
+td.linenos .normal { color: #666666; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: #666666; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+.codehilite .hll { background-color: #ffffcc }
+.codehilite { background: #f0f0f0; }
+.codehilite .c { color: #60A0B0; font-style: italic } /* Comment */
+.codehilite .err { border: 1px solid #F00 } /* Error */
+.codehilite .k { color: #007020; font-weight: bold } /* Keyword */
+.codehilite .o { color: #666 } /* Operator */
+.codehilite .ch { color: #60A0B0; font-style: italic } /* Comment.Hashbang */
+.codehilite .cm { color: #60A0B0; font-style: italic } /* Comment.Multiline */
+.codehilite .cp { color: #007020 } /* Comment.Preproc */
+.codehilite .cpf { color: #60A0B0; font-style: italic } /* Comment.PreprocFile */
+.codehilite .c1 { color: #60A0B0; font-style: italic } /* Comment.Single */
+.codehilite .cs { color: #60A0B0; background-color: #FFF0F0 } /* Comment.Special */
+.codehilite .gd { color: #A00000 } /* Generic.Deleted */
+.codehilite .ge { font-style: italic } /* Generic.Emph */
+.codehilite .ges { font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.codehilite .gr { color: #F00 } /* Generic.Error */
+.codehilite .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.codehilite .gi { color: #00A000 } /* Generic.Inserted */
+.codehilite .go { color: #888 } /* Generic.Output */
+.codehilite .gp { color: #C65D09; font-weight: bold } /* Generic.Prompt */
+.codehilite .gs { font-weight: bold } /* Generic.Strong */
+.codehilite .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.codehilite .gt { color: #04D } /* Generic.Traceback */
+.codehilite .kc { color: #007020; font-weight: bold } /* Keyword.Constant */
+.codehilite .kd { color: #007020; font-weight: bold } /* Keyword.Declaration */
+.codehilite .kn { color: #007020; font-weight: bold } /* Keyword.Namespace */
+.codehilite .kp { color: #007020 } /* Keyword.Pseudo */
+.codehilite .kr { color: #007020; font-weight: bold } /* Keyword.Reserved */
+.codehilite .kt { color: #902000 } /* Keyword.Type */
+.codehilite .m { color: #40A070 } /* Literal.Number */
+.codehilite .s { color: #4070A0 } /* Literal.String */
+.codehilite .na { color: #4070A0 } /* Name.Attribute */
+.codehilite .nb { color: #007020 } /* Name.Builtin */
+.codehilite .nc { color: #0E84B5; font-weight: bold } /* Name.Class */
+.codehilite .no { color: #60ADD5 } /* Name.Constant */
+.codehilite .nd { color: #555; font-weight: bold } /* Name.Decorator */
+.codehilite .ni { color: #D55537; font-weight: bold } /* Name.Entity */
+.codehilite .ne { color: #007020 } /* Name.Exception */
+.codehilite .nf { color: #06287E } /* Name.Function */
+.codehilite .nl { color: #002070; font-weight: bold } /* Name.Label */
+.codehilite .nn { color: #0E84B5; font-weight: bold } /* Name.Namespace */
+.codehilite .nt { color: #062873; font-weight: bold } /* Name.Tag */
+.codehilite .nv { color: #BB60D5 } /* Name.Variable */
+.codehilite .ow { color: #007020; font-weight: bold } /* Operator.Word */
+.codehilite .w { color: #BBB } /* Text.Whitespace */
+.codehilite .mb { color: #40A070 } /* Literal.Number.Bin */
+.codehilite .mf { color: #40A070 } /* Literal.Number.Float */
+.codehilite .mh { color: #40A070 } /* Literal.Number.Hex */
+.codehilite .mi { color: #40A070 } /* Literal.Number.Integer */
+.codehilite .mo { color: #40A070 } /* Literal.Number.Oct */
+.codehilite .sa { color: #4070A0 } /* Literal.String.Affix */
+.codehilite .sb { color: #4070A0 } /* Literal.String.Backtick */
+.codehilite .sc { color: #4070A0 } /* Literal.String.Char */
+.codehilite .dl { color: #4070A0 } /* Literal.String.Delimiter */
+.codehilite .sd { color: #4070A0; font-style: italic } /* Literal.String.Doc */
+.codehilite .s2 { color: #4070A0 } /* Literal.String.Double */
+.codehilite .se { color: #4070A0; font-weight: bold } /* Literal.String.Escape */
+.codehilite .sh { color: #4070A0 } /* Literal.String.Heredoc */
+.codehilite .si { color: #70A0D0; font-style: italic } /* Literal.String.Interpol */
+.codehilite .sx { color: #C65D09 } /* Literal.String.Other */
+.codehilite .sr { color: #235388 } /* Literal.String.Regex */
+.codehilite .s1 { color: #4070A0 } /* Literal.String.Single */
+.codehilite .ss { color: #517918 } /* Literal.String.Symbol */
+.codehilite .bp { color: #007020 } /* Name.Builtin.Pseudo */
+.codehilite .fm { color: #06287E } /* Name.Function.Magic */
+.codehilite .vc { color: #BB60D5 } /* Name.Variable.Class */
+.codehilite .vg { color: #BB60D5 } /* Name.Variable.Global */
+.codehilite .vi { color: #BB60D5 } /* Name.Variable.Instance */
+.codehilite .vm { color: #BB60D5 } /* Name.Variable.Magic */
+.codehilite .il { color: #40A070 } /* Literal.Number.Integer.Long */
+pre { line-height: 125%; }
+td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+html[data-theme="dark"] .codehilite .hll { background-color: #49483e }
+html[data-theme="dark"] .codehilite { background: #272822; color: #F8F8F2 }
+html[data-theme="dark"] .codehilite .c { color: #959077 } /* Comment */
+html[data-theme="dark"] .codehilite .err { color: #ED007E; background-color: #1E0010 } /* Error */
+html[data-theme="dark"] .codehilite .esc { color: #F8F8F2 } /* Escape */
+html[data-theme="dark"] .codehilite .g { color: #F8F8F2 } /* Generic */
+html[data-theme="dark"] .codehilite .k { color: #66D9EF } /* Keyword */
+html[data-theme="dark"] .codehilite .l { color: #AE81FF } /* Literal */
+html[data-theme="dark"] .codehilite .n { color: #F8F8F2 } /* Name */
+html[data-theme="dark"] .codehilite .o { color: #FF4689 } /* Operator */
+html[data-theme="dark"] .codehilite .x { color: #F8F8F2 } /* Other */
+html[data-theme="dark"] .codehilite .p { color: #F8F8F2 } /* Punctuation */
+html[data-theme="dark"] .codehilite .ch { color: #959077 } /* Comment.Hashbang */
+html[data-theme="dark"] .codehilite .cm { color: #959077 } /* Comment.Multiline */
+html[data-theme="dark"] .codehilite .cp { color: #959077 } /* Comment.Preproc */
+html[data-theme="dark"] .codehilite .cpf { color: #959077 } /* Comment.PreprocFile */
+html[data-theme="dark"] .codehilite .c1 { color: #959077 } /* Comment.Single */
+html[data-theme="dark"] .codehilite .cs { color: #959077 } /* Comment.Special */
+html[data-theme="dark"] .codehilite .gd { color: #FF4689 } /* Generic.Deleted */
+html[data-theme="dark"] .codehilite .ge { color: #F8F8F2; font-style: italic } /* Generic.Emph */
+html[data-theme="dark"] .codehilite .ges { color: #F8F8F2; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+html[data-theme="dark"] .codehilite .gr { color: #F8F8F2 } /* Generic.Error */
+html[data-theme="dark"] .codehilite .gh { color: #F8F8F2 } /* Generic.Heading */
+html[data-theme="dark"] .codehilite .gi { color: #A6E22E } /* Generic.Inserted */
+html[data-theme="dark"] .codehilite .go { color: #66D9EF } /* Generic.Output */
+html[data-theme="dark"] .codehilite .gp { color: #FF4689; font-weight: bold } /* Generic.Prompt */
+html[data-theme="dark"] .codehilite .gs { color: #F8F8F2; font-weight: bold } /* Generic.Strong */
+html[data-theme="dark"] .codehilite .gu { color: #959077 } /* Generic.Subheading */
+html[data-theme="dark"] .codehilite .gt { color: #F8F8F2 } /* Generic.Traceback */
+html[data-theme="dark"] .codehilite .kc { color: #66D9EF } /* Keyword.Constant */
+html[data-theme="dark"] .codehilite .kd { color: #66D9EF } /* Keyword.Declaration */
+html[data-theme="dark"] .codehilite .kn { color: #FF4689 } /* Keyword.Namespace */
+html[data-theme="dark"] .codehilite .kp { color: #66D9EF } /* Keyword.Pseudo */
+html[data-theme="dark"] .codehilite .kr { color: #66D9EF } /* Keyword.Reserved */
+html[data-theme="dark"] .codehilite .kt { color: #66D9EF } /* Keyword.Type */
+html[data-theme="dark"] .codehilite .ld { color: #E6DB74 } /* Literal.Date */
+html[data-theme="dark"] .codehilite .m { color: #AE81FF } /* Literal.Number */
+html[data-theme="dark"] .codehilite .s { color: #E6DB74 } /* Literal.String */
+html[data-theme="dark"] .codehilite .na { color: #A6E22E } /* Name.Attribute */
+html[data-theme="dark"] .codehilite .nb { color: #F8F8F2 } /* Name.Builtin */
+html[data-theme="dark"] .codehilite .nc { color: #A6E22E } /* Name.Class */
+html[data-theme="dark"] .codehilite .no { color: #66D9EF } /* Name.Constant */
+html[data-theme="dark"] .codehilite .nd { color: #A6E22E } /* Name.Decorator */
+html[data-theme="dark"] .codehilite .ni { color: #F8F8F2 } /* Name.Entity */
+html[data-theme="dark"] .codehilite .ne { color: #A6E22E } /* Name.Exception */
+html[data-theme="dark"] .codehilite .nf { color: #A6E22E } /* Name.Function */
+html[data-theme="dark"] .codehilite .nl { color: #F8F8F2 } /* Name.Label */
+html[data-theme="dark"] .codehilite .nn { color: #F8F8F2 } /* Name.Namespace */
+html[data-theme="dark"] .codehilite .nx { color: #A6E22E } /* Name.Other */
+html[data-theme="dark"] .codehilite .py { color: #F8F8F2 } /* Name.Property */
+html[data-theme="dark"] .codehilite .nt { color: #FF4689 } /* Name.Tag */
+html[data-theme="dark"] .codehilite .nv { color: #F8F8F2 } /* Name.Variable */
+html[data-theme="dark"] .codehilite .ow { color: #FF4689 } /* Operator.Word */
+html[data-theme="dark"] .codehilite .pm { color: #F8F8F2 } /* Punctuation.Marker */
+html[data-theme="dark"] .codehilite .w { color: #F8F8F2 } /* Text.Whitespace */
+html[data-theme="dark"] .codehilite .mb { color: #AE81FF } /* Literal.Number.Bin */
+html[data-theme="dark"] .codehilite .mf { color: #AE81FF } /* Literal.Number.Float */
+html[data-theme="dark"] .codehilite .mh { color: #AE81FF } /* Literal.Number.Hex */
+html[data-theme="dark"] .codehilite .mi { color: #AE81FF } /* Literal.Number.Integer */
+html[data-theme="dark"] .codehilite .mo { color: #AE81FF } /* Literal.Number.Oct */
+html[data-theme="dark"] .codehilite .sa { color: #E6DB74 } /* Literal.String.Affix */
+html[data-theme="dark"] .codehilite .sb { color: #E6DB74 } /* Literal.String.Backtick */
+html[data-theme="dark"] .codehilite .sc { color: #E6DB74 } /* Literal.String.Char */
+html[data-theme="dark"] .codehilite .dl { color: #E6DB74 } /* Literal.String.Delimiter */
+html[data-theme="dark"] .codehilite .sd { color: #E6DB74 } /* Literal.String.Doc */
+html[data-theme="dark"] .codehilite .s2 { color: #E6DB74 } /* Literal.String.Double */
+html[data-theme="dark"] .codehilite .se { color: #AE81FF } /* Literal.String.Escape */
+html[data-theme="dark"] .codehilite .sh { color: #E6DB74 } /* Literal.String.Heredoc */
+html[data-theme="dark"] .codehilite .si { color: #E6DB74 } /* Literal.String.Interpol */
+html[data-theme="dark"] .codehilite .sx { color: #E6DB74 } /* Literal.String.Other */
+html[data-theme="dark"] .codehilite .sr { color: #E6DB74 } /* Literal.String.Regex */
+html[data-theme="dark"] .codehilite .s1 { color: #E6DB74 } /* Literal.String.Single */
+html[data-theme="dark"] .codehilite .ss { color: #E6DB74 } /* Literal.String.Symbol */
+html[data-theme="dark"] .codehilite .bp { color: #F8F8F2 } /* Name.Builtin.Pseudo */
+html[data-theme="dark"] .codehilite .fm { color: #A6E22E } /* Name.Function.Magic */
+html[data-theme="dark"] .codehilite .vc { color: #F8F8F2 } /* Name.Variable.Class */
+html[data-theme="dark"] .codehilite .vg { color: #F8F8F2 } /* Name.Variable.Global */
+html[data-theme="dark"] .codehilite .vi { color: #F8F8F2 } /* Name.Variable.Instance */
+html[data-theme="dark"] .codehilite .vm { color: #F8F8F2 } /* Name.Variable.Magic */
+html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Integer.Long */
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav class="sidebar">
+    <h2>목차</h2>
+    <div class="toc">
+<ul>
+<li><a href="#0">0. 한 장 요약</a><ul>
+<li><a href="#_1">용어 관계도</a></li>
+<li><a href="#5">가장 많이 하는 실수 5가지</a></li>
+</ul>
+</li>
+<li><a href="#1">1. 리소스 — 무엇을 만드는가</a><ul>
+<li><a href="#11-arm">1.1 ARM 리소스 타입은 하나입니다</a></li>
+<li><a href="#12-hub">1.2 Hub · 프로젝트 — 어느 것을 쓰나</a></li>
+<li><a href="#13">1.3 리소스 하나에 배포는 여러 개</a></li>
+<li><a href="#14">1.4 엔드포인트와 호출 방식</a></li>
+</ul>
+</li>
+<li><a href="#2-deployment">2. 배포(Deployment) — 무엇을 올리는가</a><ul>
+<li><a href="#21">2.1 배포 유형 전체 지도</a></li>
+<li><a href="#22">2.2 어떻게 고르나</a></li>
+<li><a href="#23-standard-vs-provisioned">2.3 Standard vs Provisioned 핵심 차이</a></li>
+</ul>
+</li>
+<li><a href="#3-ptu">3. PTU — 전용 처리 능력의 단위</a><ul>
+<li><a href="#31-ptu">3.1 PTU의 성질</a></li>
+<li><a href="#32">3.2 최소 배포 크기와 증분</a></li>
+<li><a href="#33-ptu">3.3 PTU 규모 산정</a></li>
+</ul>
+</li>
+<li><a href="#4-quota-vs-capacity">4. 쿼터(Quota) vs 용량(Capacity) — 가장 큰 혼란</a><ul>
+<li><a href="#41">4.1 둘은 완전히 다른 것입니다</a></li>
+<li><a href="#42">4.2 🔴 쿼터가 있어도 배포가 실패합니다</a></li>
+<li><a href="#43">4.3 ⚠️ 반납한 용량은 돌아오지 않을 수 있습니다</a></li>
+<li><a href="#44">4.4 쿼터가 나뉘는 기준</a></li>
+<li><a href="#45-standard-tpm">4.5 Standard 쿼터 — TPM과 쿼터 티어</a></li>
+</ul>
+</li>
+<li><a href="#5-1">5. 실전 절차 ① — 쿼터 신청과 용량 확인</a><ul>
+<li><a href="#51">5.1 전체 흐름</a></li>
+<li><a href="#52">5.2 쿼터 확인 및 신청</a></li>
+<li><a href="#53-capacity">5.3 용량(Capacity) 확인 — 배포 전에</a></li>
+<li><a href="#54">5.4 용량이 없을 때</a></li>
+</ul>
+</li>
+<li><a href="#6-2-azure-reservation">6. 실전 절차 ② — Azure 예약(Reservation) 구매</a><ul>
+<li><a href="#61">6.1 예약이란</a></li>
+<li><a href="#62">6.2 🔑 반드시 "배포 → 예약" 순서</a></li>
+<li><a href="#63">6.3 구매 절차</a></li>
+<li><a href="#64">6.4 ⚠️ 배포 유형·리전 매칭 규칙</a></li>
+<li><a href="#65">6.5 초과와 미달</a></li>
+<li><a href="#66">6.6 변경·취소·갱신</a></li>
+</ul>
+</li>
+<li><a href="#7">7. 운영 체크포인트</a><ul>
+<li><a href="#71">7.1 배포 후 확인할 것</a></li>
+<li><a href="#72">7.2 정리(삭제) 순서</a></li>
+<li><a href="#73">7.3 정기 점검 루틴</a></li>
+</ul>
+</li>
+<li><a href="#8">8. 자주 묻는 질문</a></li>
+<li><a href="#a">부록 A. 용어 대조표</a></li>
+<li><a href="#b">부록 B. 참고 문서</a><ul>
+<li><a href="#_4">개념</a></li>
+<li><a href="#_5">쿼터 · 용량</a></li>
+<li><a href="#_6">예약 · 청구</a></li>
+<li><a href="#_7">운영</a></li>
+</ul>
+</li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+
+  </nav>
+  <main>
+    <div class="topbar">
+      <span class="badge">Azure OpenAI · Foundations · DRAFT</span>
+      <button class="toggle" id="themeToggle" type="button">테마 전환</button>
+    </div>
+    <h1 id="azure-openai-ptu">Azure OpenAI 기본 개념 — 리소스 · 배포 · 쿼터 · PTU 신청과 예약</h1>
+<blockquote>
+<p>대상: AOAI/Foundry를 처음 도입하거나, <strong>쿼터·용량·예약 개념이 헷갈리는</strong> 아키텍트·플랫폼 담당자
+범위: 리소스 계층 구조 → 배포 유형 → 쿼터 vs 용량 → PTU 신청 절차 → Azure 예약 구매
+관련 가이드: <a href="../01-oai-to-aoai-onboarding/">01 온보딩</a> · <a href="../03-aoai-deployment-monitoring/">03 배포 &amp; 모니터링</a> · <a href="../04-aoai-high-availability/">04 고가용성</a>
+검증 기준: Foundry 리소스·배포 유형·쿼터/제한·PTU 사이징/청구·예약(Cost Management) 문서 (2026-08 확인)</p>
+</blockquote>
+<hr />
+<h2 id="0">0. 한 장 요약</h2>
+<h3 id="_1">용어 관계도</h3>
+<div class="mermaid" data-idx="0"></div>
+<table>
+<thead>
+<tr>
+<th>용어</th>
+<th>한 줄 정의</th>
+<th>흔한 오해</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>리소스(Resource)</strong></td>
+<td>Azure에 만드는 그릇. 엔드포인트·키·네트워크·RBAC의 경계</td>
+<td>"리소스 = 모델"이 아님</td>
+</tr>
+<tr>
+<td><strong>배포(Deployment)</strong></td>
+<td>리소스 안에 특정 모델을 특정 방식으로 올린 것</td>
+<td>배포 이름이 곧 API의 <code>model</code> 값</td>
+</tr>
+<tr>
+<td><strong>배포 유형(Deployment type)</strong></td>
+<td>그 배포가 <strong>어디서 처리되고 어떻게 과금되는지</strong></td>
+<td>모델 종류와 무관한 별개 축</td>
+</tr>
+<tr>
+<td><strong>쿼터(Quota)</strong></td>
+<td>배포할 수 있는 <strong>상한선</strong>. 비용 없음</td>
+<td>"쿼터 = 용량"이 아님</td>
+</tr>
+<tr>
+<td><strong>용량(Capacity)</strong></td>
+<td>실제로 배포 가능한 <strong>실물 자원</strong></td>
+<td>쿼터가 있어도 없을 수 있음</td>
+</tr>
+<tr>
+<td><strong>PTU</strong></td>
+<td>전용 처리 능력의 단위</td>
+<td>모델별로 같은 PTU가 다른 TPM을 냄</td>
+</tr>
+<tr>
+<td><strong>예약(Reservation)</strong></td>
+<td>PTU 요금 <strong>할인 약정</strong></td>
+<td>용량을 잡아주지 않음</td>
+</tr>
+</tbody>
+</table>
+<h3 id="5">가장 많이 하는 실수 5가지</h3>
+<ol>
+<li><strong>쿼터를 받았으니 배포된다고 생각</strong> → 용량이 없으면 배포 실패 (§4.2)</li>
+<li><strong>예약을 먼저 구매</strong> → 배포 못 하면 돈만 나감. <strong>배포 → 예약</strong> 순서 (§6.2)</li>
+<li><strong>배포 유형별로 쿼터가 나뉜 걸 모름</strong> → Global 쿼터로 Regional 배포 불가 (§4.4)</li>
+<li><strong>야간에 PTU 축소</strong> → 아침에 용량을 못 되찾을 수 있음 (§4.3)</li>
+<li><strong>예약을 배포 유형·리전과 안 맞춤</strong> → 할인 미적용 (§6.4)</li>
+</ol>
+<hr />
+<h2 id="1">1. 리소스 — 무엇을 만드는가</h2>
+<h3 id="11-arm">1.1 ARM 리소스 타입은 하나입니다</h3>
+<p>Azure OpenAI든 Foundry든 <strong>ARM 리소스 타입은 동일</strong>합니다.</p>
+<div class="codehilite"><pre><span></span><code>Microsoft.CognitiveServices/accounts
+</code></pre></div>
+
+<p>구분은 <strong><code>kind</code></strong> 로 이루어집니다.</p>
+<table>
+<thead>
+<tr>
+<th>kind</th>
+<th>명칭</th>
+<th>성격</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OpenAI</code></td>
+<td>Azure OpenAI 리소스</td>
+<td><strong>레거시.</strong> OpenAI 모델·API만 제공</td>
+</tr>
+<tr>
+<td><code>AIServices</code></td>
+<td><strong>Foundry 리소스</strong></td>
+<td><strong>현재 권장.</strong> 에이전트·모델·도구·평가를 한 리소스에서</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><em>"Azure OpenAI – A specialized resource type that provides access to OpenAI models and APIs only. </em><em>For most use cases, use the Foundry resource</em><em>, which offers backward compatibility with all Azure OpenAI APIs."</em></p>
+</blockquote>
+<p><strong>기존 Azure OpenAI 리소스를 쓰고 있다면</strong> 업그레이드 경로가 있습니다.</p>
+<blockquote>
+<p><em>"Upgrade your Azure OpenAI resource to a Foundry resource </em><em>while preserving your endpoint, API keys, and existing state</em><em>."</em></p>
+</blockquote>
+<p>즉 <strong>엔드포인트와 키를 유지한 채</strong> 전환할 수 있어 애플리케이션 코드 변경이 최소화됩니다.</p>
+<h3 id="12-hub">1.2 Hub · 프로젝트 — 어느 것을 쓰나</h3>
+<table>
+<thead>
+<tr>
+<th>개념</th>
+<th>상태</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Azure AI Hub</strong></td>
+<td>레거시. 2025-06부터 기능이 Foundry 리소스로 이관 중</td>
+</tr>
+<tr>
+<td><strong>Hub 기반 프로젝트</strong></td>
+<td>Foundry (classic) 포털에서만 접근. <strong>신규 투자 대상 아님</strong></td>
+</tr>
+<tr>
+<td><strong>Foundry 프로젝트</strong></td>
+<td><strong>현재 권장.</strong> 새 포털의 기본</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><em>"Hub-based projects are accessible in the Foundry (classic) portal. </em><em>New investments are focused on Foundry projects in the new portal.</em><em>"</em></p>
+</blockquote>
+<h3 id="13">1.3 리소스 하나에 배포는 여러 개</h3>
+<p><strong>리소스 : 배포 = 1 : N</strong> 관계입니다.</p>
+<table>
+<thead>
+<tr>
+<th>제한</th>
+<th>값</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>리소스당 최대 Standard 배포 수</td>
+<td><strong>32</strong></td>
+</tr>
+<tr>
+<td>배포당 최대 PTU</td>
+<td><strong>100,000</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 <strong>중요</strong>: 같은 리소스 안의 배포들은 <strong>엔드포인트를 공유</strong>합니다. 이 사실이 <a href="../04-aoai-high-availability/">가이드 04</a>의 HA 설계에서 결정적인 의미를 갖습니다. 리소스가 죽으면 그 안의 모든 배포가 함께 도달 불가가 됩니다.</p>
+</blockquote>
+<h3 id="14">1.4 엔드포인트와 호출 방식</h3>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
+
+<span class="n">client</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">(</span>
+    <span class="n">api_key</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;AZURE_OPENAI_API_KEY&quot;</span><span class="p">),</span>
+    <span class="n">base_url</span><span class="o">=</span><span class="s2">&quot;https://&lt;resource-name&gt;.openai.azure.com/openai/v1/&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">resp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;prod-gpt5-ptu&quot;</span><span class="p">,</span>     <span class="c1"># ← 모델명이 아니라 &quot;배포 이름&quot;</span>
+    <span class="n">messages</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">]</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<blockquote>
+<p>🔑 <strong><code>model</code> 파라미터에는 모델명이 아니라 배포 이름이 들어갑니다.</strong> OpenAI에서 넘어온 팀이 가장 먼저 부딪히는 차이입니다(<a href="../01-oai-to-aoai-onboarding/">가이드 01</a> 참고).</p>
+</blockquote>
+<hr />
+<h2 id="2-deployment">2. 배포(Deployment) — 무엇을 올리는가</h2>
+<p>배포를 만들 때 정하는 것은 <strong>3가지</strong>입니다.</p>
+<div class="codehilite"><pre><span></span><code>① 어떤 모델을      (gpt-5.1)
+② 어떤 버전으로    (2025-11-13)
+③ 어떤 방식으로    (Global Standard / Global Provisioned / ...)
+</code></pre></div>
+
+<p><strong>③이 "배포 유형"이며, 모델 선택과는 완전히 독립된 축</strong>입니다. 여기서 대부분의 혼란이 발생합니다.</p>
+<h3 id="21">2.1 배포 유형 전체 지도</h3>
+<p>배포 유형은 <strong>"어디서 처리되나(행) × 어떻게 과금되나(열)"</strong> 의 조합입니다.</p>
+<table>
+<thead>
+<tr>
+<th>처리 위치 ＼ 과금</th>
+<th><strong>토큰 과금 (Standard)</strong></th>
+<th><strong>용량 예약 (Provisioned)</strong></th>
+<th>배치</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>전 세계</strong> (Global)</td>
+<td><code>GlobalStandard</code></td>
+<td><code>GlobalProvisionedManaged</code></td>
+<td><code>GlobalBatch</code></td>
+</tr>
+<tr>
+<td><strong>데이터 존 내</strong> (US/EU/APAC*)</td>
+<td><code>DataZoneStandard</code></td>
+<td><code>DataZoneProvisionedManaged</code>*</td>
+<td><code>DataZoneBatch</code></td>
+</tr>
+<tr>
+<td><strong>단일 리전</strong></td>
+<td><code>Standard</code></td>
+<td><code>ProvisionedManaged</code></td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>* <strong>APAC은 Standard만 지원</strong>합니다. Data Zone Provisioned는 US/EU만 가능합니다(<a href="../04-aoai-high-availability/">가이드 04 §3.2</a>).</p>
+<h3 id="22">2.2 어떻게 고르나</h3>
+<p><strong>1단계 — 데이터 처리 위치 요건이 있는가?</strong></p>
+<table>
+<thead>
+<tr>
+<th>요건</th>
+<th>선택</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>없음</td>
+<td><strong>Global</strong> (쿼터가 가장 크고 모델도 가장 빨리 들어옴)</td>
+</tr>
+<tr>
+<td>지리 권역 내(EU/US/APAC)</td>
+<td><strong>Data Zone</strong></td>
+</tr>
+<tr>
+<td>특정 리전 내</td>
+<td><strong>Standard / Regional Provisioned</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>저장(at rest)은 모든 유형이 지정 지리 내</strong>입니다. Global이 문제가 되는 건 <strong>처리(processing)</strong> 위치입니다. 규제가 처리 위치까지 제한하는지 먼저 확인하세요.</p>
+</blockquote>
+<p><strong>2단계 — 트래픽이 예측 가능한가?</strong></p>
+<table>
+<thead>
+<tr>
+<th>상황</th>
+<th>선택</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>개발·테스트·변동 큰 트래픽</td>
+<td><strong>Standard</strong> (쓴 만큼 과금)</td>
+</tr>
+<tr>
+<td>예측 가능한 기저 부하 · 지연 SLA 필요</td>
+<td><strong>Provisioned (PTU)</strong></td>
+</tr>
+<tr>
+<td>야간 대량 처리, 지연 무관</td>
+<td><strong>Batch</strong> (약 50% 저렴, 별도 쿼터)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="23-standard-vs-provisioned">2.3 Standard vs Provisioned 핵심 차이</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Standard</th>
+<th>Provisioned (PTU)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>과금</td>
+<td><strong>토큰당</strong></td>
+<td><strong>시간당</strong> (PTU 수 × 시간)</td>
+</tr>
+<tr>
+<td>사용량 0일 때</td>
+<td><strong>0원</strong></td>
+<td><strong>그대로 청구</strong></td>
+</tr>
+<tr>
+<td>용량</td>
+<td>공유</td>
+<td><strong>전용</strong></td>
+</tr>
+<tr>
+<td>지연 SLA</td>
+<td>없음(best-effort)</td>
+<td><strong>모델별 지연 목표 있음</strong></td>
+</tr>
+<tr>
+<td>한계 도달 시</td>
+<td>429</td>
+<td><strong>사용률 100% → 429</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💰 <strong>PTU는 "쓰든 안 쓰든" 청구됩니다.</strong> 배포를 만든 순간 미터가 시작되고 삭제해야 멈춥니다. 기저 부하가 확실할 때만 의미가 있습니다.</p>
+</blockquote>
+<hr />
+<h2 id="3-ptu">3. PTU — 전용 처리 능력의 단위</h2>
+<h3 id="31-ptu">3.1 PTU의 성질</h3>
+<table>
+<thead>
+<tr>
+<th>특성</th>
+<th>내용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>모델 독립적</strong></td>
+<td>같은 PTU 쿼터로 지원되는 아무 모델이나 배포 가능. "gpt-5용 PTU"를 따로 사지 않음</td>
+</tr>
+<tr>
+<td><strong>리전별</strong></td>
+<td>쿼터는 구독 × 리전 × 배포 유형 단위</td>
+</tr>
+<tr>
+<td><strong>모델마다 처리량이 다름</strong></td>
+<td>같은 100 PTU라도 모델에 따라 나오는 TPM이 다름</td>
+</tr>
+<tr>
+<td><strong>최소 배포 크기 존재</strong></td>
+<td>모델·유형별로 다름</td>
+</tr>
+</tbody>
+</table>
+<h3 id="32">3.2 최소 배포 크기와 증분</h3>
+<table>
+<thead>
+<tr>
+<th>배포 유형</th>
+<th>최소 PTU</th>
+<th>증분</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Global / Data Zone Provisioned</strong></td>
+<td><strong>15</strong></td>
+<td><strong>5</strong></td>
+</tr>
+<tr>
+<td><strong>Regional Provisioned</strong></td>
+<td><strong>25~50</strong> (모델별)</td>
+<td><strong>25~50</strong></td>
+</tr>
+</tbody>
+</table>
+<p>예: gpt-4.1·gpt-5 계열의 Regional은 <strong>50 PTU 최소 · 50 단위 증분</strong> → 50, 100, 150...</p>
+<blockquote>
+<p>💰 이 차이가 HA 비용에 직접 영향을 줍니다. Regional로 다중 리전을 구성하면 최소 비용이 몇 배가 됩니다.</p>
+</blockquote>
+<h3 id="33-ptu">3.3 PTU 규모 산정</h3>
+<p>계산에 필요한 3가지 입력입니다.</p>
+<table>
+<thead>
+<tr>
+<th>입력</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>요청 형태</strong></td>
+<td>분당 요청 수(RPM), 평균 입력 토큰, 평균 출력 토큰</td>
+</tr>
+<tr>
+<td><strong>출력:입력 비율</strong></td>
+<td><strong>출력 토큰이 입력보다 훨씬 무겁습니다.</strong> 모델별 환산 비율 존재</td>
+</tr>
+<tr>
+<td><strong>캐시 적중률</strong></td>
+<td><strong>캐시된 토큰은 PTU를 소모하지 않습니다.</strong> 적중률이 높으면 필요 PTU 감소</td>
+</tr>
+</tbody>
+</table>
+<p>이를 <strong>정규화 TPM</strong>으로 환산한 뒤, 모델의 <strong>PTU당 입력 TPM</strong> 값으로 나눠 필요 PTU를 구합니다.</p>
+<p>🔗 <strong>용량 계산기</strong>: https://ai.azure.com/nextgen/goto/build/models/ptu-calculator</p>
+<blockquote>
+<p>💡 <strong>출력 토큰을 통제하면 PTU가 줄어듭니다.</strong> <code>max_tokens</code> 제한과 프롬프트 캐싱은 성능뿐 아니라 <strong>필요 PTU 자체를 낮추는</strong> 수단입니다.</p>
+</blockquote>
+<hr />
+<h2 id="4-quota-vs-capacity">4. 쿼터(Quota) vs 용량(Capacity) — 가장 큰 혼란</h2>
+<h3 id="41">4.1 둘은 완전히 다른 것입니다</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>쿼터 (Quota)</strong></th>
+<th><strong>용량 (Capacity)</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>정체</td>
+<td>Azure가 정한 <strong>정책 한도</strong></td>
+<td>실제 존재하는 <strong>물리 자원</strong></td>
+</tr>
+<tr>
+<td>비용</td>
+<td><strong>없음</strong></td>
+<td>배포 시 점유</td>
+</tr>
+<tr>
+<td>비유</td>
+<td>은행 <strong>한도</strong></td>
+<td>금고 안의 <strong>현금</strong></td>
+</tr>
+<tr>
+<td>확인 방법</td>
+<td>Foundry 포털 Quota 페이지</td>
+<td>배포 시도 / Model capacities API</td>
+</tr>
+</tbody>
+</table>
+<h3 id="42">4.2 🔴 쿼터가 있어도 배포가 실패합니다</h3>
+<blockquote>
+<p><em>"</em><em>Having PTU quota doesn't guarantee that capacity is available.</em><em> If capacity in the region is insufficient for the requested PTU count, </em><em>the deployment fails.</em><em> Always verify capacity availability before planning a deployment or purchasing a reservation."</em></p>
+</blockquote>
+<p><strong>"쿼터를 미리 받아뒀으니 장애 때 배포하면 된다"는 계획은 실패합니다.</strong></p>
+<h3 id="43">4.3 ⚠️ 반납한 용량은 돌아오지 않을 수 있습니다</h3>
+<blockquote>
+<p><em>"</em><em>Deleting or scaling down a deployment releases its capacity back to the region pool.</em><em> There's </em><em>no guarantee the same capacity is available</em><em> if you re-create or scale the deployment up later."</em></p>
+<p><em>"</em><em>Capacity availability changes throughout the day</em><em> based on customer demand across all regions and models."</em></p>
+</blockquote>
+<p>→ <strong>비용 절감을 위해 야간에 PTU를 축소하는 운영은 위험합니다.</strong></p>
+<h3 id="44">4.4 쿼터가 나뉘는 기준</h3>
+<div class="codehilite"><pre><span></span><code>쿼터 = 구독  ×  리전  ×  배포 유형
+</code></pre></div>
+
+<table>
+<thead>
+<tr>
+<th>잘못된 가정</th>
+<th>실제</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>"PTU 100개 있으니 아무 유형이나"</td>
+<td>❌ Global / Data Zone / Regional은 <strong>완전히 별개 풀</strong></td>
+</tr>
+<tr>
+<td>"East US 쿼터가 남으니 West Europe에서도"</td>
+<td>❌ <em>"quota in East US doesn't apply to West Europe"</em></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ Failover 설계에서 <strong>배포 유형을 바꾸려면</strong>(예: Regional → Global) <strong>그 유형의 쿼터를 따로 확보</strong>해야 합니다.</p>
+</blockquote>
+<h3 id="45-standard-tpm">4.5 Standard 쿼터 — TPM과 쿼터 티어</h3>
+<p>Standard 배포의 쿼터는 <strong>TPM(분당 토큰)</strong> 과 <strong>RPM(분당 요청)</strong> 으로 표현됩니다.</p>
+<blockquote>
+<p>⚠️ <strong>"1,000 TPM = 6 RPM" 같은 고정 비율은 현재 문서에 없습니다.</strong> 모델별로 크게 다릅니다.</p>
+<table>
+<thead>
+<tr>
+<th>모델</th>
+<th>RPM</th>
+<th>TPM</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>gpt-4.1 (GlobalStandard)</td>
+<td>1,000</td>
+<td>1,000,000</td>
+</tr>
+<tr>
+<td>gpt-4o-mini (GlobalStandard)</td>
+<td>20,000</td>
+<td>2,000,000</td>
+</tr>
+<tr>
+<td>o3-mini (GlobalStandard)</td>
+<td>500</td>
+<td>5,000,000</td>
+</tr>
+</tbody>
+</table>
+<p>반드시 <strong>모델별 쿼터 표</strong>를 확인하세요.</p>
+</blockquote>
+<h4 id="_2">🆕 쿼터 티어 (자동 상향)</h4>
+<p>Foundry는 <strong>Free Tier + Tier 1~6</strong> 체계를 도입했습니다.</p>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>내용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>초기 티어 결정</td>
+<td>현재 사용량 + Microsoft 관계(<strong>EA / MCA-E</strong>)</td>
+</tr>
+<tr>
+<td>자동 상향</td>
+<td>사용량이 늘면 <strong>자동으로 상위 티어로 이동</strong></td>
+</tr>
+<tr>
+<td>기존 승인분</td>
+<td><strong>유지되며 축소되지 않음</strong></td>
+</tr>
+<tr>
+<td>추가 요청</td>
+<td>티어와 별개로 폼으로 요청 가능</td>
+</tr>
+<tr>
+<td>옵트아웃</td>
+<td><code>tierUpgradePolicy: NoAutoUpgrade</code> (preview)</td>
+</tr>
+</tbody>
+</table>
+<p>현재 티어 확인:</p>
+<div class="codehilite"><pre><span></span><code>curl<span class="w"> </span>-X<span class="w"> </span>GET<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="s2">&quot;https://management.azure.com/subscriptions/</span><span class="nv">$SUB</span><span class="s2">/providers/Microsoft.CognitiveServices/quotaTiers?api-version=2025-10-01-preview&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: Bearer </span><span class="k">$(</span>az<span class="w"> </span>account<span class="w"> </span>get-access-token<span class="w"> </span>--resource<span class="w"> </span>https://management.azure.com<span class="w"> </span>--query<span class="w"> </span>accessToken<span class="w"> </span>-o<span class="w"> </span>tsv<span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+
+<h4 id="_3">🆕 구독 단위 쿼터 통합</h4>
+<blockquote>
+<p><em>"</em><em>Subscription-level quota management in Microsoft Foundry started after May 7, 2026.</em><em>"</em></p>
+</blockquote>
+<ul>
+<li><strong>Global Standard</strong>: 같은 모델·버전이면 <strong>구독 내 모든 리전이 한 풀을 공유</strong></li>
+<li><strong>Data Zone Standard</strong>: <strong>데이터 존별로 한 풀</strong></li>
+</ul>
+<blockquote>
+<p>📌 이전에는 리소스·리전별로 쿼터를 나눠 관리했지만, 이제 <strong>구독 단위로 통합</strong>되는 방향입니다. 리전마다 쿼터를 쪼개 배정하던 기존 운영 방식은 재검토가 필요합니다.</p>
+</blockquote>
+<hr />
+<h2 id="5-1">5. 실전 절차 ① — 쿼터 신청과 용량 확인</h2>
+<h3 id="51">5.1 전체 흐름</h3>
+<div class="mermaid" data-idx="1"></div>
+<blockquote>
+<p>🔑 <strong>④와 ⑤의 순서가 핵심입니다.</strong> 뒤바꾸면 안 됩니다(§6.2).</p>
+</blockquote>
+<h3 id="52">5.2 쿼터 확인 및 신청</h3>
+<p><strong>포털 경로</strong></p>
+<div class="codehilite"><pre><span></span><code>Foundry 포털 → Operate → Quota → Provisioned throughput unit
+→ 구독·리전 선택 → 현재 사용량 확인
+→ 부족하면 [Request Quota]
+</code></pre></div>
+
+<p><strong>신청 폼 (직접 링크)</strong>
+🔗 https://aka.ms/oai/stuquotarequest</p>
+<blockquote>
+<p>Standard TPM 쿼터와 PTU 쿼터 모두 현재 <strong>같은 폼</strong>을 사용합니다.</p>
+<p>⏱️ <em>"</em><em>Approval might take several days</em><em> based on quota availability, and you receive an email notification when the request is approved."</em></p>
+<p><strong>수일이 걸립니다.</strong> 장애 상황에서 급히 신청하는 건 대책이 되지 못합니다. 반드시 <strong>사전에</strong> 확보하세요.</p>
+</blockquote>
+<h3 id="53-capacity">5.3 용량(Capacity) 확인 — 배포 전에</h3>
+<p><strong>방법 ① 포털</strong>
+배포 화면이 용량 가용 여부를 알려주고, 부족하면 <strong>대체 리전을 제시</strong>합니다.</p>
+<p><strong>방법 ② Model capacities API</strong> (자동화·정기 점검용)</p>
+<div class="codehilite"><pre><span></span><code>curl<span class="w"> </span>-X<span class="w"> </span>GET<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="s2">&quot;https://management.azure.com/subscriptions/</span><span class="nv">$SUB</span><span class="s2">/providers/Microsoft.CognitiveServices/modelCapacities\</span>
+<span class="s2">?api-version=2024-10-01&amp;modelFormat=OpenAI&amp;modelName=gpt-5.1&amp;modelVersion=2025-11-13&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span>
+</code></pre></div>
+
+<p>응답에서 <strong><code>availableCapacity</code></strong> 가 배포 가능한 최대치입니다.</p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;location&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;koreacentral&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;format&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;OpenAI&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;gpt-5.1&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-11-13&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">&quot;skuName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;GlobalProvisionedManaged&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;availableCapacity&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">300</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<blockquote>
+<p>💡 <strong>HA를 운영한다면 이 API를 정기 점검에 넣으세요.</strong> Failover 대상 리전의 용량이 실제로 있는지를 장애 전에 알 수 있는 유일한 방법입니다.</p>
+</blockquote>
+<h3 id="54">5.4 용량이 없을 때</h3>
+<ol>
+<li><strong>PTU 수를 줄여</strong> 배포 시도</li>
+<li><strong>다른 리전</strong> 시도 (포털이 대체 리전을 제시)</li>
+<li><strong>시간을 두고 재시도</strong> — 용량은 하루 중에도 변합니다</li>
+<li>쿼터 폼으로 <strong>용량 요청</strong></li>
+</ol>
+<hr />
+<h2 id="6-2-azure-reservation">6. 실전 절차 ② — Azure 예약(Reservation) 구매</h2>
+<h3 id="61">6.1 예약이란</h3>
+<p><strong>PTU 시간당 요금에 적용되는 할인 약정</strong>입니다. 1개월 또는 1년을 약정하고 낮은 단가를 받습니다.</p>
+<table>
+<thead>
+<tr>
+<th>특성</th>
+<th>내용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>약정 기간</td>
+<td><strong>1개월 또는 1년</strong> (3년 옵션 <strong>없음</strong>)</td>
+</tr>
+<tr>
+<td>적용 대상</td>
+<td>배포가 아니라 <strong>PTU 미터(시간당 사용량)</strong></td>
+</tr>
+<tr>
+<td>결합도</td>
+<td>배포와 예약은 <strong>독립적으로 생성</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="62">6.2 🔑 반드시 "배포 → 예약" 순서</h3>
+<blockquote>
+<p><em>"Because capacity availability for model deployments is dynamic and changes frequently across regions and models, </em><em>always create deployments first, then purchase the Azure Reservation</em><em> to cover the PTUs you've deployed."</em></p>
+<p><em>"</em><em>Reservations don't guarantee capacity.</em><em> First create deployments to confirm that capacity is available, then purchase the reservation to lock in the discounted rate."</em></p>
+</blockquote>
+<p><strong>예약을 먼저 사면 이런 일이 생깁니다:</strong></p>
+<div class="codehilite"><pre><span></span><code>예약 500 PTU 구매  →  배포하려니 용량 300 PTU만 있음
+                  →  200 PTU 분량의 약정은 그대로 청구
+                  →  사용하지 못한 예약은 소멸(이월 안 됨)
+</code></pre></div>
+
+<h3 id="63">6.3 구매 절차</h3>
+<div class="codehilite"><pre><span></span><code>Azure 포털 → All services → Reservations
+→ [Microsoft Foundry Provisioned Throughput] 선택
+</code></pre></div>
+
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>선택 항목</th>
+<th>주의</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>구독</strong></td>
+<td>EA / MCA / 종량제 지원</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>범위(Scope)</strong></td>
+<td>리소스 그룹 / 단일 구독 / 공유 / 관리 그룹</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>리전</strong></td>
+<td>Global은 아무 리전이나 무방(§6.4)</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>제품(배포 유형)</strong></td>
+<td>Global / Data Zone / Regional 중 <strong>배포와 일치</strong></td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>수량</strong></td>
+<td>배포된 PTU 총합에 맞춤</td>
+</tr>
+<tr>
+<td>6</td>
+<td>검토 → <strong>Buy now</strong></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="64">6.4 ⚠️ 배포 유형·리전 매칭 규칙</h3>
+<blockquote>
+<p><em>"</em><em>Reservations for Global, Data Zone, and Regional deployments aren't interchangeable.</em><em> You need to purchase a separate reservation for each deployment type."</em></p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>배포 유형</th>
+<th>리전 일치 필요?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Global Provisioned</strong></td>
+<td>❌ <strong>불필요</strong> — 한 예약이 여러 리전을 커버</td>
+</tr>
+<tr>
+<td><strong>Data Zone Provisioned</strong></td>
+<td>✅ <strong>필요</strong></td>
+</tr>
+<tr>
+<td><strong>Regional Provisioned</strong></td>
+<td>✅ <strong>필요</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Global 예약의 강점 (문서 예시):</strong></p>
+<blockquote>
+<p><em>"if you have 50 Global PTUs in East US, 100 in West Europe, and 200 in Australia East, you can purchase a </em><em>single Global reservation for 350 units in any region</em><em> to cover all deployments across all three regions."</em></p>
+<p>💰 <strong>다중 리전 HA를 계획한다면 Global Provisioned가 예약 측면에서 압도적으로 유리합니다.</strong> Regional은 리전마다 별도 예약이 필요합니다.</p>
+</blockquote>
+<h3 id="65">6.5 초과와 미달</h3>
+<table>
+<thead>
+<tr>
+<th>상황</th>
+<th>결과</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>배포 PTU &gt; 예약 수량</strong></td>
+<td>초과분은 <strong>정가 시간당 요금</strong>으로 청구</td>
+</tr>
+<tr>
+<td><strong>예약 수량 &gt; 배포 PTU</strong></td>
+<td>남는 예약은 <strong>소멸. 이월되지 않음</strong></td>
+</tr>
+</tbody>
+</table>
+<p>문서 예시: 500 PTU 예약 + 기존 300 PTU 배포 상태에서 300 PTU를 추가하면 → 200은 커버, <strong>100은 시간당 정가 청구</strong>.</p>
+<h3 id="66">6.6 변경·취소·갱신</h3>
+<p><strong>교환(Exchange)으로 바꿀 수 있는 것</strong>
+- 리전 / 배포 유형 / 약정 기간 / 결제 방식</p>
+<blockquote>
+<p>⚠️ 교환 시 <strong>약정 기간이 새로 시작</strong>됩니다.</p>
+</blockquote>
+<p><strong>취소 한도</strong></p>
+<blockquote>
+<p><em>"The sum total of all canceled reservation commitment in your billing scope </em><em>can't exceed USD 50,000 in a 12-month rolling window</em><em>."</em></p>
+</blockquote>
+<p><strong>자동 갱신</strong>
+| 약정 | 갱신 동작 |
+|---|---|
+| 1개월 | 동일 예약 주문 ID로 갱신 |
+| 1년 | <strong>새 예약이 생성됨</strong> |</p>
+<blockquote>
+<p>🔴 <strong>배포를 지워도 예약은 자동 취소되지 않습니다.</strong> 포털에서 직접 취소·교환해야 합니다. 정리 작업 시 가장 흔히 놓치는 부분입니다.</p>
+</blockquote>
+<hr />
+<h2 id="7">7. 운영 체크포인트</h2>
+<h3 id="71">7.1 배포 후 확인할 것</h3>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>방법</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PTU 사용률</td>
+<td>Azure Monitor → <code>Provisioned-managed utilization V2</code></td>
+</tr>
+<tr>
+<td>성능 검증</td>
+<td><code>azure-openai-benchmark</code> 도구</td>
+</tr>
+<tr>
+<td>429 발생</td>
+<td>정상적인 흐름 제어 신호. 재시도 또는 Spillover로 대응</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>자세한 메트릭·알림·KQL은 <a href="../03-aoai-deployment-monitoring/">가이드 03</a> 참고.</p>
+</blockquote>
+<h3 id="72">7.2 정리(삭제) 순서</h3>
+<div class="codehilite"><pre><span></span><code>① 배포 삭제
+② 리소스 삭제
+③ Purge (소프트 삭제 완전 제거)
+④ 예약은 별도로 취소·교환   ← 잊기 쉬움
+</code></pre></div>
+
+<h3 id="73">7.3 정기 점검 루틴</h3>
+<table>
+<thead>
+<tr>
+<th>주기</th>
+<th>항목</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>주간</td>
+<td>PTU 사용률 · 429 발생 추이</td>
+</tr>
+<tr>
+<td>월간</td>
+<td>예약 활용률(사용하지 못한 예약 확인) · 토큰 소비 상위 앱</td>
+</tr>
+<tr>
+<td>분기</td>
+<td>Failover 리전 <strong>용량 실재 확인</strong> · 모델 은퇴 일정</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8">8. 자주 묻는 질문</h2>
+<p><strong>Q. 리소스를 여러 개 만들어야 하나요, 하나에 배포를 여러 개 만들어야 하나요?</strong>
+기능만 보면 하나로 충분합니다(배포 32개까지). 다만 <strong>가용성 관점에서는 리소스가 곧 엔드포인트 경계</strong>이므로, 프로덕션에서는 <strong>리전이 다른 리소스 2개</strong>를 권장합니다(<a href="../04-aoai-high-availability/">가이드 04</a>).</p>
+<p><strong>Q. PTU를 샀는데 다른 모델로 바꿔도 되나요?</strong>
+됩니다. PTU 쿼터는 <strong>모델 독립적</strong>입니다. 지원되는 모델이면 같은 쿼터로 재배포할 수 있습니다. 단, <strong>모델마다 최소 PTU와 PTU당 처리량이 다릅니다.</strong></p>
+<p><strong>Q. 트래픽이 없는 밤에 PTU를 줄이면 비용이 절약되나요?</strong>
+계산상으로는 그렇지만 <strong>권장하지 않습니다.</strong> 반납한 용량을 다시 확보하지 못할 수 있고, 지속적인 시간당 과금이 예약 가격보다 비싼 경우가 많습니다(§4.3).</p>
+<p><strong>Q. 예약을 사면 용량이 확보되나요?</strong>
+<strong>아닙니다.</strong> 예약은 순수한 <strong>요금 할인</strong>입니다. 반드시 배포로 용량을 확인한 뒤 구매하세요(§6.2).</p>
+<p><strong>Q. Standard와 PTU를 같이 쓸 수 있나요?</strong>
+권장 구성입니다. <strong>PTU로 기저 부하, Standard로 피크</strong>를 처리합니다. Spillover를 설정하면 PTU 포화 시 자동으로 넘어갑니다(<a href="../04-aoai-high-availability/">가이드 04 §5</a>).</p>
+<p><strong>Q. 쿼터 신청은 얼마나 걸리나요?</strong>
+<strong>수일</strong>이 소요됩니다. 프로젝트 일정에 반드시 선반영하세요.</p>
+<hr />
+<h2 id="a">부록 A. 용어 대조표</h2>
+<table>
+<thead>
+<tr>
+<th>한국어</th>
+<th>영어</th>
+<th>ARM/CLI 값</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>리소스</td>
+<td>Resource / Account</td>
+<td><code>Microsoft.CognitiveServices/accounts</code></td>
+</tr>
+<tr>
+<td>Foundry 리소스</td>
+<td>Foundry resource</td>
+<td><code>kind=AIServices</code></td>
+</tr>
+<tr>
+<td>Azure OpenAI 리소스</td>
+<td>Azure OpenAI resource</td>
+<td><code>kind=OpenAI</code></td>
+</tr>
+<tr>
+<td>배포</td>
+<td>Deployment</td>
+<td><code>deployments/&lt;name&gt;</code></td>
+</tr>
+<tr>
+<td>배포 유형</td>
+<td>Deployment type</td>
+<td><code>sku.name</code></td>
+</tr>
+<tr>
+<td>전 세계 표준</td>
+<td>Global Standard</td>
+<td><code>GlobalStandard</code></td>
+</tr>
+<tr>
+<td>데이터 존 표준</td>
+<td>Data Zone Standard</td>
+<td><code>DataZoneStandard</code></td>
+</tr>
+<tr>
+<td>리전 표준</td>
+<td>Standard</td>
+<td><code>Standard</code></td>
+</tr>
+<tr>
+<td>전 세계 프로비저닝</td>
+<td>Global Provisioned</td>
+<td><code>GlobalProvisionedManaged</code></td>
+</tr>
+<tr>
+<td>데이터 존 프로비저닝</td>
+<td>Data Zone Provisioned</td>
+<td><code>DataZoneProvisionedManaged</code></td>
+</tr>
+<tr>
+<td>리전 프로비저닝</td>
+<td>Regional Provisioned</td>
+<td><code>ProvisionedManaged</code></td>
+</tr>
+<tr>
+<td>프로비저닝 처리량 단위</td>
+<td>Provisioned Throughput Unit</td>
+<td>PTU</td>
+</tr>
+<tr>
+<td>쿼터</td>
+<td>Quota</td>
+<td>—</td>
+</tr>
+<tr>
+<td>용량</td>
+<td>Capacity</td>
+<td><code>availableCapacity</code></td>
+</tr>
+<tr>
+<td>예약</td>
+<td>Azure Reservation</td>
+<td>"Microsoft Foundry Provisioned Throughput"</td>
+</tr>
+</tbody>
+</table>
+<h2 id="b">부록 B. 참고 문서</h2>
+<h3 id="_4">개념</h3>
+<ul>
+<li>Foundry란 무엇인가: https://learn.microsoft.com/azure/foundry/what-is-foundry</li>
+<li>리소스 유형: https://learn.microsoft.com/azure/foundry-classic/concepts/resource-types</li>
+<li>Foundry 리소스 생성: https://learn.microsoft.com/azure/ai-services/multi-service-resource</li>
+<li>배포 유형 비교: https://learn.microsoft.com/azure/foundry/foundry-models/concepts/deployment-types</li>
+</ul>
+<h3 id="_5">쿼터 · 용량</h3>
+<ul>
+<li>쿼터 및 제한(쿼터 티어 포함): https://learn.microsoft.com/azure/foundry/openai/quotas-limits</li>
+<li>PTU 개념: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput</li>
+<li>PTU 사이징: https://learn.microsoft.com/azure/foundry/openai/how-to/provisioned-throughput-sizing</li>
+<li>Model capacities API: https://learn.microsoft.com/rest/api/aiservices/accountmanagement/model-capacities/list</li>
+<li>🔑 모델 리전 가용성 표: https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure-region-availability?pivots=provisioned</li>
+<li>쿼터 신청 폼: https://aka.ms/oai/stuquotarequest</li>
+<li>용량 계산기: https://ai.azure.com/nextgen/goto/build/models/ptu-calculator</li>
+</ul>
+<h3 id="_6">예약 · 청구</h3>
+<ul>
+<li>PTU 청구 및 예약: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput-billing</li>
+<li>예약 구매(Cost Management): https://learn.microsoft.com/azure/cost-management-billing/reservations/microsoft-foundry</li>
+<li>예약 교환·환불: https://learn.microsoft.com/azure/cost-management-billing/reservations/exchange-and-refund-azure-reservations</li>
+</ul>
+<h3 id="_7">운영</h3>
+<ul>
+<li>프로비저닝 배포 운영 시작: https://learn.microsoft.com/azure/foundry/openai/how-to/provisioned-get-started</li>
+</ul>
+    <hr>
+    <p class="meta">최종 수정 2026-08-07 · Microsoft Scout</p>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+(function () {
+  var DIAGRAMS = ["flowchart TB\n    SUB[\"Azure 구독\"] --> RES[\"Foundry 리소스<br/>Microsoft.CognitiveServices/accounts\"]\n    RES --> DEP1[\"배포 A<br/>gpt-5.1 · Global Standard\"]\n    RES --> DEP2[\"배포 B<br/>gpt-5.1 · Global Provisioned\"]\n    DEP1 --> EP[\"엔드포인트 1개<br/>https://name.openai.azure.com\"]\n    DEP2 --> EP\n    SUB -.쿼터 한도.-> DEP1\n    SUB -.쿼터 한도.-> DEP2", "flowchart LR\n    A[\"① PTU 규모 산정<br/>계산기\"] --> B[\"② 쿼터 확인·신청<br/>포털 / 폼\"]\n    B --> C[\"③ 용량 확인<br/>포털 / API\"]\n    C --> D[\"④ 배포 생성<br/>= 용량 확보\"]\n    D --> E[\"⑤ 예약 구매<br/>할인 적용\"]\n    E --> F[\"⑥ 모니터링\"]"];
+  var toggle = document.getElementById("themeToggle");
+
+  function currentTheme() { return document.documentElement.getAttribute("data-theme"); }
+
+  function renderMermaid() {
+    var nodes = document.querySelectorAll(".mermaid");
+    if (!window.mermaid) {
+      nodes.forEach(function (el) {
+        var i = parseInt(el.getAttribute("data-idx"), 10);
+        el.classList.add("mermaid-fallback");
+        el.textContent = DIAGRAMS[i];
+      });
+      return;
+    }
+    window.mermaid.initialize({
+      startOnLoad: false,
+      theme: currentTheme() === "dark" ? "dark" : "default",
+      securityLevel: "loose",
+      flowchart: { htmlLabels: true, curve: "basis" }
+    });
+    nodes.forEach(function (el, n) {
+      var i = parseInt(el.getAttribute("data-idx"), 10);
+      var def = DIAGRAMS[i];
+      var id = "mmd-" + i + "-" + Date.now() + "-" + n;
+      try {
+        window.mermaid.render(id, def).then(function (res) {
+          el.innerHTML = res.svg;
+          el.classList.remove("mermaid-fallback");
+        }).catch(function (err) {
+          el.classList.add("mermaid-fallback");
+          el.textContent = def;
+          console.error("mermaid render failed", err);
+        });
+      } catch (err) {
+        el.classList.add("mermaid-fallback");
+        el.textContent = def;
+        console.error("mermaid threw", err);
+      }
+    });
+  }
+
+  toggle.addEventListener("click", function () {
+    document.documentElement.setAttribute("data-theme", currentTheme() === "dark" ? "light" : "dark");
+    renderMermaid();
+  });
+
+  window.addEventListener("load", renderMermaid);
+
+  var links = Array.prototype.slice.call(document.querySelectorAll(".sidebar a"));
+  var targets = links.map(function (a) {
+    try { return document.querySelector(a.getAttribute("href")); } catch (e) { return null; }
+  });
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      var i = targets.indexOf(e.target);
+      if (i < 0) return;
+      links.forEach(function (l) { l.classList.remove("active"); });
+      links[i].classList.add("active");
+    });
+  }, { rootMargin: "-8% 0px -80% 0px" });
+  targets.forEach(function (t) { if (t) obs.observe(t); });
+})();
+</script>
+<script src="../../assets/guide-nav.js"></script>
+</body>
+</html>

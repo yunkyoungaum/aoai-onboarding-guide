@@ -11,9 +11,18 @@
 | No | 가이드 | 주제 | 링크 |
 |----|--------|------|------|
 | 01 | OAI → Azure OpenAI 온보딩 가이드 | 온보딩, 마이그레이션, 인증, 네트워크 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/01-oai-to-aoai-onboarding/) |
-| 02 | Azure OpenAI 배포 & 운영 모니터링 가이드 | 모니터링, PTU, KQL, Alert, APIM | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/02-aoai-deployment-monitoring/) |
-| 03 | Azure OpenAI 고가용성(HA) 아키텍처 가이드 *(draft)* | HA, Failover, Spillover, 멀티 리전 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/03-aoai-high-availability/) |
-| 03-1 | Azure OpenAI 고가용성(HA) — 핵심 요약 *(draft)* | 03의 5분 압축판 · 체크리스트 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/03-1-aoai-ha-summary/) |
+| 02 | Azure OpenAI 기본 개념 *(draft)* | 리소스·배포·쿼터·용량·PTU 신청·예약 구매 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/02-aoai-foundations/) |
+| 03 | Azure OpenAI 배포 & 운영 모니터링 가이드 | 모니터링, PTU, KQL, Alert, APIM | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/03-aoai-deployment-monitoring/) |
+| 04 | Azure OpenAI 고가용성(HA) 아키텍처 가이드 *(draft)* | HA, Failover, Spillover, 멀티 리전 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/04-aoai-high-availability/) |
+| 04-1 | Azure OpenAI 고가용성(HA) — 핵심 요약 *(draft)* | 04의 5분 압축판 · 체크리스트 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/04-1-aoai-ha-summary/) |
+
+### 읽는 순서 추천
+
+```
+처음이라면        01 온보딩 → 02 기본 개념
+운영 준비 중이면   02 기본 개념 → 03 모니터링
+가용성 설계 중이면 04-1 요약 → 04 상세
+```
 
 > 목록의 **정본(Single Source of Truth)은 [`guides.js`](guides.js)** 입니다.
 > 루트 `index.html`(허브)은 이 파일을 읽어 카드를 자동 생성하므로, 허브 HTML을 직접 수정할 필요가 없습니다.
@@ -31,19 +40,36 @@
 ├── guides/
 │   ├── 01-oai-to-aoai-onboarding/
 │   │   └── index.html
-│   ├── 02-aoai-deployment-monitoring/
-│   │   ├── index.html
-│   │   └── source.md           # 마크다운 원본 (선택)
-│   ├── 03-aoai-high-availability/
+│   ├── 02-aoai-foundations/
 │   │   ├── index.html
 │   │   └── source.md
-│   ├── 03-1-aoai-ha-summary/
+│   ├── 03-aoai-deployment-monitoring/
 │   │   ├── index.html
 │   │   └── source.md
+│   ├── 04-aoai-high-availability/
+│   │   ├── index.html
+│   │   └── source.md
+│   ├── 04-1-aoai-ha-summary/
+│   │   ├── index.html
+│   │   └── source.md
+│   ├── 02-aoai-deployment-monitoring/   # 리다이렉트 스텁 (구 번호 → 03)
+│   ├── 03-aoai-high-availability/       # 리다이렉트 스텁 (구 번호 → 04)
+│   ├── 03-1-aoai-ha-summary/            # 리다이렉트 스텁 (구 번호 → 04-1)
 │   └── _template/
 │       └── index.html          # 새 가이드 시작용 빈 템플릿
 └── README.md
 ```
+
+### 번호 변경 이력
+
+2026-08-07에 기본 개념 가이드를 02로 추가하면서 이후 번호를 한 칸씩 밀었습니다.
+이전에 공유된 링크가 깨지지 않도록 **구 경로에 리다이렉트 스텁**을 남겨두었습니다.
+
+| 이전 | 현재 |
+|---|---|
+| `02-aoai-deployment-monitoring` | `03-aoai-deployment-monitoring` |
+| `03-aoai-high-availability` | `04-aoai-high-availability` |
+| `03-1-aoai-ha-summary` | `04-1-aoai-ha-summary` |
 
 ---
 
@@ -51,15 +77,15 @@
 
 ### 1단계 — 폴더 만들기
 
-`guides/` 아래에 `<2자리 번호>-<영문 슬러그>` 형식으로 폴더를 만듭니다.
+`guides/` 아래에 `<번호>-<영문 슬러그>` 형식으로 폴더를 만듭니다.
 
 ```bash
-cp -r guides/_template guides/03-rag-design-patterns
+cp -r guides/_template guides/05-rag-design-patterns
 ```
 
 ### 2단계 — 문서 작성
 
-`guides/03-rag-design-patterns/index.html`을 편집합니다.
+`guides/05-rag-design-patterns/index.html`을 편집합니다.
 
 - 템플릿에는 **Clawpilot 테마 변수(`--cp-*`)** 와 테마 자동 감지 스크립트가 이미 포함되어 있습니다.
 - 색상은 반드시 `var(--cp-*)` 변수를 사용하고, 하드코딩된 hex 값은 쓰지 마세요.
@@ -72,8 +98,8 @@ cp -r guides/_template guides/03-rag-design-patterns
 window.GUIDES = [
   // ... 기존 항목 ...
   {
-    no: "03",
-    slug: "03-rag-design-patterns",
+    no: "05",
+    slug: "05-rag-design-patterns",
     title: "RAG 설계 패턴 가이드",
     summary: "청킹 전략, 하이브리드 검색, 재순위화, 평가 지표까지 RAG 파이프라인 설계 선택지를 정리합니다.",
     tags: ["RAG", "AI Search", "평가"],
@@ -86,7 +112,7 @@ window.GUIDES = [
 
 | 필드 | 설명 |
 |------|------|
-| `no` | 가이드 번호 (2자리 문자열, 정렬 기준) |
+| `no` | 가이드 번호 (정렬 기준). 하위 문서는 `04-1` 형식 사용 |
 | `slug` | `guides/` 하위 폴더명과 **정확히 일치**해야 함 |
 | `title` | 카드 제목 |
 | `summary` | 1~2문장 요약 |
@@ -99,11 +125,13 @@ window.GUIDES = [
 
 ```bash
 git add .
-git commit -m "docs: add guide 03 - RAG design patterns"
+git commit -m "docs: add guide 05 - RAG design patterns"
 git push
 ```
 
-GitHub Pages가 자동 배포합니다(보통 1분 이내).
+GitHub Pages가 자동 배포합니다(보통 1~5분).
+
+> **번호를 바꿔야 한다면** `git mv`로 폴더를 옮기고, 구 경로에 리다이렉트 스텁을 남기세요. 기존에 공유된 링크가 깨집니다.
 
 ---
 
@@ -125,4 +153,5 @@ python -m http.server 8000
 2. **폰트** — `"Segoe UI", Aptos, Calibri, ...` / 코드는 `Consolas, "Courier New", ...`
 3. **자기완결형(self-contained)** — 가이드 1개는 HTML 파일 1개로 완결되게 유지합니다. 공통 자산은 `assets/`에만 둡니다.
 4. **검증 가능한 내용** — 메트릭명·API 이름·정책명 등은 공식 문서로 확인한 값을 사용하고, 참고 링크를 문서 말미에 남깁니다.
-5. **번호는 재사용하지 않음** — 가이드를 폐기해도 번호는 비워두고 다음 번호를 씁니다.
+5. **가용성 표를 신뢰** — 배포 유형 × 리전 가용성은 개념 문서가 아니라 모델 리전 가용성 표로 확인합니다.
+6. **번호는 재사용하지 않음** — 가이드를 폐기해도 번호는 비워두고 다음 번호를 씁니다.
