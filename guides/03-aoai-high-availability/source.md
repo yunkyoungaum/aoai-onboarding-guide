@@ -3,6 +3,7 @@
 > 대상: AOAI를 **미션 크리티컬 워크로드**에 사용하는 아키텍트, SRE, 플랫폼 팀
 > 범위: 장애 유형 분류 → 계층별 HA 설계 → Spillover/APIM/멀티 리전 → 용량·모델 수명주기 → 검증
 > 관련 가이드: [01 온보딩](../01-oai-to-aoai-onboarding/) · [02 배포 & 운영 모니터링](../02-aoai-deployment-monitoring/)
+> 📄 **바쁘시면 → [03-1 핵심 요약(5분)](../03-1-aoai-ha-summary/)**
 > 검증 기준: Foundry HA/resiliency 가이드, Provisioned throughput 개념·사이징·청구, Deployment types, Spillover, API Management Backends(`2024-05-01`), Azure RBAC 문서 (2026-08 확인)
 >
 > **⚠️ 초안(Draft)** — 리뷰용으로 공개된 문서입니다. 조직 표준 확정 전까지 그대로 적용하지 마세요. 미확정 항목은 문서 말미의 *리뷰가 필요한 항목* 참고.

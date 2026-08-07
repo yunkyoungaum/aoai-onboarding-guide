@@ -48,5 +48,16 @@ window.GUIDES = [
     updated: "2026-08-06",
     status: "draft",
     source: "source.md"
+  },
+  {
+    no: "03-1",
+    slug: "03-1-aoai-ha-summary",
+    title: "Azure OpenAI 고가용성(HA) — 핵심 요약",
+    summary:
+      "가이드 03의 5분 압축판. 배경과 코드를 걷어내고 의사결정에 필요한 결론만 담았습니다. 엔드포인트 vs 용량 이중화 구분, PTU 3종, Spillover 페어링, 체크리스트 중심.",
+    tags: ["HA", "요약", "체크리스트", "PTU", "Spillover"],
+    updated: "2026-08-07",
+    status: "draft",
+    source: "source.md"
   }
 ];
