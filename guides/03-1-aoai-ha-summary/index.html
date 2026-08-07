@@ -372,7 +372,6 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li><a href="#2_1">2. 장애 유형별 대응 (오진 방지)</a></li>
 <li><a href="#3">3. 배포 유형 선택</a><ul>
 <li><a href="#ptu">PTU는 세 가지입니다</a></li>
-<li><a href="#korea-central">🇰🇷 한국(Korea Central) 의사결정표</a></li>
 <li><a href="#standard">Standard 계열</a></li>
 </ul>
 </li>
@@ -421,6 +420,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li><a href="#top-10">자주 하는 실수 Top 10</a></li>
 </ul>
 </div>
+
 
 
 
@@ -594,53 +594,6 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <p>💰 Regional은 최소 PTU가 크고 <strong>리전마다 별도 예약</strong>이 필요해, 다중 리전 HA 비용이 급증합니다.</p>
 <p>🚨 <strong>APAC에는 Data Zone Provisioned가 없습니다.</strong> 개념 문서 일부가 "US/EU/APAC"이라 표기하지만, <strong>모델 리전 가용성 표의 APAC 탭은 "Not available"</strong> 입니다. 배포 유형 × 리전 가용성은 <strong>반드시 가용성 표로 확인</strong>하세요.</p>
 </blockquote>
-<h3 id="korea-central">🇰🇷 한국(Korea Central) 의사결정표</h3>
-<table>
-<thead>
-<tr>
-<th>요건</th>
-<th>선택지</th>
-<th>지원 모델</th>
-<th>처리 위치</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>PTU + 한국 내 처리</strong></td>
-<td><strong><code>ProvisionedManaged</code></strong>(Regional)</td>
-<td>폭넓음</td>
-<td>Korea Central 고정</td>
-</tr>
-<tr>
-<td>PTU + 위치 무관</td>
-<td><code>GlobalProvisionedManaged</code></td>
-<td>전 모델</td>
-<td>전 세계</td>
-</tr>
-<tr>
-<td>토큰 과금 + APAC 내</td>
-<td><code>DataZoneStandard</code></td>
-<td>⚠️ <strong>gpt-5.2 이상만</strong></td>
-<td>APAC 내</td>
-</tr>
-<tr>
-<td>토큰 과금 + 한국 내</td>
-<td><code>Standard</code></td>
-<td>폭넓음</td>
-<td>Korea Central</td>
-</tr>
-<tr>
-<td><strong>PTU + APAC 존</strong></td>
-<td>❌ <strong>불가</strong></td>
-<td>—</td>
-<td>—</td>
-</tr>
-</tbody>
-</table>
-<blockquote>
-<p>⚠️ 한국에서 <strong>"PTU + 데이터 상주"</strong> 가 필요하면 답은 Data Zone이 아니라 <strong><code>Regional Provisioned</code></strong> 입니다. 비싼 최소 PTU와 리전별 예약을 감수해야 하며 <strong>우회로가 없습니다.</strong>
-💡 이 경우 피크 흡수는 <strong>동일 리전 <code>Standard</code>로 Spillover</strong>를 걸면 됩니다. 상주 요건을 지키면서 PAYG로 초과분을 처리할 수 있습니다.</p>
-</blockquote>
 <h3 id="standard">Standard 계열</h3>
 <ul>
 <li>상주 요건이 허용하면 <strong>Global Standard 1순위</strong>, 지리 경계 필요 시 <strong>Data Zone Standard 2순위</strong></li>
@@ -714,8 +667,6 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </table>
 <blockquote>
 <p><strong>Data Zone PTU → Global Standard 조합은 오류가 나지 않습니다.</strong> 감사 시점에야 발견됩니다.</p>
-<p>📌 <strong>Regional Provisioned도 Spillover 유효합니다.</strong> 공식 권장 문구는 <em>"global and data zone"</em> 만 열거하지만 <strong>금지 조항은 없고</strong>, 전제 조건은 "provisioned managed 배포 + 동일 리소스 내 standard 배포"뿐입니다.
-<strong>Regional PTU + 동일 리전 Standard</strong> 는 상주 요건을 지키면서 피크를 PAYG로 흡수하는 자연스러운 구성입니다. 단 리전 Standard는 <strong>기본 쿼터가 작으므로 사전 확보 필수</strong>입니다.</p>
 </blockquote>
 <h3 id="_3">표준 배포도 실패하면?</h3>
 <p><strong>클라이언트는 "마지막 백엔드"의 응답을 그대로 받습니다.</strong></p>

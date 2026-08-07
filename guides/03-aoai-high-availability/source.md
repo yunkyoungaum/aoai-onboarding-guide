@@ -161,21 +161,6 @@ Global 계열 배포를 "리전 장애에 자동으로 안전하다"고 이해�
 
 > **📌 배포 유형 × 리전 가용성은 반드시 [모델 리전 가용성 표](https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure-region-availability?pivots=provisioned)로 확인하세요.** 개념 페이지의 서술이 실제 가용성과 어긋나는 경우가 있습니다.
 
-#### 🇰🇷 한국(Korea Central) 고객 의사결정표
-
-| 요건 | 선택지 | 지원 모델 | 데이터 처리 위치 |
-|---|---|---|---|
-| **PTU + 한국 내 처리** | **`ProvisionedManaged`**(Regional) | gpt-4.1·4o·5 계열 등 폭넓음 | **Korea Central 고정** |
-| PTU + 처리 위치 무관 | `GlobalProvisionedManaged` | 전 모델 | 전 세계 |
-| 토큰 과금 + APAC 내 | `DataZoneStandard` | ⚠️ **gpt-5.2 이상만** | APAC 내(호주·일본·한국·싱가포르·인도) |
-| 토큰 과금 + 한국 내 | `Standard` | 폭넓음 | Korea Central |
-| **PTU + APAC 존 처리** | ❌ **불가** | — | Data Zone Provisioned 미제공 |
-
-> ⚠️ **한국에서 "PTU + 데이터 상주"가 필요하면 답은 Data Zone이 아니라 `Regional Provisioned`입니다.**
-> 앞서 언급한 Regional의 단점(최소 PTU 50, 리전별 별도 예약)을 감수해야 하며, **Data Zone으로 우회할 수 없습니다.** HA 비용 산정 시 이 점을 먼저 반영하세요.
->
-> `DataZoneStandard`도 APAC에서는 **gpt-5.2 이상 모델만** 지원합니다. gpt-4o·gpt-4.1·o 시리즈가 필요하면 `Standard`(Korea Central)를 써야 합니다.
-
 ### 3.3 Standard 계열
 
 | 배포 유형 | SKU | 추론 처리 위치 | HA 역할 |
@@ -377,30 +362,7 @@ sequenceDiagram
 
 > 💡 반대로 **Global Provisioned → 리전 `Standard`** 로 걸면, 오버플로가 **단일 리전 쿼터에 묶여** Global의 이점을 잃습니다.
 
-#### 📌 Regional Provisioned와 Spillover — 오해 주의
-
-공식 권장 문구는 배포 유형을 열거합니다.
-
-> *"To maximize the utilization of your provisioned deployment, enable spillover for **all global and data zone provisioned deployments**."*
-
-여기서 Regional이 빠져 있지만, **이는 금지가 아닙니다.** 확인된 사실은 다음과 같습니다.
-
-| 항목 | 문서 내용 |
-|---|---|
-| 전제 조건 | *"A **provisioned managed deployment** and a standard deployment in the same Foundry resource"* — **유형 제한 없음** |
-| 포털 절차 | *"Set the Deployment type to **one of the provisioned options**"* — 일반적 표현 |
-| 모델 지원 | *"**All** Azure OpenAI ... that support provisioned throughput **also support spillover**"* |
-| 금지 조항 | **없음** |
-
-**`Regional PTU` + `동일 리전 Standard` 조합은 유효하며, 오히려 자연스러운 구성입니다.**
-
-- PTU 사용률 100% 도달 → 피크를 PAYG로 흡수 (Spillover의 교과서적 용도)
-- **데이터가 해당 리전을 벗어나지 않음** → Regional을 선택한 이유가 그대로 유지됨
-- Global/Data Zone Standard로 넘기면 편하지만 **상주 요건이 깨집니다**
-
-> ⚠️ **단, 쿼터를 먼저 확보하세요.** 리전 `Standard`는 Global Standard보다 **기본 쿼터가 작습니다.** 피크 초과분을 감당할 TPM이 실제로 할당되어 있는지 §8 기준으로 확인해야 합니다. 쿼터가 없으면 Spillover 대상까지 429가 나고, 그 429는 **클라이언트에게 그대로 전달**됩니다(§5.6).
-
-> Regional Provisioned는 리전 단위 이중화가 어렵다는 별개의 약점이 있습니다(§3.2). **엔드포인트 장애 대비는 Spillover가 아니라 §3.5의 엔터프라이즈 PTU 풀 + 게이트웨이 Failover**로 해결하세요. Spillover(용량)와 게이트웨이(엔드포인트)는 서로 다른 계층입니다.
+> ⚠️ **어떤 조합이든 대상 배포의 쿼터를 먼저 확보하세요.** 쿼터가 부족하면 Spillover 대상까지 429가 나고, 그 429는 **클라이언트에게 그대로 전달**됩니다(§5.6).
 
 ### 5.3 배포 단위로 켜기
 

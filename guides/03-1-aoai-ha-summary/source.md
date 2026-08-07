@@ -65,19 +65,6 @@
 
 > 🚨 **APAC에는 Data Zone Provisioned가 없습니다.** 개념 문서 일부가 "US/EU/APAC"이라 표기하지만, **모델 리전 가용성 표의 APAC 탭은 "Not available"** 입니다. 배포 유형 × 리전 가용성은 **반드시 가용성 표로 확인**하세요.
 
-### 🇰🇷 한국(Korea Central) 의사결정표
-
-| 요건 | 선택지 | 지원 모델 | 처리 위치 |
-|---|---|---|---|
-| **PTU + 한국 내 처리** | **`ProvisionedManaged`**(Regional) | 폭넓음 | Korea Central 고정 |
-| PTU + 위치 무관 | `GlobalProvisionedManaged` | 전 모델 | 전 세계 |
-| 토큰 과금 + APAC 내 | `DataZoneStandard` | ⚠️ **gpt-5.2 이상만** | APAC 내 |
-| 토큰 과금 + 한국 내 | `Standard` | 폭넓음 | Korea Central |
-| **PTU + APAC 존** | ❌ **불가** | — | — |
-
-> ⚠️ 한국에서 **"PTU + 데이터 상주"** 가 필요하면 답은 Data Zone이 아니라 **`Regional Provisioned`** 입니다. 비싼 최소 PTU와 리전별 예약을 감수해야 하며 **우회로가 없습니다.**
-> 💡 이 경우 피크 흡수는 **동일 리전 `Standard`로 Spillover**를 걸면 됩니다. 상주 요건을 지키면서 PAYG로 초과분을 처리할 수 있습니다.
-
 ### Standard 계열
 
 - 상주 요건이 허용하면 **Global Standard 1순위**, 지리 경계 필요 시 **Data Zone Standard 2순위**
@@ -120,9 +107,6 @@ Client ──1건──▶ PTU ──(429/400/500/503)──▶ [서비스가 �
 | Regional Provisioned | **`Standard`(동일 리전)** | 🚨 Global/DZ Standard → 상주 요건 위반 |
 
 > **Data Zone PTU → Global Standard 조합은 오류가 나지 않습니다.** 감사 시점에야 발견됩니다.
-
-> 📌 **Regional Provisioned도 Spillover 유효합니다.** 공식 권장 문구는 *"global and data zone"* 만 열거하지만 **금지 조항은 없고**, 전제 조건은 "provisioned managed 배포 + 동일 리소스 내 standard 배포"뿐입니다.
-> **Regional PTU + 동일 리전 Standard** 는 상주 요건을 지키면서 피크를 PAYG로 흡수하는 자연스러운 구성입니다. 단 리전 Standard는 **기본 쿼터가 작으므로 사전 확보 필수**입니다.
 
 ### 표준 배포도 실패하면?
 
