@@ -2,8 +2,6 @@
 
 > 대상: AOAI/Foundry를 처음 도입하거나, **쿼터·용량·예약 개념이 헷갈리는** 아키텍트·플랫폼 담당자
 > 범위: 리소스 계층 구조 → 배포 유형 → 쿼터 vs 용량 → PTU 신청 절차 → Azure 예약 구매
-> 관련 가이드: [01 온보딩](../01-oai-to-aoai-onboarding/) · [03 배포 & 모니터링](../03-aoai-deployment-monitoring/) · [04 고가용성](../04-aoai-high-availability/)
-> 검증 기준: Foundry 리소스·배포 유형·쿼터/제한·PTU 사이징/청구·예약(Cost Management) 문서 (2026-08 확인)
 
 ---
 
@@ -13,14 +11,33 @@
 
 ```mermaid
 flowchart TB
-    SUB["Azure 구독"] --> RES["Foundry 리소스<br/>Microsoft.CognitiveServices/accounts"]
-    RES --> DEP1["배포 A<br/>gpt-5.1 · Global Standard"]
-    RES --> DEP2["배포 B<br/>gpt-5.1 · Global Provisioned"]
-    DEP1 --> EP["엔드포인트 1개<br/>https://name.openai.azure.com"]
-    DEP2 --> EP
+    SUB["Azure 구독"] --> RES["Foundry 리소스 (Korea Central)<br/>= 관문 · 엔드포인트"]
+    RES --> DEP1["배포 A · Global Standard"]
+    RES --> DEP2["배포 B · Global Provisioned"]
     SUB -.쿼터 한도.-> DEP1
     SUB -.쿼터 한도.-> DEP2
 ```
+
+### 🔑 먼저 짚을 것 — 리소스에는 반드시 "리전"이 있습니다
+
+**Global 배포를 쓰더라도 리소스를 만들 때 리전을 골라야 합니다.** 여기서 대부분 혼란이 시작됩니다.
+
+```mermaid
+flowchart LR
+    C["클라이언트"] -->|"호출"| GW["관문 (Gateway)<br/>Foundry 리소스 · Korea Central<br/>name.openai.azure.com"]
+    GW -.->|"Global 배포는<br/>뒤에서 글로벌 라우팅"| W["전 세계 가용 데이터센터"]
+    GW -.->|"Regional 배포는<br/>해당 리전에서 처리"| K["Korea Central"]
+```
+
+| 계층 | 리전 종속성 |
+|---|---|
+| **리소스(엔드포인트)** | **항상 특정 리전에 고정** — 클라이언트가 두드리는 주소 |
+| **배포의 처리 위치** | 배포 유형에 따라 전 세계 / 데이터 존 / 단일 리전 |
+
+즉 **리소스 리전은 "처리 장소"가 아니라 "들어가는 문"** 입니다. Global Standard든 Global Provisioned든 **일단 Korea Central의 관문으로 들어온 뒤**, 그 뒤에서 전 세계로 라우팅됩니다.
+
+> ⚠️ 그래서 **"Global이니까 리전과 무관하다"는 말은 절반만 맞습니다.**
+> 처리는 글로벌이지만 **관문은 리전 고정**이므로, 그 리전에 문제가 생기면 호출 자체가 들어가지 못합니다. 이것이 [가이드 04](../04-aoai-high-availability/)에서 다루는 가용성 설계의 출발점입니다.
 
 | 용어 | 한 줄 정의 | 흔한 오해 |
 |---|---|---|
@@ -86,7 +103,7 @@ Microsoft.CognitiveServices/accounts
 | 리소스당 최대 Standard 배포 수 | **32** |
 | 배포당 최대 PTU | **100,000** |
 
-> 💡 **중요**: 같은 리소스 안의 배포들은 **엔드포인트를 공유**합니다. 이 사실이 [가이드 04](../04-aoai-high-availability/)의 HA 설계에서 결정적인 의미를 갖습니다. 리소스가 죽으면 그 안의 모든 배포가 함께 도달 불가가 됩니다.
+> 💡 **중요**: 같은 리소스 안의 배포들은 **엔드포인트를 공유**합니다. 즉 §0에서 본 "관문"이 하나뿐이라는 뜻입니다. 리소스가 속한 리전에 문제가 생기면 그 안의 **모든 배포가 함께 도달 불가**가 됩니다. 이 사실이 [가이드 04](../04-aoai-high-availability/)의 HA 설계에서 결정적인 의미를 갖습니다.
 
 ### 1.4 엔드포인트와 호출 방식
 
@@ -295,8 +312,8 @@ curl -X GET \
 
 ```mermaid
 flowchart LR
-    A["① PTU 규모 산정<br/>계산기"] --> B["② 쿼터 확인·신청<br/>포털 / 폼"]
-    B --> C["③ 용량 확인<br/>포털 / API"]
+    A["① PTU 규모 산정<br/>계산기"] --> B["② 쿼터 확인·신청"]
+    B --> C["③ 용량 확인<br/>capacities API"]
     C --> D["④ 배포 생성<br/>= 용량 확보"]
     D --> E["⑤ 예약 구매<br/>할인 적용"]
     E --> F["⑥ 모니터링"]
@@ -324,10 +341,7 @@ Foundry 포털 → Operate → Quota → Provisioned throughput unit
 
 ### 5.3 용량(Capacity) 확인 — 배포 전에
 
-**방법 ① 포털**
-배포 화면이 용량 가용 여부를 알려주고, 부족하면 **대체 리전을 제시**합니다.
-
-**방법 ② Model capacities API** (자동화·정기 점검용)
+**Model capacities API**로 배포 가능한 실제 용량을 조회합니다.
 
 ```bash
 curl -X GET \
@@ -336,7 +350,14 @@ curl -X GET \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-응답에서 **`availableCapacity`** 가 배포 가능한 최대치입니다.
+| 쿼리 파라미터 | 필수 | 예시 |
+|---|---|---|
+| `api-version` | ✅ | `2024-10-01` |
+| `modelFormat` | ✅ | `OpenAI` |
+| `modelName` | ✅ | `gpt-5.1` |
+| `modelVersion` | ✅ | `2025-11-13` |
+
+응답은 **리전 × 배포 유형(SKU)별**로 반환되며, **`availableCapacity`** 가 배포 가능한 최대치입니다.
 
 ```json
 {
@@ -353,12 +374,14 @@ curl -X GET \
 }
 ```
 
-> 💡 **HA를 운영한다면 이 API를 정기 점검에 넣으세요.** Failover 대상 리전의 용량이 실제로 있는지를 장애 전에 알 수 있는 유일한 방법입니다.
+> 💡 **HA를 운영한다면 이 API를 정기 점검에 넣으세요.** Failover 대상 리전의 용량이 실제로 있는지를 **장애 전에** 확인할 수 있는 방법입니다.
+
+> 📌 `skuName`이 배포 유형입니다. 같은 리전·모델이라도 **`GlobalProvisionedManaged`와 `ProvisionedManaged`의 용량은 별개**이므로, 실제로 배포할 유형의 값을 확인해야 합니다.
 
 ### 5.4 용량이 없을 때
 
 1. **PTU 수를 줄여** 배포 시도
-2. **다른 리전** 시도 (포털이 대체 리전을 제시)
+2. **다른 리전** 시도 — API를 리전별로 조회해 여유가 있는 곳을 찾습니다
 3. **시간을 두고 재시도** — 용량은 하루 중에도 변합니다
 4. 쿼터 폼으로 **용량 요청**
 
@@ -431,24 +454,6 @@ Azure 포털 → All services → Reservations
 
 문서 예시: 500 PTU 예약 + 기존 300 PTU 배포 상태에서 300 PTU를 추가하면 → 200은 커버, **100은 시간당 정가 청구**.
 
-### 6.6 변경·취소·갱신
-
-**교환(Exchange)으로 바꿀 수 있는 것**
-- 리전 / 배포 유형 / 약정 기간 / 결제 방식
-
-> ⚠️ 교환 시 **약정 기간이 새로 시작**됩니다.
-
-**취소 한도**
-> *"The sum total of all canceled reservation commitment in your billing scope **can't exceed USD 50,000 in a 12-month rolling window**."*
-
-**자동 갱신**
-| 약정 | 갱신 동작 |
-|---|---|
-| 1개월 | 동일 예약 주문 ID로 갱신 |
-| 1년 | **새 예약이 생성됨** |
-
-> 🔴 **배포를 지워도 예약은 자동 취소되지 않습니다.** 포털에서 직접 취소·교환해야 합니다. 정리 작업 시 가장 흔히 놓치는 부분입니다.
-
 ---
 
 ## 7. 운영 체크포인트
@@ -471,6 +476,8 @@ Azure 포털 → All services → Reservations
 ③ Purge (소프트 삭제 완전 제거)
 ④ 예약은 별도로 취소·교환   ← 잊기 쉬움
 ```
+
+> 🔴 **배포를 지워도 예약은 자동으로 취소되지 않습니다.** Azure 포털의 Reservations에서 직접 처리해야 하며, 그대로 두면 쓰지도 않는 약정이 계속 청구됩니다.
 
 ### 7.3 정기 점검 루틴
 

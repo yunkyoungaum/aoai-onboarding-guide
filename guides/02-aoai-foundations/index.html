@@ -365,6 +365,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <ul>
 <li><a href="#0">0. 한 장 요약</a><ul>
 <li><a href="#_1">용어 관계도</a></li>
+<li><a href="#_2">🔑 먼저 짚을 것 — 리소스에는 반드시 "리전"이 있습니다</a></li>
 <li><a href="#5">가장 많이 하는 실수 5가지</a></li>
 </ul>
 </li>
@@ -408,7 +409,6 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li><a href="#63">6.3 구매 절차</a></li>
 <li><a href="#64">6.4 ⚠️ 배포 유형·리전 매칭 규칙</a></li>
 <li><a href="#65">6.5 초과와 미달</a></li>
-<li><a href="#66">6.6 변경·취소·갱신</a></li>
 </ul>
 </li>
 <li><a href="#7">7. 운영 체크포인트</a><ul>
@@ -420,14 +420,15 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li><a href="#8">8. 자주 묻는 질문</a></li>
 <li><a href="#a">부록 A. 용어 대조표</a></li>
 <li><a href="#b">부록 B. 참고 문서</a><ul>
-<li><a href="#_4">개념</a></li>
-<li><a href="#_5">쿼터 · 용량</a></li>
-<li><a href="#_6">예약 · 청구</a></li>
-<li><a href="#_7">운영</a></li>
+<li><a href="#_5">개념</a></li>
+<li><a href="#_6">쿼터 · 용량</a></li>
+<li><a href="#_7">예약 · 청구</a></li>
+<li><a href="#_8">운영</a></li>
 </ul>
 </li>
 </ul>
 </div>
+
 
 
 
@@ -446,14 +447,38 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
     <h1 id="azure-openai-ptu">Azure OpenAI 기본 개념 — 리소스 · 배포 · 쿼터 · PTU 신청과 예약</h1>
 <blockquote>
 <p>대상: AOAI/Foundry를 처음 도입하거나, <strong>쿼터·용량·예약 개념이 헷갈리는</strong> 아키텍트·플랫폼 담당자
-범위: 리소스 계층 구조 → 배포 유형 → 쿼터 vs 용량 → PTU 신청 절차 → Azure 예약 구매
-관련 가이드: <a href="../01-oai-to-aoai-onboarding/">01 온보딩</a> · <a href="../03-aoai-deployment-monitoring/">03 배포 &amp; 모니터링</a> · <a href="../04-aoai-high-availability/">04 고가용성</a>
-검증 기준: Foundry 리소스·배포 유형·쿼터/제한·PTU 사이징/청구·예약(Cost Management) 문서 (2026-08 확인)</p>
+범위: 리소스 계층 구조 → 배포 유형 → 쿼터 vs 용량 → PTU 신청 절차 → Azure 예약 구매</p>
 </blockquote>
 <hr />
 <h2 id="0">0. 한 장 요약</h2>
 <h3 id="_1">용어 관계도</h3>
 <div class="mermaid" data-idx="0"></div>
+<h3 id="_2">🔑 먼저 짚을 것 — 리소스에는 반드시 "리전"이 있습니다</h3>
+<p><strong>Global 배포를 쓰더라도 리소스를 만들 때 리전을 골라야 합니다.</strong> 여기서 대부분 혼란이 시작됩니다.</p>
+<div class="mermaid" data-idx="1"></div>
+<table>
+<thead>
+<tr>
+<th>계층</th>
+<th>리전 종속성</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>리소스(엔드포인트)</strong></td>
+<td><strong>항상 특정 리전에 고정</strong> — 클라이언트가 두드리는 주소</td>
+</tr>
+<tr>
+<td><strong>배포의 처리 위치</strong></td>
+<td>배포 유형에 따라 전 세계 / 데이터 존 / 단일 리전</td>
+</tr>
+</tbody>
+</table>
+<p>즉 <strong>리소스 리전은 "처리 장소"가 아니라 "들어가는 문"</strong> 입니다. Global Standard든 Global Provisioned든 <strong>일단 Korea Central의 관문으로 들어온 뒤</strong>, 그 뒤에서 전 세계로 라우팅됩니다.</p>
+<blockquote>
+<p>⚠️ 그래서 <strong>"Global이니까 리전과 무관하다"는 말은 절반만 맞습니다.</strong>
+처리는 글로벌이지만 <strong>관문은 리전 고정</strong>이므로, 그 리전에 문제가 생기면 호출 자체가 들어가지 못합니다. 이것이 <a href="../04-aoai-high-availability/">가이드 04</a>에서 다루는 가용성 설계의 출발점입니다.</p>
+</blockquote>
 <table>
 <thead>
 <tr>
@@ -592,7 +617,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </tbody>
 </table>
 <blockquote>
-<p>💡 <strong>중요</strong>: 같은 리소스 안의 배포들은 <strong>엔드포인트를 공유</strong>합니다. 이 사실이 <a href="../04-aoai-high-availability/">가이드 04</a>의 HA 설계에서 결정적인 의미를 갖습니다. 리소스가 죽으면 그 안의 모든 배포가 함께 도달 불가가 됩니다.</p>
+<p>💡 <strong>중요</strong>: 같은 리소스 안의 배포들은 <strong>엔드포인트를 공유</strong>합니다. 즉 §0에서 본 "관문"이 하나뿐이라는 뜻입니다. 리소스가 속한 리전에 문제가 생기면 그 안의 <strong>모든 배포가 함께 도달 불가</strong>가 됩니다. 이 사실이 <a href="../04-aoai-high-availability/">가이드 04</a>의 HA 설계에서 결정적인 의미를 갖습니다.</p>
 </blockquote>
 <h3 id="14">1.4 엔드포인트와 호출 방식</h3>
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
@@ -929,7 +954,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </table>
 <p>반드시 <strong>모델별 쿼터 표</strong>를 확인하세요.</p>
 </blockquote>
-<h4 id="_2">🆕 쿼터 티어 (자동 상향)</h4>
+<h4 id="_3">🆕 쿼터 티어 (자동 상향)</h4>
 <p>Foundry는 <strong>Free Tier + Tier 1~6</strong> 체계를 도입했습니다.</p>
 <table>
 <thead>
@@ -967,7 +992,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: Bearer </span><span class="k">$(</span>az<span class="w"> </span>account<span class="w"> </span>get-access-token<span class="w"> </span>--resource<span class="w"> </span>https://management.azure.com<span class="w"> </span>--query<span class="w"> </span>accessToken<span class="w"> </span>-o<span class="w"> </span>tsv<span class="k">)</span><span class="s2">&quot;</span>
 </code></pre></div>
 
-<h4 id="_3">🆕 구독 단위 쿼터 통합</h4>
+<h4 id="_4">🆕 구독 단위 쿼터 통합</h4>
 <blockquote>
 <p><em>"</em><em>Subscription-level quota management in Microsoft Foundry started after May 7, 2026.</em><em>"</em></p>
 </blockquote>
@@ -981,7 +1006,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <hr />
 <h2 id="5-1">5. 실전 절차 ① — 쿼터 신청과 용량 확인</h2>
 <h3 id="51">5.1 전체 흐름</h3>
-<div class="mermaid" data-idx="1"></div>
+<div class="mermaid" data-idx="2"></div>
 <blockquote>
 <p>🔑 <strong>④와 ⑤의 순서가 핵심입니다.</strong> 뒤바꾸면 안 됩니다(§6.2).</p>
 </blockquote>
@@ -1000,16 +1025,45 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <p><strong>수일이 걸립니다.</strong> 장애 상황에서 급히 신청하는 건 대책이 되지 못합니다. 반드시 <strong>사전에</strong> 확보하세요.</p>
 </blockquote>
 <h3 id="53-capacity">5.3 용량(Capacity) 확인 — 배포 전에</h3>
-<p><strong>방법 ① 포털</strong>
-배포 화면이 용량 가용 여부를 알려주고, 부족하면 <strong>대체 리전을 제시</strong>합니다.</p>
-<p><strong>방법 ② Model capacities API</strong> (자동화·정기 점검용)</p>
+<p><strong>Model capacities API</strong>로 배포 가능한 실제 용량을 조회합니다.</p>
 <div class="codehilite"><pre><span></span><code>curl<span class="w"> </span>-X<span class="w"> </span>GET<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span><span class="s2">&quot;https://management.azure.com/subscriptions/</span><span class="nv">$SUB</span><span class="s2">/providers/Microsoft.CognitiveServices/modelCapacities\</span>
 <span class="s2">?api-version=2024-10-01&amp;modelFormat=OpenAI&amp;modelName=gpt-5.1&amp;modelVersion=2025-11-13&quot;</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span>
 </code></pre></div>
 
-<p>응답에서 <strong><code>availableCapacity</code></strong> 가 배포 가능한 최대치입니다.</p>
+<table>
+<thead>
+<tr>
+<th>쿼리 파라미터</th>
+<th>필수</th>
+<th>예시</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>api-version</code></td>
+<td>✅</td>
+<td><code>2024-10-01</code></td>
+</tr>
+<tr>
+<td><code>modelFormat</code></td>
+<td>✅</td>
+<td><code>OpenAI</code></td>
+</tr>
+<tr>
+<td><code>modelName</code></td>
+<td>✅</td>
+<td><code>gpt-5.1</code></td>
+</tr>
+<tr>
+<td><code>modelVersion</code></td>
+<td>✅</td>
+<td><code>2025-11-13</code></td>
+</tr>
+</tbody>
+</table>
+<p>응답은 <strong>리전 × 배포 유형(SKU)별</strong>로 반환되며, <strong><code>availableCapacity</code></strong> 가 배포 가능한 최대치입니다.</p>
 <div class="codehilite"><pre><span></span><code><span class="p">{</span>
 <span class="w">  </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
@@ -1025,12 +1079,13 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </code></pre></div>
 
 <blockquote>
-<p>💡 <strong>HA를 운영한다면 이 API를 정기 점검에 넣으세요.</strong> Failover 대상 리전의 용량이 실제로 있는지를 장애 전에 알 수 있는 유일한 방법입니다.</p>
+<p>💡 <strong>HA를 운영한다면 이 API를 정기 점검에 넣으세요.</strong> Failover 대상 리전의 용량이 실제로 있는지를 <strong>장애 전에</strong> 확인할 수 있는 방법입니다.</p>
+<p>📌 <code>skuName</code>이 배포 유형입니다. 같은 리전·모델이라도 <strong><code>GlobalProvisionedManaged</code>와 <code>ProvisionedManaged</code>의 용량은 별개</strong>이므로, 실제로 배포할 유형의 값을 확인해야 합니다.</p>
 </blockquote>
 <h3 id="54">5.4 용량이 없을 때</h3>
 <ol>
 <li><strong>PTU 수를 줄여</strong> 배포 시도</li>
-<li><strong>다른 리전</strong> 시도 (포털이 대체 리전을 제시)</li>
+<li><strong>다른 리전</strong> 시도 — API를 리전별로 조회해 여유가 있는 곳을 찾습니다</li>
 <li><strong>시간을 두고 재시도</strong> — 용량은 하루 중에도 변합니다</li>
 <li>쿼터 폼으로 <strong>용량 요청</strong></li>
 </ol>
@@ -1168,24 +1223,6 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </tbody>
 </table>
 <p>문서 예시: 500 PTU 예약 + 기존 300 PTU 배포 상태에서 300 PTU를 추가하면 → 200은 커버, <strong>100은 시간당 정가 청구</strong>.</p>
-<h3 id="66">6.6 변경·취소·갱신</h3>
-<p><strong>교환(Exchange)으로 바꿀 수 있는 것</strong>
-- 리전 / 배포 유형 / 약정 기간 / 결제 방식</p>
-<blockquote>
-<p>⚠️ 교환 시 <strong>약정 기간이 새로 시작</strong>됩니다.</p>
-</blockquote>
-<p><strong>취소 한도</strong></p>
-<blockquote>
-<p><em>"The sum total of all canceled reservation commitment in your billing scope </em><em>can't exceed USD 50,000 in a 12-month rolling window</em><em>."</em></p>
-</blockquote>
-<p><strong>자동 갱신</strong>
-| 약정 | 갱신 동작 |
-|---|---|
-| 1개월 | 동일 예약 주문 ID로 갱신 |
-| 1년 | <strong>새 예약이 생성됨</strong> |</p>
-<blockquote>
-<p>🔴 <strong>배포를 지워도 예약은 자동 취소되지 않습니다.</strong> 포털에서 직접 취소·교환해야 합니다. 정리 작업 시 가장 흔히 놓치는 부분입니다.</p>
-</blockquote>
 <hr />
 <h2 id="7">7. 운영 체크포인트</h2>
 <h3 id="71">7.1 배포 후 확인할 것</h3>
@@ -1221,6 +1258,9 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 ④ 예약은 별도로 취소·교환   ← 잊기 쉬움
 </code></pre></div>
 
+<blockquote>
+<p>🔴 <strong>배포를 지워도 예약은 자동으로 취소되지 않습니다.</strong> Azure 포털의 Reservations에서 직접 처리해야 하며, 그대로 두면 쓰지도 않는 약정이 계속 청구됩니다.</p>
+</blockquote>
 <h3 id="73">7.3 정기 점검 루틴</h3>
 <table>
 <thead>
@@ -1347,14 +1387,14 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </tbody>
 </table>
 <h2 id="b">부록 B. 참고 문서</h2>
-<h3 id="_4">개념</h3>
+<h3 id="_5">개념</h3>
 <ul>
 <li>Foundry란 무엇인가: https://learn.microsoft.com/azure/foundry/what-is-foundry</li>
 <li>리소스 유형: https://learn.microsoft.com/azure/foundry-classic/concepts/resource-types</li>
 <li>Foundry 리소스 생성: https://learn.microsoft.com/azure/ai-services/multi-service-resource</li>
 <li>배포 유형 비교: https://learn.microsoft.com/azure/foundry/foundry-models/concepts/deployment-types</li>
 </ul>
-<h3 id="_5">쿼터 · 용량</h3>
+<h3 id="_6">쿼터 · 용량</h3>
 <ul>
 <li>쿼터 및 제한(쿼터 티어 포함): https://learn.microsoft.com/azure/foundry/openai/quotas-limits</li>
 <li>PTU 개념: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput</li>
@@ -1364,13 +1404,13 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li>쿼터 신청 폼: https://aka.ms/oai/stuquotarequest</li>
 <li>용량 계산기: https://ai.azure.com/nextgen/goto/build/models/ptu-calculator</li>
 </ul>
-<h3 id="_6">예약 · 청구</h3>
+<h3 id="_7">예약 · 청구</h3>
 <ul>
 <li>PTU 청구 및 예약: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput-billing</li>
 <li>예약 구매(Cost Management): https://learn.microsoft.com/azure/cost-management-billing/reservations/microsoft-foundry</li>
 <li>예약 교환·환불: https://learn.microsoft.com/azure/cost-management-billing/reservations/exchange-and-refund-azure-reservations</li>
 </ul>
-<h3 id="_7">운영</h3>
+<h3 id="_8">운영</h3>
 <ul>
 <li>프로비저닝 배포 운영 시작: https://learn.microsoft.com/azure/foundry/openai/how-to/provisioned-get-started</li>
 </ul>
@@ -1382,7 +1422,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 <script>
 (function () {
-  var DIAGRAMS = ["flowchart TB\n    SUB[\"Azure 구독\"] --> RES[\"Foundry 리소스<br/>Microsoft.CognitiveServices/accounts\"]\n    RES --> DEP1[\"배포 A<br/>gpt-5.1 · Global Standard\"]\n    RES --> DEP2[\"배포 B<br/>gpt-5.1 · Global Provisioned\"]\n    DEP1 --> EP[\"엔드포인트 1개<br/>https://name.openai.azure.com\"]\n    DEP2 --> EP\n    SUB -.쿼터 한도.-> DEP1\n    SUB -.쿼터 한도.-> DEP2", "flowchart LR\n    A[\"① PTU 규모 산정<br/>계산기\"] --> B[\"② 쿼터 확인·신청<br/>포털 / 폼\"]\n    B --> C[\"③ 용량 확인<br/>포털 / API\"]\n    C --> D[\"④ 배포 생성<br/>= 용량 확보\"]\n    D --> E[\"⑤ 예약 구매<br/>할인 적용\"]\n    E --> F[\"⑥ 모니터링\"]"];
+  var DIAGRAMS = ["flowchart TB\n    SUB[\"Azure 구독\"] --> RES[\"Foundry 리소스 (Korea Central)<br/>= 관문 · 엔드포인트\"]\n    RES --> DEP1[\"배포 A · Global Standard\"]\n    RES --> DEP2[\"배포 B · Global Provisioned\"]\n    SUB -.쿼터 한도.-> DEP1\n    SUB -.쿼터 한도.-> DEP2", "flowchart LR\n    C[\"클라이언트\"] -->|\"호출\"| GW[\"관문 (Gateway)<br/>Foundry 리소스 · Korea Central<br/>name.openai.azure.com\"]\n    GW -.->|\"Global 배포는<br/>뒤에서 글로벌 라우팅\"| W[\"전 세계 가용 데이터센터\"]\n    GW -.->|\"Regional 배포는<br/>해당 리전에서 처리\"| K[\"Korea Central\"]", "flowchart LR\n    A[\"① PTU 규모 산정<br/>계산기\"] --> B[\"② 쿼터 확인·신청\"]\n    B --> C[\"③ 용량 확인<br/>capacities API\"]\n    C --> D[\"④ 배포 생성<br/>= 용량 확보\"]\n    D --> E[\"⑤ 예약 구매<br/>할인 적용\"]\n    E --> F[\"⑥ 모니터링\"]"];
   var toggle = document.getElementById("themeToggle");
 
   function currentTheme() { return document.documentElement.getAttribute("data-theme"); }
