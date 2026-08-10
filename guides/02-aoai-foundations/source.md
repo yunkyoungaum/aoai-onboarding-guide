@@ -1,7 +1,8 @@
 # Azure OpenAI 기본 개념 — 리소스 · 배포 · 쿼터 · PTU 신청과 예약
 
-> 대상: AOAI/Foundry를 처음 도입하거나, **쿼터·용량·예약 개념이 헷갈리는** 아키텍트·플랫폼 담당자
-> 범위: 리소스 계층 구조 → 배포 유형 → 쿼터 vs 용량 → PTU 신청 절차 → Azure 예약 구매
+> **대상** &nbsp;·&nbsp; AOAI/Foundry를 처음 도입하거나, **쿼터·용량·예약 개념이 헷갈리는** 아키텍트·플랫폼 담당자
+>
+> **범위** &nbsp;·&nbsp; 리소스 계층 구조 → 배포 유형 → 쿼터 vs 용량 → PTU 신청 절차 → Azure 예약 구매
 
 ---
 
@@ -179,7 +180,7 @@ resp = client.chat.completions.create(
 | 지연 SLA | 없음(best-effort) | **모델별 지연 목표 있음** |
 | 한계 도달 시 | 429 | **사용률 100% → 429** |
 
-> 💰 **PTU는 "쓰든 안 쓰든" 청구됩니다.** 배포를 만든 순간 미터가 시작되고 삭제해야 멈춥니다. 기저 부하가 확실할 때만 의미가 있습니다.
+> 💰 **PTU는 "쓰든 안 쓰든" 청구됩니다.** 배포를 만든 순간 미터가 시작되고 삭제해야 멈춥니다.
 
 ---
 
@@ -260,49 +261,6 @@ resp = client.chat.completions.create(
 | "East US 쿼터가 남으니 West Europe에서도" | ❌ *"quota in East US doesn't apply to West Europe"* |
 
 > ⚠️ Failover 설계에서 **배포 유형을 바꾸려면**(예: Regional → Global) **그 유형의 쿼터를 따로 확보**해야 합니다.
-
-### 4.5 Standard 쿼터 — TPM과 쿼터 티어
-
-Standard 배포의 쿼터는 **TPM(분당 토큰)** 과 **RPM(분당 요청)** 으로 표현됩니다.
-
-> ⚠️ **"1,000 TPM = 6 RPM" 같은 고정 비율은 현재 문서에 없습니다.** 모델별로 크게 다릅니다.
->
-> | 모델 | RPM | TPM |
-> |---|---|---|
-> | gpt-4.1 (GlobalStandard) | 1,000 | 1,000,000 |
-> | gpt-4o-mini (GlobalStandard) | 20,000 | 2,000,000 |
-> | o3-mini (GlobalStandard) | 500 | 5,000,000 |
->
-> 반드시 **모델별 쿼터 표**를 확인하세요.
-
-#### 🆕 쿼터 티어 (자동 상향)
-
-Foundry는 **Free Tier + Tier 1~6** 체계를 도입했습니다.
-
-| 항목 | 내용 |
-|---|---|
-| 초기 티어 결정 | 현재 사용량 + Microsoft 관계(**EA / MCA-E**) |
-| 자동 상향 | 사용량이 늘면 **자동으로 상위 티어로 이동** |
-| 기존 승인분 | **유지되며 축소되지 않음** |
-| 추가 요청 | 티어와 별개로 폼으로 요청 가능 |
-| 옵트아웃 | `tierUpgradePolicy: NoAutoUpgrade` (preview) |
-
-현재 티어 확인:
-
-```bash
-curl -X GET \
-  "https://management.azure.com/subscriptions/$SUB/providers/Microsoft.CognitiveServices/quotaTiers?api-version=2025-10-01-preview" \
-  -H "Authorization: Bearer $(az account get-access-token --resource https://management.azure.com --query accessToken -o tsv)"
-```
-
-#### 🆕 구독 단위 쿼터 통합
-
-> *"**Subscription-level quota management in Microsoft Foundry started after May 7, 2026.**"*
-
-- **Global Standard**: 같은 모델·버전이면 **구독 내 모든 리전이 한 풀을 공유**
-- **Data Zone Standard**: **데이터 존별로 한 풀**
-
-> 📌 이전에는 리소스·리전별로 쿼터를 나눠 관리했지만, 이제 **구독 단위로 통합**되는 방향입니다. 리전마다 쿼터를 쪼개 배정하던 기존 운영 방식은 재검토가 필요합니다.
 
 ---
 
@@ -520,7 +478,7 @@ Azure 포털 → All services → Reservations
 - 배포 유형 비교: https://learn.microsoft.com/azure/foundry/foundry-models/concepts/deployment-types
 
 ### 쿼터 · 용량
-- 쿼터 및 제한(쿼터 티어 포함): https://learn.microsoft.com/azure/foundry/openai/quotas-limits
+- 쿼터 및 제한: https://learn.microsoft.com/azure/foundry/openai/quotas-limits
 - PTU 개념: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput
 - PTU 사이징: https://learn.microsoft.com/azure/foundry/openai/how-to/provisioned-throughput-sizing
 - Model capacities API: https://learn.microsoft.com/rest/api/aiservices/accountmanagement/model-capacities/list

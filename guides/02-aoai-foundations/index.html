@@ -393,7 +393,6 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li><a href="#42">4.2 🔴 쿼터가 있어도 배포가 실패합니다</a></li>
 <li><a href="#43">4.3 ⚠️ 반납한 용량은 돌아오지 않을 수 있습니다</a></li>
 <li><a href="#44">4.4 쿼터가 나뉘는 기준</a></li>
-<li><a href="#45-standard-tpm">4.5 Standard 쿼터 — TPM과 쿼터 티어</a></li>
 </ul>
 </li>
 <li><a href="#5-1">5. 실전 절차 ① — 쿼터 신청과 용량 확인</a><ul>
@@ -418,15 +417,16 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </ul>
 </li>
 <li><a href="#8">8. 자주 묻는 질문</a></li>
-<li><a href="#_5">부록. 참고 문서</a><ul>
-<li><a href="#_6">개념</a></li>
-<li><a href="#_7">쿼터 · 용량</a></li>
-<li><a href="#_8">예약 · 청구</a></li>
-<li><a href="#_9">운영</a></li>
+<li><a href="#_3">부록. 참고 문서</a><ul>
+<li><a href="#_4">개념</a></li>
+<li><a href="#_5">쿼터 · 용량</a></li>
+<li><a href="#_6">예약 · 청구</a></li>
+<li><a href="#_7">운영</a></li>
 </ul>
 </li>
 </ul>
 </div>
+
 
 
 
@@ -446,8 +446,8 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
     </div>
     <h1 id="azure-openai-ptu">Azure OpenAI 기본 개념 — 리소스 · 배포 · 쿼터 · PTU 신청과 예약</h1>
 <blockquote>
-<p>대상: AOAI/Foundry를 처음 도입하거나, <strong>쿼터·용량·예약 개념이 헷갈리는</strong> 아키텍트·플랫폼 담당자
-범위: 리소스 계층 구조 → 배포 유형 → 쿼터 vs 용량 → PTU 신청 절차 → Azure 예약 구매</p>
+<p><strong>대상</strong> &nbsp;·&nbsp; AOAI/Foundry를 처음 도입하거나, <strong>쿼터·용량·예약 개념이 헷갈리는</strong> 아키텍트·플랫폼 담당자</p>
+<p><strong>범위</strong> &nbsp;·&nbsp; 리소스 계층 구조 → 배포 유형 → 쿼터 vs 용량 → PTU 신청 절차 → Azure 예약 구매</p>
 </blockquote>
 <hr />
 <h2 id="0">0. 한 장 요약</h2>
@@ -766,7 +766,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </tbody>
 </table>
 <blockquote>
-<p>💰 <strong>PTU는 "쓰든 안 쓰든" 청구됩니다.</strong> 배포를 만든 순간 미터가 시작되고 삭제해야 멈춥니다. 기저 부하가 확실할 때만 의미가 있습니다.</p>
+<p>💰 <strong>PTU는 "쓰든 안 쓰든" 청구됩니다.</strong> 배포를 만든 순간 미터가 시작되고 삭제해야 멈춥니다.</p>
 </blockquote>
 <hr />
 <h2 id="3-ptu">3. PTU — 전용 처리 능력의 단위</h2>
@@ -921,87 +921,6 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </table>
 <blockquote>
 <p>⚠️ Failover 설계에서 <strong>배포 유형을 바꾸려면</strong>(예: Regional → Global) <strong>그 유형의 쿼터를 따로 확보</strong>해야 합니다.</p>
-</blockquote>
-<h3 id="45-standard-tpm">4.5 Standard 쿼터 — TPM과 쿼터 티어</h3>
-<p>Standard 배포의 쿼터는 <strong>TPM(분당 토큰)</strong> 과 <strong>RPM(분당 요청)</strong> 으로 표현됩니다.</p>
-<blockquote>
-<p>⚠️ <strong>"1,000 TPM = 6 RPM" 같은 고정 비율은 현재 문서에 없습니다.</strong> 모델별로 크게 다릅니다.</p>
-<table>
-<thead>
-<tr>
-<th>모델</th>
-<th>RPM</th>
-<th>TPM</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>gpt-4.1 (GlobalStandard)</td>
-<td>1,000</td>
-<td>1,000,000</td>
-</tr>
-<tr>
-<td>gpt-4o-mini (GlobalStandard)</td>
-<td>20,000</td>
-<td>2,000,000</td>
-</tr>
-<tr>
-<td>o3-mini (GlobalStandard)</td>
-<td>500</td>
-<td>5,000,000</td>
-</tr>
-</tbody>
-</table>
-<p>반드시 <strong>모델별 쿼터 표</strong>를 확인하세요.</p>
-</blockquote>
-<h4 id="_3">🆕 쿼터 티어 (자동 상향)</h4>
-<p>Foundry는 <strong>Free Tier + Tier 1~6</strong> 체계를 도입했습니다.</p>
-<table>
-<thead>
-<tr>
-<th>항목</th>
-<th>내용</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>초기 티어 결정</td>
-<td>현재 사용량 + Microsoft 관계(<strong>EA / MCA-E</strong>)</td>
-</tr>
-<tr>
-<td>자동 상향</td>
-<td>사용량이 늘면 <strong>자동으로 상위 티어로 이동</strong></td>
-</tr>
-<tr>
-<td>기존 승인분</td>
-<td><strong>유지되며 축소되지 않음</strong></td>
-</tr>
-<tr>
-<td>추가 요청</td>
-<td>티어와 별개로 폼으로 요청 가능</td>
-</tr>
-<tr>
-<td>옵트아웃</td>
-<td><code>tierUpgradePolicy: NoAutoUpgrade</code> (preview)</td>
-</tr>
-</tbody>
-</table>
-<p>현재 티어 확인:</p>
-<div class="codehilite"><pre><span></span><code>curl<span class="w"> </span>-X<span class="w"> </span>GET<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span><span class="s2">&quot;https://management.azure.com/subscriptions/</span><span class="nv">$SUB</span><span class="s2">/providers/Microsoft.CognitiveServices/quotaTiers?api-version=2025-10-01-preview&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: Bearer </span><span class="k">$(</span>az<span class="w"> </span>account<span class="w"> </span>get-access-token<span class="w"> </span>--resource<span class="w"> </span>https://management.azure.com<span class="w"> </span>--query<span class="w"> </span>accessToken<span class="w"> </span>-o<span class="w"> </span>tsv<span class="k">)</span><span class="s2">&quot;</span>
-</code></pre></div>
-
-<h4 id="_4">🆕 구독 단위 쿼터 통합</h4>
-<blockquote>
-<p><em>"</em><em>Subscription-level quota management in Microsoft Foundry started after May 7, 2026.</em><em>"</em></p>
-</blockquote>
-<ul>
-<li><strong>Global Standard</strong>: 같은 모델·버전이면 <strong>구독 내 모든 리전이 한 풀을 공유</strong></li>
-<li><strong>Data Zone Standard</strong>: <strong>데이터 존별로 한 풀</strong></li>
-</ul>
-<blockquote>
-<p>📌 이전에는 리소스·리전별로 쿼터를 나눠 관리했지만, 이제 <strong>구독 단위로 통합</strong>되는 방향입니다. 리전마다 쿼터를 쪼개 배정하던 기존 운영 방식은 재검토가 필요합니다.</p>
 </blockquote>
 <hr />
 <h2 id="5-1">5. 실전 절차 ① — 쿼터 신청과 용량 확인</h2>
@@ -1299,17 +1218,17 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <p><strong>Q. 쿼터 신청은 얼마나 걸리나요?</strong>
 <strong>수일</strong>이 소요됩니다. 프로젝트 일정에 반드시 선반영하세요.</p>
 <hr />
-<h2 id="_5">부록. 참고 문서</h2>
-<h3 id="_6">개념</h3>
+<h2 id="_3">부록. 참고 문서</h2>
+<h3 id="_4">개념</h3>
 <ul>
 <li>Foundry란 무엇인가: https://learn.microsoft.com/azure/foundry/what-is-foundry</li>
 <li>리소스 유형: https://learn.microsoft.com/azure/foundry-classic/concepts/resource-types</li>
 <li>Foundry 리소스 생성: https://learn.microsoft.com/azure/ai-services/multi-service-resource</li>
 <li>배포 유형 비교: https://learn.microsoft.com/azure/foundry/foundry-models/concepts/deployment-types</li>
 </ul>
-<h3 id="_7">쿼터 · 용량</h3>
+<h3 id="_5">쿼터 · 용량</h3>
 <ul>
-<li>쿼터 및 제한(쿼터 티어 포함): https://learn.microsoft.com/azure/foundry/openai/quotas-limits</li>
+<li>쿼터 및 제한: https://learn.microsoft.com/azure/foundry/openai/quotas-limits</li>
 <li>PTU 개념: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput</li>
 <li>PTU 사이징: https://learn.microsoft.com/azure/foundry/openai/how-to/provisioned-throughput-sizing</li>
 <li>Model capacities API: https://learn.microsoft.com/rest/api/aiservices/accountmanagement/model-capacities/list</li>
@@ -1317,18 +1236,18 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li>쿼터 신청 폼: https://aka.ms/oai/stuquotarequest</li>
 <li>용량 계산기: https://ai.azure.com/nextgen/goto/build/models/ptu-calculator</li>
 </ul>
-<h3 id="_8">예약 · 청구</h3>
+<h3 id="_6">예약 · 청구</h3>
 <ul>
 <li>PTU 청구 및 예약: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput-billing</li>
 <li>예약 구매(Cost Management): https://learn.microsoft.com/azure/cost-management-billing/reservations/microsoft-foundry</li>
 <li>예약 교환·환불: https://learn.microsoft.com/azure/cost-management-billing/reservations/exchange-and-refund-azure-reservations</li>
 </ul>
-<h3 id="_9">운영</h3>
+<h3 id="_7">운영</h3>
 <ul>
 <li>프로비저닝 배포 운영 시작: https://learn.microsoft.com/azure/foundry/openai/how-to/provisioned-get-started</li>
 </ul>
     <hr>
-    <p class="meta">최종 수정 2026-08-07 · Microsoft Scout</p>
+    <p class="meta">최종 수정 2026-08-10 · Microsoft Scout</p>
   </main>
 </div>
 
