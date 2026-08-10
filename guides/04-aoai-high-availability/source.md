@@ -5,7 +5,7 @@
 > 관련 가이드: [01 온보딩](../01-oai-to-aoai-onboarding/) · [02 기본 개념](../02-aoai-foundations/) · [03 배포 & 운영 모니터링](../03-aoai-deployment-monitoring/)
 > 검증 기준: Foundry HA/resiliency 가이드, Provisioned throughput 개념·사이징·청구, Deployment types, Spillover, API Management Backends(`2024-05-01`), Azure RBAC 문서 (2026-08 확인)
 >
-> **⚠️ 초안(Draft)** — 리뷰용으로 공개된 문서입니다. 조직 표준 확정 전까지 그대로 적용하지 마세요. 미확정 항목은 문서 말미의 *리뷰가 필요한 항목* 참고.
+> **⚠️ 초안(Draft)** — 리뷰용으로 공개된 문서입니다. 조직 표준 확정 전까지 그대로 적용하지 마세요.
 
 ---
 
@@ -42,7 +42,7 @@
 - [ ] **배포 유형별 쿼터 풀**이 분리되어 있음을 반영했다 (§8.2)
 - [ ] 모델 **버전 은퇴(retirement) 일정**을 추적하고 있다 (§9)
 - [ ] **성능 저하 모드(graceful degradation)** 가 정의되어 있다 (§10)
-- [ ] Failover를 **정기적으로 테스트**한다 (§11)
+- [ ] Failover를 **정기적으로 테스트**한다
 
 ---
 
@@ -305,14 +305,6 @@ sequenceDiagram
 | **권한** | **Cognitive Services Contributor** 이상 |
 | **모델 지원** | AOAI 모델은 전부 지원. **Azure DeepSeek · Meta Llama 등 타 공급자 모델은 미지원** |
 
-> ⚠️ **Spillover의 제약은 "동일 리전"이 아니라 "동일 리소스 = 동일 엔드포인트"입니다.**
->
-> 두 배포는 같은 `https://<resource>.openai.azure.com` 을 공유합니다. 따라서:
-> - **처리 용량**: PTU와 대상 배포가 모두 Global 유형이면 **양쪽 다 전 세계로 라우팅**되므로, 특정 리전의 용량 부족은 상당 부분 흡수됩니다.
-> - **엔드포인트**: 그러나 **리소스가 속한 리전의 장애**에는 두 배포 **모두 도달 불가**입니다. Foundry는 리전 서비스이며, 컨트롤 플레인이 리전 단위이기 때문입니다.
->
-> **즉 Spillover는 용량 오버플로 장치이지 재해 복구 장치가 아닙니다.** 엔드포인트 이중화는 Spillover로 불가능하며 **별도 리소스 2개 + 게이트웨이**가 필요합니다(§7.2).
-
 #### Spillover 대상 유형 선택 — 페어링이 중요합니다
 
 문서상 대상은 **"standard(pay-as-you-go) 배포"** 이기만 하면 되고, **SKU 제한은 없습니다.** 즉 `Standard` / `GlobalStandard` / `DataZoneStandard` 모두 대상이 될 수 있습니다. 명시적 페어링 규칙도 없습니다.
@@ -491,13 +483,6 @@ Spillover된 요청은 **표준 배포 쪽에 `IsSpillover=True` + 최종 상태
   - **Resource ID**: `https://cognitiveservices.azure.com` (후행 슬래시 없음, `/.default` 불필요)
   - APIM의 관리 ID에 **`Cognitive Services OpenAI User`** 역할 부여
 
-> ⚠️ **역할 선택 주의 — 공식 문서 간 불일치가 있습니다.**
-> APIM *Backends* 문서는 AOAI 백엔드에 **`Cognitive Services User`** 를 부여하라고 안내합니다. 기능적으로는 동작하지만, 이 역할은 `Microsoft.CognitiveServices/accounts/listkeys/action` 권한을 포함해 **관리 ID가 AOAI 계정 키를 조회할 수 있습니다.** 또한 DataActions가 `Microsoft.CognitiveServices/*` 와일드카드라 Speech·Vision 등 다른 서비스까지 열립니다.
->
-> 반면 AOAI RBAC 문서가 추론 호출용으로 제시하는 역할은 **`Cognitive Services OpenAI User`**(`5e0bd9bd-7b93-4f28-af87-19fc36ad61bd`)이며, 키 조회 권한이 **없고** 데이터 액션이 `accounts/OpenAI/...` 범위로 한정됩니다.
->
-> **최소 권한 원칙상 `Cognitive Services OpenAI User`를 사용하세요.**
-
 ```bash
 az role assignment create \
   --assignee-object-id $APIM_PRINCIPAL_ID \
@@ -516,12 +501,6 @@ az role assignment create \
 
 > **핵심 동작**: 낮은 우선순위 그룹은 **상위 그룹의 모든 백엔드가 서킷 브레이커로 차단되었을 때에만** 사용됩니다.
 > 즉 **우선순위 기반 라우팅은 서킷 브레이커와 반드시 함께 구성해야 의미가 있습니다.**
-
-제약 사항:
-- 풀 하나에 **최대 30개 백엔드**
-- APIM은 분산 아키텍처이므로 로드 밸런싱과 서킷 브레이커 판정은 **게이트웨이 인스턴스 간 동기화되지 않는 근사(approximate) 동작**
-
-**세션 인식(session awareness)**: 쿠키 기반으로 동일 세션의 요청을 같은 백엔드로 보냅니다. 대화형 어시스턴트처럼 상태가 백엔드에 묶이는 시나리오에 사용하되, **HA 관점에서는 Failover 유연성을 떨어뜨리므로 꼭 필요한 경우에만** 사용합니다.
 
 ### 6.3 서킷 브레이커 (필수)
 
@@ -564,7 +543,7 @@ resource backend 'Microsoft.ApiManagement/service/backends@2024-05-01' = {
 ```
 
 > - `acceptRetryAfter: true`로 두면 응답에 `Retry-After`가 있을 때 그 시간만큼 기다린 뒤 해당 백엔드로 다시 보냅니다. 이것이 §4.2에서 설명한 "긴 `Retry-After` = 경로 전환" 원칙의 게이트웨이 구현입니다. (포털에서는 **Check 'Retry-After' header in HTTP response → True (Accept)**)
-> - 위 `count` / `interval` / `tripDuration` 값은 **예시**입니다. 문서 기본값은 실패 간격·차단 기간 모두 1시간이며, AOAI처럼 회복이 빠른 백엔드에는 분 단위가 더 적합한 경우가 많습니다. **반드시 부하 테스트로 튜닝**하세요(§11).
+> - 위 `count` / `interval` / `tripDuration` 값은 **예시**입니다. 문서 기본값은 실패 간격·차단 기간 모두 1시간이며, AOAI처럼 회복이 빠른 백엔드에는 분 단위가 더 적합한 경우가 많습니다. **반드시 부하 테스트로 튜닝**하세요.
 
 ### 6.4 우선순위 기반 Failover 풀 예시
 
@@ -701,14 +680,6 @@ AOAI        │ 계속 생성 ──────│ (아무도 읽지 않을 결
 
 위 설정 기준 **클라이언트 타임아웃은 200초 이상**으로 잡아야 합니다.
 
-#### ④ 스트리밍에는 `buffer-response="false"` 가 필수
-
-> 문서 원문: *"Set to **`false`** with backends such as those implementing **server-sent events (SSE)** that require content to be returned or streamed immediately to the caller."*
-
-기본값 `true`는 응답을 **8KB 단위로 버퍼링**합니다. AOAI 스트리밍을 APIM 뒤에서 그대로 쓰면 토큰이 뭉쳐서 전달되어 **스트리밍 UX가 사실상 사라지고 TTFT 이점도 없어집니다.**
-
-한편 `buffer-request-body="true"`는 **재시도 시 요청 본문을 재사용하기 위해 필요**하므로 유지합니다.
-
 ### 6.7 시맨틱 캐싱 — 가용성 관점
 
 `llm-semantic-cache-lookup` / `llm-semantic-cache-store`는 비용 절감 기능으로 알려져 있지만, **HA 관점에서는 "백엔드 부하를 줄여 429 자체를 예방"하는 수단**입니다. 반복 질의 비중이 높은 워크로드(FAQ, 사내 지식 검색)에서 효과가 큽니다.
@@ -743,9 +714,6 @@ AOAI        │ 계속 생성 ──────│ (아무도 읽지 않을 결
 > *"You can deploy an Azure OpenAI resource to **any supported region** and then create a **private endpoint for that resource in a region closer to your application**. After traffic enters the Azure OpenAI boundary, the service optimizes routing and processing across available compute in the data zone."*
 
 즉 **리소스 리전과 애플리케이션 리전이 반드시 같을 필요가 없습니다.** 용량이 있는 리전에 리소스를 만들고, 앱 근처에 Private Endpoint를 두는 방식으로 **쿼터 제약과 네트워크 지연을 분리해 해결**할 수 있습니다.
-
-> *"**Data Zone routing is more efficient and simpler than self-managed load balancing** across multiple regional deployments."*
-> → 직접 리전별 로드밸런싱을 구현하기 전에, **Data Zone 배포로 해결되는지 먼저 검토**하세요.
 
 ### 7.3 Active-Active vs Active-Passive
 
@@ -817,12 +785,7 @@ flowchart LR
 >
 > *"**Capacity availability changes throughout the day** based on customer demand across all regions and models."*
 
-→ **비용 절감을 위해 야간에 PTU를 축소하는 운영은 위험합니다.** 아침에 다시 확보하지 못할 수 있습니다. 공식 문서도 트래픽에 맞춰 PTU를 늘렸다 줄이는 방식을 권하지 않습니다.
-
-#### 용량 사전 확인 방법
-
-- **Foundry 포털 배포 화면** — 용량 가용 여부를 알려주고, 부족하면 **대체 리전을 제시**
-- **Model capacities API** — 특정 모델·리전의 최대 배포 가능 PTU를 프로그래밍 방식으로 조회
+**Model capacities API**로 특정 모델·리전의 최대 배포 가능 PTU를 조회할 수 있습니다.
 
 ```bash
 # 배포 전/정기 점검 스크립트에 편입 권장
@@ -862,7 +825,7 @@ az rest --method get \
 |---|---|
 | Failover 리전의 **실제 TPM/PTU 쿼터** | Foundry 포털 → Quotas / Azure Portal → Usage + quotas |
 | **해당 배포 유형의** 쿼터인지 | Global/Data Zone/Regional 각각 별도 확인 |
-| **용량(capacity) 실재 여부** | Foundry 포털 배포 화면 또는 Model capacities API (§8.1) |
+| **용량(capacity) 실재 여부** | Model capacities API (§8.1) |
 | 쿼터가 **다른 배포에 이미 소진**되지 않았는지 | 리전 쿼터는 배포들이 나눠 씀 |
 | PTU **최소 배포 크기와 증분** | Global/DZ는 15/5, Regional은 25~50 단위(§3.2) |
 | 구독 한도 | 소진 시 **새 구독 추가** 후 게이트웨이 뒤에 배치 |
@@ -919,38 +882,11 @@ Failover 설계 시 최소한 다음 3가지를 계산해 둡니다.
 
 ---
 
-## 11. 검증 — 설계보다 중요한 것
-
-> **테스트하지 않은 Failover는 없는 것과 같습니다.**
-
-### 11.1 정기 훈련 항목
-
-| 훈련 | 방법 | 확인 지표 |
-|---|---|---|
-| PTU 포화 | 부하 도구로 PTU 사용률 100% 유도 | Spillover 발생(`IsSpillover`), 사용자 실패율 |
-| Primary 리전 상실 | 백엔드 URL을 잘못된 값으로 변경 / NSG 차단 | 서킷 브레이커 trip 시간, Failover 소요 시간 |
-| 긴 `Retry-After` | 429 + 큰 `Retry-After` 모의 응답 | 클라이언트가 대기하지 않고 전환하는지 |
-| 게이트웨이 장애 | APIM 리전 하나 차단 | Front Door 우회 동작 |
-| 모델 버전 부재 | 존재하지 않는 배포명 호출 | 오류 분류·알림 동작 |
-
-### 11.2 측정할 값
-
-| 지표 | 의미 |
-|---|---|
-| **MTTD** | 장애 감지까지 걸린 시간 (알림 설정 품질) |
-| **Failover 소요 시간** | 첫 실패 → 정상 응답 복귀까지 |
-| **실효 성공률** | 재시도·Failover 포함, 사용자가 실제로 성공한 비율 |
-| 성능 저하 지속 시간 | 강등 모드로 운영된 시간 |
-
-> 실효 성공률 산출 KQL은 [가이드 03 §7.8](../03-aoai-deployment-monitoring/) 참고.
-
----
-
-## 12. 참조 아키텍처
+## 11. 참조 아키텍처
 
 > 아래 구성은 §3.5의 **엔터프라이즈 PTU 풀 패턴**과 **리전 반상관 원칙**을 반영한 것입니다.
 
-### 12.1 Tier 1 — 표준 워크로드 (PTU 불필요)
+### 11.1 Tier 1 — 표준 워크로드 (PTU 불필요)
 
 ```
 Client → APIM
@@ -961,7 +897,7 @@ Client → APIM
 - 상주 요건이 있으면 Global Standard → **Data Zone Standard**로 대체
 - 비용: 낮음 · 리전 장애 대응 가능
 
-### 12.2 Tier 2 — 일반 Production (PTU 도입)
+### 11.2 Tier 2 — 일반 Production (PTU 도입)
 
 ```
 Client → APIM
@@ -973,7 +909,7 @@ Client → APIM
 - 용량 장애: Spillover(같은 리전 내) · 리전 장애: 우선순위 2 백엔드
 - 비용: 중
 
-### 12.3 Tier 3 — 미션 크리티컬 (3단 Failover 체인)
+### 11.3 Tier 3 — 미션 크리티컬 (3단 Failover 체인)
 
 ```
 Client → Front Door
@@ -992,7 +928,7 @@ Client → Front Door
 - 게이트웨이 이중화 + 상시 카나리 트래픽으로 경로 검증
 - 비용: 높음
 
-### 12.4 구성 요소별 역할 요약
+### 11.4 구성 요소별 역할 요약
 
 | 구성 요소 | 담당 장애 | 없으면 생기는 일 |
 |---|---|---|
@@ -1008,7 +944,7 @@ Client → Front Door
 
 ---
 
-## 13. HA 체크리스트
+## 12. HA 체크리스트
 
 ### 설계
 - [ ] 장애 유형(F1~F6)별로 대응 수단이 매핑되어 있다
@@ -1110,12 +1046,3 @@ Client → Front Door
 - Azure 기본 제공 역할 (AI + Machine Learning): https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/ai-machine-learning
 - Supported metrics (Microsoft.CognitiveServices/accounts): https://learn.microsoft.com/azure/azure-monitor/reference/supported-metrics/microsoft-cognitiveservices-accounts-metrics
 
----
-
-## 리뷰가 필요한 항목 (초안 메모)
-
-- [ ] 고객 환경 기준 **RTO 목표치** 확정 → §13에 반영
-- [ ] Tier 2 / Tier 3 중 표준 권고안을 무엇으로 할지 결정
-- [ ] Front Door vs APIM 다중 리전만으로 충분한지 비용 검토
-- [ ] 성능 저하 모드의 구체적 대체 모델 지정 (조직 표준 필요)
-- [ ] 사내 부하 테스트 도구 및 카오스 훈련 절차 연결

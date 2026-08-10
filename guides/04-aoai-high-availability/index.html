@@ -425,35 +425,30 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </li>
 <li><a href="#9">9. 모델 수명주기 — 조용한 가용성 리스크</a></li>
 <li><a href="#10-layer-5-graceful-degradation">10. Layer 5 — 우아한 성능 저하 (Graceful Degradation)</a></li>
-<li><a href="#11">11. 검증 — 설계보다 중요한 것</a><ul>
-<li><a href="#111">11.1 정기 훈련 항목</a></li>
-<li><a href="#112">11.2 측정할 값</a></li>
+<li><a href="#11">11. 참조 아키텍처</a><ul>
+<li><a href="#111-tier-1-ptu">11.1 Tier 1 — 표준 워크로드 (PTU 불필요)</a></li>
+<li><a href="#112-tier-2-production-ptu">11.2 Tier 2 — 일반 Production (PTU 도입)</a></li>
+<li><a href="#113-tier-3-3-failover">11.3 Tier 3 — 미션 크리티컬 (3단 Failover 체인)</a></li>
+<li><a href="#114">11.4 구성 요소별 역할 요약</a></li>
 </ul>
 </li>
-<li><a href="#12">12. 참조 아키텍처</a><ul>
-<li><a href="#121-tier-1-ptu">12.1 Tier 1 — 표준 워크로드 (PTU 불필요)</a></li>
-<li><a href="#122-tier-2-production-ptu">12.2 Tier 2 — 일반 Production (PTU 도입)</a></li>
-<li><a href="#123-tier-3-3-failover">12.3 Tier 3 — 미션 크리티컬 (3단 Failover 체인)</a></li>
-<li><a href="#124">12.4 구성 요소별 역할 요약</a></li>
-</ul>
-</li>
-<li><a href="#13-ha">13. HA 체크리스트</a><ul>
-<li><a href="#_7">설계</a></li>
-<li><a href="#_8">구현</a></li>
-<li><a href="#_9">운영</a></li>
+<li><a href="#12-ha">12. HA 체크리스트</a><ul>
+<li><a href="#_6">설계</a></li>
+<li><a href="#_7">구현</a></li>
+<li><a href="#_8">운영</a></li>
 </ul>
 </li>
 <li><a href="#a">부록 A. 자주 하는 실수</a></li>
 <li><a href="#b">부록 B. 참고 문서</a><ul>
 <li><a href="#ha_1">공식 HA / 아키텍처</a></li>
-<li><a href="#_10">배포 유형 · 용량</a></li>
+<li><a href="#_9">배포 유형 · 용량</a></li>
 <li><a href="#api-management">API Management</a></li>
-<li><a href="#_11">보안 · 관측</a></li>
+<li><a href="#_10">보안 · 관측</a></li>
 </ul>
 </li>
-<li><a href="#_12">리뷰가 필요한 항목 (초안 메모)</a></li>
 </ul>
 </div>
+
 
 
 
@@ -476,7 +471,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 범위: 장애 유형 분류 → 계층별 HA 설계 → Spillover/APIM/멀티 리전 → 용량·모델 수명주기 → 검증
 관련 가이드: <a href="../01-oai-to-aoai-onboarding/">01 온보딩</a> · <a href="../02-aoai-foundations/">02 기본 개념</a> · <a href="../03-aoai-deployment-monitoring/">03 배포 &amp; 운영 모니터링</a>
 검증 기준: Foundry HA/resiliency 가이드, Provisioned throughput 개념·사이징·청구, Deployment types, Spillover, API Management Backends(<code>2024-05-01</code>), Azure RBAC 문서 (2026-08 확인)</p>
-<p><strong>⚠️ 초안(Draft)</strong> — 리뷰용으로 공개된 문서입니다. 조직 표준 확정 전까지 그대로 적용하지 마세요. 미확정 항목은 문서 말미의 <em>리뷰가 필요한 항목</em> 참고.</p>
+<p><strong>⚠️ 초안(Draft)</strong> — 리뷰용으로 공개된 문서입니다. 조직 표준 확정 전까지 그대로 적용하지 마세요.</p>
 </blockquote>
 <hr />
 <h2 id="0-tldr">0. TL;DR</h2>
@@ -545,7 +540,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li>[ ] <strong>배포 유형별 쿼터 풀</strong>이 분리되어 있음을 반영했다 (§8.2)</li>
 <li>[ ] 모델 <strong>버전 은퇴(retirement) 일정</strong>을 추적하고 있다 (§9)</li>
 <li>[ ] <strong>성능 저하 모드(graceful degradation)</strong> 가 정의되어 있다 (§10)</li>
-<li>[ ] Failover를 <strong>정기적으로 테스트</strong>한다 (§11)</li>
+<li>[ ] Failover를 <strong>정기적으로 테스트</strong>한다</li>
 </ul>
 <hr />
 <h2 id="1-aoai">1. AOAI에서 "장애"란 무엇인가</h2>
@@ -1023,13 +1018,6 @@ US/EU 데이터 경계가 필요하면 <strong>Data Zone Provisioned</strong>를
 </tr>
 </tbody>
 </table>
-<blockquote>
-<p>⚠️ <strong>Spillover의 제약은 "동일 리전"이 아니라 "동일 리소스 = 동일 엔드포인트"입니다.</strong></p>
-<p>두 배포는 같은 <code>https://&lt;resource&gt;.openai.azure.com</code> 을 공유합니다. 따라서:
-- <strong>처리 용량</strong>: PTU와 대상 배포가 모두 Global 유형이면 <strong>양쪽 다 전 세계로 라우팅</strong>되므로, 특정 리전의 용량 부족은 상당 부분 흡수됩니다.
-- <strong>엔드포인트</strong>: 그러나 <strong>리소스가 속한 리전의 장애</strong>에는 두 배포 <strong>모두 도달 불가</strong>입니다. Foundry는 리전 서비스이며, 컨트롤 플레인이 리전 단위이기 때문입니다.</p>
-<p><strong>즉 Spillover는 용량 오버플로 장치이지 재해 복구 장치가 아닙니다.</strong> 엔드포인트 이중화는 Spillover로 불가능하며 <strong>별도 리소스 2개 + 게이트웨이</strong>가 필요합니다(§7.2).</p>
-</blockquote>
 <h4 id="spillover">Spillover 대상 유형 선택 — 페어링이 중요합니다</h4>
 <p>문서상 대상은 <strong>"standard(pay-as-you-go) 배포"</strong> 이기만 하면 되고, <strong>SKU 제한은 없습니다.</strong> 즉 <code>Standard</code> / <code>GlobalStandard</code> / <code>DataZoneStandard</code> 모두 대상이 될 수 있습니다. 명시적 페어링 규칙도 없습니다.</p>
 <p><strong>그러나 어떤 유형을 고르느냐에 따라 결과가 크게 달라집니다.</strong></p>
@@ -1353,12 +1341,6 @@ PTU 포화 여부는 반드시 <strong><code>IsSpillover</code> 차원</strong> 
 <li><strong>Resource ID</strong>: <code>https://cognitiveservices.azure.com</code> (후행 슬래시 없음, <code>/.default</code> 불필요)</li>
 <li>APIM의 관리 ID에 <strong><code>Cognitive Services OpenAI User</code></strong> 역할 부여</li>
 </ul>
-<blockquote>
-<p>⚠️ <strong>역할 선택 주의 — 공식 문서 간 불일치가 있습니다.</strong>
-APIM <em>Backends</em> 문서는 AOAI 백엔드에 <strong><code>Cognitive Services User</code></strong> 를 부여하라고 안내합니다. 기능적으로는 동작하지만, 이 역할은 <code>Microsoft.CognitiveServices/accounts/listkeys/action</code> 권한을 포함해 <strong>관리 ID가 AOAI 계정 키를 조회할 수 있습니다.</strong> 또한 DataActions가 <code>Microsoft.CognitiveServices/*</code> 와일드카드라 Speech·Vision 등 다른 서비스까지 열립니다.</p>
-<p>반면 AOAI RBAC 문서가 추론 호출용으로 제시하는 역할은 <strong><code>Cognitive Services OpenAI User</code></strong>(<code>5e0bd9bd-7b93-4f28-af87-19fc36ad61bd</code>)이며, 키 조회 권한이 <strong>없고</strong> 데이터 액션이 <code>accounts/OpenAI/...</code> 범위로 한정됩니다.</p>
-<p><strong>최소 권한 원칙상 <code>Cognitive Services OpenAI User</code>를 사용하세요.</strong></p>
-</blockquote>
 <div class="codehilite"><pre><span></span><code>az<span class="w"> </span>role<span class="w"> </span>assignment<span class="w"> </span>create<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--assignee-object-id<span class="w"> </span><span class="nv">$APIM_PRINCIPAL_ID</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--assignee-principal-type<span class="w"> </span>ServicePrincipal<span class="w"> </span><span class="se">\</span>
@@ -1397,10 +1379,6 @@ APIM <em>Backends</em> 문서는 AOAI 백엔드에 <strong><code>Cognitive Servi
 <p><strong>핵심 동작</strong>: 낮은 우선순위 그룹은 <strong>상위 그룹의 모든 백엔드가 서킷 브레이커로 차단되었을 때에만</strong> 사용됩니다.
 즉 <strong>우선순위 기반 라우팅은 서킷 브레이커와 반드시 함께 구성해야 의미가 있습니다.</strong></p>
 </blockquote>
-<p>제약 사항:
-- 풀 하나에 <strong>최대 30개 백엔드</strong>
-- APIM은 분산 아키텍처이므로 로드 밸런싱과 서킷 브레이커 판정은 <strong>게이트웨이 인스턴스 간 동기화되지 않는 근사(approximate) 동작</strong></p>
-<p><strong>세션 인식(session awareness)</strong>: 쿠키 기반으로 동일 세션의 요청을 같은 백엔드로 보냅니다. 대화형 어시스턴트처럼 상태가 백엔드에 묶이는 시나리오에 사용하되, <strong>HA 관점에서는 Failover 유연성을 떨어뜨리므로 꼭 필요한 경우에만</strong> 사용합니다.</p>
 <h3 id="63">6.3 서킷 브레이커 (필수)</h3>
 <ul>
 <li>정의한 기간 동안 실패 조건(개수/비율, 상태 코드 범위)을 넘으면 회로가 <strong>trip</strong></li>
@@ -1441,7 +1419,7 @@ APIM <em>Backends</em> 문서는 AOAI 백엔드에 <strong><code>Cognitive Servi
 <blockquote>
 <ul>
 <li><code>acceptRetryAfter: true</code>로 두면 응답에 <code>Retry-After</code>가 있을 때 그 시간만큼 기다린 뒤 해당 백엔드로 다시 보냅니다. 이것이 §4.2에서 설명한 "긴 <code>Retry-After</code> = 경로 전환" 원칙의 게이트웨이 구현입니다. (포털에서는 <strong>Check 'Retry-After' header in HTTP response → True (Accept)</strong>)</li>
-<li>위 <code>count</code> / <code>interval</code> / <code>tripDuration</code> 값은 <strong>예시</strong>입니다. 문서 기본값은 실패 간격·차단 기간 모두 1시간이며, AOAI처럼 회복이 빠른 백엔드에는 분 단위가 더 적합한 경우가 많습니다. <strong>반드시 부하 테스트로 튜닝</strong>하세요(§11).</li>
+<li>위 <code>count</code> / <code>interval</code> / <code>tripDuration</code> 값은 <strong>예시</strong>입니다. 문서 기본값은 실패 간격·차단 기간 모두 1시간이며, AOAI처럼 회복이 빠른 백엔드에는 분 단위가 더 적합한 경우가 많습니다. <strong>반드시 부하 테스트로 튜닝</strong>하세요.</li>
 </ul>
 </blockquote>
 <h3 id="64-failover">6.4 우선순위 기반 Failover 풀 예시</h3>
@@ -1597,12 +1575,6 @@ AOAI        │ 계속 생성 ──────│ (아무도 읽지 않을 결
 </code></pre></div>
 
 <p>위 설정 기준 <strong>클라이언트 타임아웃은 200초 이상</strong>으로 잡아야 합니다.</p>
-<h4 id="4-buffer-responsefalse">④ 스트리밍에는 <code>buffer-response="false"</code> 가 필수</h4>
-<blockquote>
-<p>문서 원문: <em>"Set to </em><em><code>false</code></em><em> with backends such as those implementing </em><em>server-sent events (SSE)</em><em> that require content to be returned or streamed immediately to the caller."</em></p>
-</blockquote>
-<p>기본값 <code>true</code>는 응답을 <strong>8KB 단위로 버퍼링</strong>합니다. AOAI 스트리밍을 APIM 뒤에서 그대로 쓰면 토큰이 뭉쳐서 전달되어 <strong>스트리밍 UX가 사실상 사라지고 TTFT 이점도 없어집니다.</strong></p>
-<p>한편 <code>buffer-request-body="true"</code>는 <strong>재시도 시 요청 본문을 재사용하기 위해 필요</strong>하므로 유지합니다.</p>
 <h3 id="67">6.7 시맨틱 캐싱 — 가용성 관점</h3>
 <p><code>llm-semantic-cache-lookup</code> / <code>llm-semantic-cache-store</code>는 비용 절감 기능으로 알려져 있지만, <strong>HA 관점에서는 "백엔드 부하를 줄여 429 자체를 예방"하는 수단</strong>입니다. 반복 질의 비중이 높은 워크로드(FAQ, 사내 지식 검색)에서 효과가 큽니다.</p>
 <hr />
@@ -1673,10 +1645,6 @@ AOAI        │ 계속 생성 ──────│ (아무도 읽지 않을 결
 <p><em>"You can deploy an Azure OpenAI resource to </em><em>any supported region</em><em> and then create a </em><em>private endpoint for that resource in a region closer to your application</em><em>. After traffic enters the Azure OpenAI boundary, the service optimizes routing and processing across available compute in the data zone."</em></p>
 </blockquote>
 <p>즉 <strong>리소스 리전과 애플리케이션 리전이 반드시 같을 필요가 없습니다.</strong> 용량이 있는 리전에 리소스를 만들고, 앱 근처에 Private Endpoint를 두는 방식으로 <strong>쿼터 제약과 네트워크 지연을 분리해 해결</strong>할 수 있습니다.</p>
-<blockquote>
-<p><em>"</em><em>Data Zone routing is more efficient and simpler than self-managed load balancing</em><em> across multiple regional deployments."</em>
-→ 직접 리전별 로드밸런싱을 구현하기 전에, <strong>Data Zone 배포로 해결되는지 먼저 검토</strong>하세요.</p>
-</blockquote>
 <h3 id="73-active-active-vs-active-passive">7.3 Active-Active vs Active-Passive</h3>
 <table>
 <thead>
@@ -1774,12 +1742,7 @@ Hot/Warm 이하를 택하더라도 <strong>소량의 상시 트래픽(예: 1~5%)
 <p><em>"</em><em>Deleting or scaling down a deployment releases its capacity back to the region pool.</em><em> There's </em><em>no guarantee the same capacity is available</em><em> if you re-create or scale the deployment up later."</em></p>
 <p><em>"</em><em>Capacity availability changes throughout the day</em><em> based on customer demand across all regions and models."</em></p>
 </blockquote>
-<p>→ <strong>비용 절감을 위해 야간에 PTU를 축소하는 운영은 위험합니다.</strong> 아침에 다시 확보하지 못할 수 있습니다. 공식 문서도 트래픽에 맞춰 PTU를 늘렸다 줄이는 방식을 권하지 않습니다.</p>
-<h4 id="_6">용량 사전 확인 방법</h4>
-<ul>
-<li><strong>Foundry 포털 배포 화면</strong> — 용량 가용 여부를 알려주고, 부족하면 <strong>대체 리전을 제시</strong></li>
-<li><strong>Model capacities API</strong> — 특정 모델·리전의 최대 배포 가능 PTU를 프로그래밍 방식으로 조회</li>
-</ul>
+<p><strong>Model capacities API</strong>로 특정 모델·리전의 최대 배포 가능 PTU를 조회할 수 있습니다.</p>
 <div class="codehilite"><pre><span></span><code><span class="c1"># 배포 전/정기 점검 스크립트에 편입 권장</span>
 az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> </span>get<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--url<span class="w"> </span><span class="s2">&quot;https://management.azure.com/subscriptions/</span><span class="nv">$SUB</span><span class="s2">/providers/Microsoft.CognitiveServices/modelCapacities?api-version=2024-06-01-preview&amp;modelFormat=OpenAI&amp;modelName=gpt-4.1&amp;modelVersion=2025-04-14&quot;</span>
@@ -1865,7 +1828,7 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
 </tr>
 <tr>
 <td><strong>용량(capacity) 실재 여부</strong></td>
-<td>Foundry 포털 배포 화면 또는 Model capacities API (§8.1)</td>
+<td>Model capacities API (§8.1)</td>
 </tr>
 <tr>
 <td>쿼터가 <strong>다른 배포에 이미 소진</strong>되지 않았는지</td>
@@ -1993,83 +1956,11 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
 <li>스트리밍 중 백엔드가 끊긴 경우, 이미 전송된 부분을 살리고 "일시적 오류" 메시지를 이어 붙이는 UX 처리</li>
 </ul>
 <hr />
-<h2 id="11">11. 검증 — 설계보다 중요한 것</h2>
-<blockquote>
-<p><strong>테스트하지 않은 Failover는 없는 것과 같습니다.</strong></p>
-</blockquote>
-<h3 id="111">11.1 정기 훈련 항목</h3>
-<table>
-<thead>
-<tr>
-<th>훈련</th>
-<th>방법</th>
-<th>확인 지표</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>PTU 포화</td>
-<td>부하 도구로 PTU 사용률 100% 유도</td>
-<td>Spillover 발생(<code>IsSpillover</code>), 사용자 실패율</td>
-</tr>
-<tr>
-<td>Primary 리전 상실</td>
-<td>백엔드 URL을 잘못된 값으로 변경 / NSG 차단</td>
-<td>서킷 브레이커 trip 시간, Failover 소요 시간</td>
-</tr>
-<tr>
-<td>긴 <code>Retry-After</code></td>
-<td>429 + 큰 <code>Retry-After</code> 모의 응답</td>
-<td>클라이언트가 대기하지 않고 전환하는지</td>
-</tr>
-<tr>
-<td>게이트웨이 장애</td>
-<td>APIM 리전 하나 차단</td>
-<td>Front Door 우회 동작</td>
-</tr>
-<tr>
-<td>모델 버전 부재</td>
-<td>존재하지 않는 배포명 호출</td>
-<td>오류 분류·알림 동작</td>
-</tr>
-</tbody>
-</table>
-<h3 id="112">11.2 측정할 값</h3>
-<table>
-<thead>
-<tr>
-<th>지표</th>
-<th>의미</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>MTTD</strong></td>
-<td>장애 감지까지 걸린 시간 (알림 설정 품질)</td>
-</tr>
-<tr>
-<td><strong>Failover 소요 시간</strong></td>
-<td>첫 실패 → 정상 응답 복귀까지</td>
-</tr>
-<tr>
-<td><strong>실효 성공률</strong></td>
-<td>재시도·Failover 포함, 사용자가 실제로 성공한 비율</td>
-</tr>
-<tr>
-<td>성능 저하 지속 시간</td>
-<td>강등 모드로 운영된 시간</td>
-</tr>
-</tbody>
-</table>
-<blockquote>
-<p>실효 성공률 산출 KQL은 <a href="../03-aoai-deployment-monitoring/">가이드 03 §7.8</a> 참고.</p>
-</blockquote>
-<hr />
-<h2 id="12">12. 참조 아키텍처</h2>
+<h2 id="11">11. 참조 아키텍처</h2>
 <blockquote>
 <p>아래 구성은 §3.5의 <strong>엔터프라이즈 PTU 풀 패턴</strong>과 <strong>리전 반상관 원칙</strong>을 반영한 것입니다.</p>
 </blockquote>
-<h3 id="121-tier-1-ptu">12.1 Tier 1 — 표준 워크로드 (PTU 불필요)</h3>
+<h3 id="111-tier-1-ptu">11.1 Tier 1 — 표준 워크로드 (PTU 불필요)</h3>
 <div class="codehilite"><pre><span></span><code>Client → APIM
            ├─ [P1] AOAI Region A : Global Standard (전체 쿼터 할당)
            └─ [P2] AOAI Region B : Global Standard (전체 쿼터 할당)
@@ -2080,7 +1971,7 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
 <li>상주 요건이 있으면 Global Standard → <strong>Data Zone Standard</strong>로 대체</li>
 <li>비용: 낮음 · 리전 장애 대응 가능</li>
 </ul>
-<h3 id="122-tier-2-production-ptu">12.2 Tier 2 — 일반 Production (PTU 도입)</h3>
+<h3 id="112-tier-2-production-ptu">11.2 Tier 2 — 일반 Production (PTU 도입)</h3>
 <div class="codehilite"><pre><span></span><code>Client → APIM
            ├─ [P1] 엔터프라이즈 PTU 풀            (Region A)
            │         └─ Spillover ─▶ 동일 리소스 Standard
@@ -2092,7 +1983,7 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
 <li>용량 장애: Spillover(같은 리전 내) · 리전 장애: 우선순위 2 백엔드</li>
 <li>비용: 중</li>
 </ul>
-<h3 id="123-tier-3-3-failover">12.3 Tier 3 — 미션 크리티컬 (3단 Failover 체인)</h3>
+<h3 id="113-tier-3-3-failover">11.3 Tier 3 — 미션 크리티컬 (3단 Failover 체인)</h3>
 <div class="codehilite"><pre><span></span><code>Client → Front Door
    ├─ APIM (Region A) ─┬─ [P1] 워크로드 전용 PTU      (Region A)
    │                   ├─ [P2] 엔터프라이즈 PTU 풀     (Region B)
@@ -2110,7 +2001,7 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
 <li>게이트웨이 이중화 + 상시 카나리 트래픽으로 경로 검증</li>
 <li>비용: 높음</li>
 </ul>
-<h3 id="124">12.4 구성 요소별 역할 요약</h3>
+<h3 id="114">11.4 구성 요소별 역할 요약</h3>
 <table>
 <thead>
 <tr>
@@ -2168,8 +2059,8 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
 </tbody>
 </table>
 <hr />
-<h2 id="13-ha">13. HA 체크리스트</h2>
-<h3 id="_7">설계</h3>
+<h2 id="12-ha">12. HA 체크리스트</h2>
+<h3 id="_6">설계</h3>
 <ul>
 <li>[ ] 장애 유형(F1~F6)별로 대응 수단이 매핑되어 있다</li>
 <li>[ ] RTO/RPO에 준하는 목표(Failover 소요 시간 목표)가 문서화되어 있다</li>
@@ -2179,7 +2070,7 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
 <li>[ ] <strong>PTU · 엔터프라이즈 풀 · Standard가 서로 다른 리전</strong>에 배치되어 있다(반상관)</li>
 <li>[ ] "Global이니까 리전 장애에 안전하다"는 가정을 하지 않았다(엔드포인트는 리전 고정)</li>
 </ul>
-<h3 id="_8">구현</h3>
+<h3 id="_7">구현</h3>
 <ul>
 <li>[ ] 클라이언트가 <code>Retry-After</code>를 해석하고, 과도한 값이면 경로를 전환한다</li>
 <li>[ ] <strong>Spillover가 있어도 클라이언트 재시도 로직을 유지</strong>한다 (표준 배포도 실패하면 오류가 그대로 전달됨, §5.6)</li>
@@ -2193,7 +2084,7 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
 <li>[ ] 응답에 처리 백엔드 식별 헤더가 포함된다</li>
 <li>[ ] 애플리케이션이 <code>x-ms-spillover-from-deployment</code> / <code>x-ms-spillover-error</code> / <code>x-ms-deployment-name</code>을 기록한다</li>
 </ul>
-<h3 id="_9">운영</h3>
+<h3 id="_8">운영</h3>
 <ul>
 <li>[ ] Failover 리전 쿼터가 <strong>평상시 트래픽 100%</strong> 를 감당한다</li>
 <li>[ ] <strong>쿼터가 아니라 실제 용량(capacity)</strong> 을 정기적으로 확인한다 (Model capacities API)</li>
@@ -2246,7 +2137,7 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
 <li>회로 차단기 패턴: https://learn.microsoft.com/azure/architecture/patterns/circuit-breaker</li>
 <li>Azure 페어링 리전: https://learn.microsoft.com/azure/reliability/cross-region-replication-azure</li>
 </ul>
-<h3 id="_10">배포 유형 · 용량</h3>
+<h3 id="_9">배포 유형 · 용량</h3>
 <ul>
 <li><strong>Provisioned throughput 개념(3가지 유형)</strong>: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput</li>
 <li><strong>Deployment types (전체 SKU 비교)</strong>: https://learn.microsoft.com/azure/foundry/foundry-models/concepts/deployment-types</li>
@@ -2268,20 +2159,11 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
 <li>APIM <code>authentication-managed-identity</code> 정책: https://learn.microsoft.com/azure/api-management/authentication-managed-identity-policy</li>
 <li>APIM GenAI gateway capabilities: https://learn.microsoft.com/azure/api-management/genai-gateway-capabilities</li>
 </ul>
-<h3 id="_11">보안 · 관측</h3>
+<h3 id="_10">보안 · 관측</h3>
 <ul>
 <li>Azure OpenAI RBAC: https://learn.microsoft.com/azure/ai-services/openai/how-to/role-based-access-control</li>
 <li>Azure 기본 제공 역할 (AI + Machine Learning): https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/ai-machine-learning</li>
 <li>Supported metrics (Microsoft.CognitiveServices/accounts): https://learn.microsoft.com/azure/azure-monitor/reference/supported-metrics/microsoft-cognitiveservices-accounts-metrics</li>
-</ul>
-<hr />
-<h2 id="_12">리뷰가 필요한 항목 (초안 메모)</h2>
-<ul>
-<li>[ ] 고객 환경 기준 <strong>RTO 목표치</strong> 확정 → §13에 반영</li>
-<li>[ ] Tier 2 / Tier 3 중 표준 권고안을 무엇으로 할지 결정</li>
-<li>[ ] Front Door vs APIM 다중 리전만으로 충분한지 비용 검토</li>
-<li>[ ] 성능 저하 모드의 구체적 대체 모델 지정 (조직 표준 필요)</li>
-<li>[ ] 사내 부하 테스트 도구 및 카오스 훈련 절차 연결</li>
 </ul>
     <hr>
     <p class="meta">최종 수정 2026-08-10 · Microsoft Scout</p>
