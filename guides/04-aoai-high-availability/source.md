@@ -314,23 +314,8 @@ Spillover 대상은 **동일 리소스 안의 호환되는 PAYG 배포**이며 *
 | PTU 유형 | 권장 Spillover 대상 | 이유 |
 |---|---|---|
 | **Global Provisioned** | **Global Standard** | 오버플로도 글로벌 라우팅 → 리전 용량 편중 흡수. 규모가 큰 쿼터 |
-| **Data Zone Provisioned** | **Data Zone Standard**(동일 존) | ⚠️ **데이터 경계 유지** — 아래 경고 참조 |
+| **Data Zone Provisioned** | **Data Zone Standard**(동일 존) | ⚠️ **데이터 경계 유지** — 다른 존으로 넘기면 오버플로가 경계 밖에서 처리될 수 있음 |
 | **Regional Provisioned** | **`Standard`(동일 리전)** | 상주 요건을 유지하면서 피크 흡수 <!-- 리뷰 필요: 지원 범위 재확인 --> |
-
-> 📋 **리뷰 필요 — Regional Provisioned의 Spillover 지원 범위**
-> 공식 Spillover 문서의 권장 문구는 *"enable spillover for **all global and data zone** provisioned deployments"* 로 **Global과 Data Zone만 명시**합니다. Regional Provisioned에 대한 금지 조항은 없으나 **지원 범위로 명시되어 있지도 않습니다.**
-> 위 표의 Regional 행은 **적용 전 최신 배포 유형 가용성 문서와 포털·API 동작으로 재확인**하세요. 미지원으로 확인되면 Regional PTU의 오버플로는 **Spillover가 아니라 APIM·애플리케이션 라우팅으로 별도 배포에 전환**하도록 설계해야 합니다.
-
-> ⚠️ 다른 SKU 교차 조합(예: Data Zone PTU → Global Standard)의 지원 여부는 **배포 시점의 포털 및 API 검증**을 기준으로 판단하세요. 공개 문서가 모든 조합을 명시적으로 보장하지는 않습니다.
-
-> 🚨 **컴플라이언스 함정**: **Data Zone Provisioned → Global Standard로 Spillover를 걸면, 오버플로 트래픽이 데이터 존 밖에서 처리될 수 있습니다.**
-> 데이터 경계를 지키려고 Data Zone PTU를 선택했는데, 피크 시간대에 조용히 그 경계를 벗어나게 됩니다. 기능적으로는 아무 오류도 나지 않으므로 **감사 시점에야 발견되는 유형의 사고**입니다.
-> Data Zone PTU의 Spillover 대상은 **반드시 같은 존의 Data Zone Standard**로 지정하세요.
-> **Regional Provisioned도 마찬가지**입니다. 상주 요건 때문에 Regional을 선택했다면 대상도 **동일 리전 `Standard`** 여야 합니다.
-
-> 💡 반대로 **Global Provisioned → 리전 `Standard`** 로 걸면, 오버플로가 **단일 리전 쿼터에 묶여** Global의 이점을 잃습니다.
-
-> ⚠️ **어떤 조합이든 대상 배포의 쿼터를 먼저 확보하세요.** 쿼터가 부족하면 Spillover 대상까지 429가 나고, 그 429는 **클라이언트에게 그대로 전달**됩니다(§5.6).
 
 ### 5.3 배포 단위로 켜기
 
@@ -514,11 +499,6 @@ az role assignment create \
 - Trip 되면 APIM은 해당 백엔드로의 전송을 멈추고 클라이언트에 **503**을 반환
 - 지정한 trip 기간 후 회로가 리셋되어 트래픽 재개
 
-제약 사항:
-- **Consumption 티어 미지원**
-- 백엔드당 **규칙 1개만** 구성 가능
-- 게이트웨이 인스턴스 간 비동기 → 근사 동작
-
 **AOAI 백엔드에 대한 공식 주의사항**: 요청이 과도하면 AOAI는 429와 함께 **매우 큰 `Retry-After` 값(예: 1일)** 을 반환할 수 있습니다. 따라서 **429를 처리하고 `Retry-After`를 수용하는 서킷 브레이커 규칙을 반드시 구성**해야 합니다.
 
 ```bicep
@@ -665,8 +645,6 @@ AOAI        │ 계속 생성 ──────│ (아무도 읽지 않을 결
 | **스트리밍(SSE)** | **첫 바이트(TTFT)까지만** — 이후 생성이 10분 걸려도 걸리지 않음 ⚠️ |
 
 스트리밍을 쓰면서 "timeout으로 전체 시간을 통제했다"고 믿으면 **틀립니다.** 전체 생성 시간은 `max_tokens`와 클라이언트 측 총 시간 제한으로 통제해야 합니다.
-
-> 또한 문서에 **"240초를 넘는 값은 무시될 수 있다"**(유휴 연결이 끊길 수 있음)고 명시되어 있어, 240초가 사실상 상한입니다.
 
 #### ③ `timeout`은 **시도 1회당** 적용됩니다 — 총 예산 계산
 
