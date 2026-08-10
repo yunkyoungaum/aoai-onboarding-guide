@@ -14,14 +14,13 @@
 | 02 | Azure OpenAI 기본 개념 *(draft)* | 리소스·배포·쿼터·용량·PTU 신청·예약 구매 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/02-aoai-foundations/) |
 | 03 | Azure OpenAI 배포 & 운영 모니터링 가이드 | 모니터링, PTU, KQL, Alert, APIM | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/03-aoai-deployment-monitoring/) |
 | 04 | Azure OpenAI 고가용성(HA) 아키텍처 가이드 *(draft)* | HA, Failover, Spillover, 멀티 리전 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/04-aoai-high-availability/) |
-| 04-1 | Azure OpenAI 고가용성(HA) — 핵심 요약 *(draft)* | 04의 5분 압축판 · 체크리스트 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/04-1-aoai-ha-summary/) |
 
 ### 읽는 순서 추천
 
 ```
 처음이라면        01 온보딩 → 02 기본 개념
 운영 준비 중이면   02 기본 개념 → 03 모니터링
-가용성 설계 중이면 04-1 요약 → 04 상세
+가용성 설계 중이면 04 고가용성
 ```
 
 > 목록의 **정본(Single Source of Truth)은 [`guides.js`](guides.js)** 입니다.
@@ -49,12 +48,8 @@
 │   ├── 04-aoai-high-availability/
 │   │   ├── index.html
 │   │   └── source.md
-│   ├── 04-1-aoai-ha-summary/
-│   │   ├── index.html
-│   │   └── source.md
 │   ├── 02-aoai-deployment-monitoring/   # 리다이렉트 스텁 (구 번호 → 03)
 │   ├── 03-aoai-high-availability/       # 리다이렉트 스텁 (구 번호 → 04)
-│   ├── 03-1-aoai-ha-summary/            # 리다이렉트 스텁 (구 번호 → 04-1)
 │   └── _template/
 │       └── index.html          # 새 가이드 시작용 빈 템플릿
 └── README.md
@@ -69,7 +64,6 @@
 |---|---|
 | `02-aoai-deployment-monitoring` | `03-aoai-deployment-monitoring` |
 | `03-aoai-high-availability` | `04-aoai-high-availability` |
-| `03-1-aoai-ha-summary` | `04-1-aoai-ha-summary` |
 
 ---
 
@@ -112,7 +106,7 @@ window.GUIDES = [
 
 | 필드 | 설명 |
 |------|------|
-| `no` | 가이드 번호 (정렬 기준). 하위 문서는 `04-1` 형식 사용 |
+| `no` | 가이드 번호 (정렬 기준). 하위 문서가 필요하면 `04-1` 형식 사용 가능 |
 | `slug` | `guides/` 하위 폴더명과 **정확히 일치**해야 함 |
 | `title` | 카드 제목 |
 | `summary` | 1~2문장 요약 |

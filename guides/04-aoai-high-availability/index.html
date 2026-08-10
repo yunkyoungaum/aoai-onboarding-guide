@@ -463,6 +463,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 
 
 
+
   </nav>
   <main>
     <div class="topbar">
@@ -474,7 +475,6 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <p>대상: AOAI를 <strong>미션 크리티컬 워크로드</strong>에 사용하는 아키텍트, SRE, 플랫폼 팀
 범위: 장애 유형 분류 → 계층별 HA 설계 → Spillover/APIM/멀티 리전 → 용량·모델 수명주기 → 검증
 관련 가이드: <a href="../01-oai-to-aoai-onboarding/">01 온보딩</a> · <a href="../02-aoai-foundations/">02 기본 개념</a> · <a href="../03-aoai-deployment-monitoring/">03 배포 &amp; 운영 모니터링</a>
-📄 <strong>바쁘시면 → <a href="../04-1-aoai-ha-summary/">04-1 핵심 요약(5분)</a></strong>
 검증 기준: Foundry HA/resiliency 가이드, Provisioned throughput 개념·사이징·청구, Deployment types, Spillover, API Management Backends(<code>2024-05-01</code>), Azure RBAC 문서 (2026-08 확인)</p>
 <p><strong>⚠️ 초안(Draft)</strong> — 리뷰용으로 공개된 문서입니다. 조직 표준 확정 전까지 그대로 적용하지 마세요. 미확정 항목은 문서 말미의 <em>리뷰가 필요한 항목</em> 참고.</p>
 </blockquote>
@@ -674,16 +674,6 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </tbody>
 </table>
 <p>즉 처리 용량은 글로벌에서 끌어오더라도, <strong>엔드포인트가 있는 리전이 장애를 겪으면 호출 자체가 도달하지 못합니다.</strong></p>
-<blockquote>
-<p>공식 문서: <em>"</em><em>Foundry is a regional service</em><em> that stores data on the service side..."</em> — 플랫폼 인프라(컨트롤 플레인·프로젝트 메타데이터)는 <em>"</em><em>Regional</em><em>; no customer action for zone configuration."</em></p>
-<p><em>"</em><em>Foundry itself doesn't provide automatic failover or disaster recovery.</em><em>"</em></p>
-<p><em>"With Global Standard and Data Zone Standard deployment types, </em><em>if the primary region experiences an interruption in service, all traffic initially routed to this region is affected.</em><em>"</em></p>
-<p>📌 <strong>단일 AOAI 리소스의 엔드포인트에 자동 지역 Failover가 있다는 문서는 존재하지 않습니다.</strong> 공식 문서는 리소스를 <strong>자체 이중화가 없는 단일 리전 엔드포인트</strong>로 다룹니다.</p>
-</blockquote>
-<p>공식 HA 가이드가 보조 배포를 두라고 권고하는 이유도 정확히 이것입니다.</p>
-<blockquote>
-<p><em>"The secondary deployment protects against </em><em>the primary Azure OpenAI endpoint being unreachable</em><em>."</em></p>
-</blockquote>
 <p><strong>결론: Global 라우팅은 "용량 가용성"을 높이지 "엔드포인트 가용성"을 높이지 않습니다.</strong> 리전 장애 대비는 여전히 <strong>다중 리소스 + 게이트웨이</strong>가 필요합니다(§6~7).</p>
 <table>
 <thead>
@@ -757,38 +747,6 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </tr>
 </tbody>
 </table>
-<blockquote>
-<p>💡 <strong>최소 PTU 차이가 HA 설계에 직접 영향을 줍니다.</strong>
-Global/Data Zone은 15 PTU에서 시작해 5 단위로 조정할 수 있지만, Regional은 모델에 따라 <strong>50 PTU 최소 · 50 단위 증분</strong>입니다(예: gpt-4.1, gpt-5 계열). 즉 <strong>Regional Provisioned로 다중 리전을 구성하면 최소 비용이 몇 배로 뜁니다.</strong></p>
-</blockquote>
-<h4 id="apac-data-zone-provisioned">🚨 APAC에는 Data Zone Provisioned가 없습니다</h4>
-<p><strong>문서 간 불일치가 있으니 주의하세요.</strong></p>
-<table>
-<thead>
-<tr>
-<th>출처</th>
-<th>Data Zone Provisioned 지원 존</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>deployment-types</code> 페이지</td>
-<td>US / EU / <strong>APAC</strong> ← ❌ 부정확</td>
-</tr>
-<tr>
-<td><code>provisioned-throughput</code> 페이지</td>
-<td><strong>US / EU</strong> ← ✅</td>
-</tr>
-<tr>
-<td><strong>모델 리전 가용성 표</strong> (실측)</td>
-<td>APAC 탭 = <strong>"Not available"</strong> ← ✅ <strong>정본</strong></td>
-</tr>
-</tbody>
-</table>
-<p>쿼터 문서도 <em>"one quota pool per data zone (</em><em>for example, US or EU</em><em>)"</em> 로 이를 뒷받침합니다.</p>
-<blockquote>
-<p><strong>📌 배포 유형 × 리전 가용성은 반드시 <a href="https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure-region-availability?pivots=provisioned">모델 리전 가용성 표</a>로 확인하세요.</strong> 개념 페이지의 서술이 실제 가용성과 어긋나는 경우가 있습니다.</p>
-</blockquote>
 <h3 id="33-standard">3.3 Standard 계열</h3>
 <table>
 <thead>
@@ -914,7 +872,7 @@ Global/Data Zone은 15 PTU에서 시작해 5 단위로 조정할 수 있지만, 
 <blockquote>
 <p>⚠️ <strong>엔터프라이즈 PTU 풀의 배포 유형 선택</strong>
 상주 요건이 없다면 <strong>Global Provisioned</strong>가 가장 유연합니다(예약이 리전 무관, §8.3).
-US/EU 데이터 경계가 필요하면 <strong>Data Zone Provisioned</strong>를 쓸 수 있지만, <strong>APAC에서는 제공되지 않습니다</strong>(§3.2). APAC 리전에서 데이터 상주가 필요하면 <strong>Regional Provisioned</strong>로 구성해야 하며, 이 경우 최소 PTU와 예약 비용이 크게 올라갑니다.</p>
+US/EU 데이터 경계가 필요하면 <strong>Data Zone Provisioned</strong>를 쓸 수 있지만, <strong>APAC에서는 제공되지 않습니다</strong>(§3.2). APAC 리전에서 데이터 상주가 필요하면 <strong>Regional Provisioned</strong>로 구성해야 하며, 이 경우 최소 PTU와 예약 비용이 올라갑니다.</p>
 </blockquote>
 <h4 id="_4">데이터 상주 주의</h4>
 <p>Global 계열은 <strong>처리(processing)</strong> 가 광역에서 일어날 수 있습니다. 저장(at rest)은 지정 지리 내이지만, 규제가 <strong>처리 위치</strong>까지 제한한다면 Failover 후보를 <strong>Data Zone</strong> 또는 동일 지리 내로 한정해야 합니다.</p>
@@ -2326,7 +2284,7 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
 <li>[ ] 사내 부하 테스트 도구 및 카오스 훈련 절차 연결</li>
 </ul>
     <hr>
-    <p class="meta">최종 수정 2026-08-07 · Microsoft Scout</p>
+    <p class="meta">최종 수정 2026-08-10 · Microsoft Scout</p>
   </main>
 </div>
 
