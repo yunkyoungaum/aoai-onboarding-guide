@@ -56,8 +56,8 @@ window.GUIDES = [
     summary:
       "장애 유형 분류부터 Spillover, APIM 백엔드 풀·서킷 브레이커, 멀티 리전 Failover, 쿼터 확보, 성능 저하 모드, Failover 훈련까지 가용성 설계를 다룹니다.",
     tags: ["HA", "Failover", "Spillover", "APIM", "멀티 리전"],
-    updated: "2026-08-07",
-    status: "draft",
+    updated: "2026-08-10",
+    status: "published",
     source: "source.md"
   }
 ];

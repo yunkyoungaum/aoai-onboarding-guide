@@ -13,7 +13,7 @@
 | 01 | OAI → Azure OpenAI 온보딩 가이드 | 온보딩, 마이그레이션, 인증, 네트워크 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/01-oai-to-aoai-onboarding/) |
 | 02 | Azure OpenAI 기본 개념 *(draft)* | 리소스·배포·쿼터·용량·PTU 신청·예약 구매 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/02-aoai-foundations/) |
 | 03 | Azure OpenAI 배포 & 운영 모니터링 가이드 | 모니터링, PTU, KQL, Alert, APIM | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/03-aoai-deployment-monitoring/) |
-| 04 | Azure OpenAI 고가용성(HA) 아키텍처 가이드 *(draft)* | HA, Failover, Spillover, 멀티 리전 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/04-aoai-high-availability/) |
+| 04 | Azure OpenAI 고가용성(HA) 아키텍처 가이드 | HA, Failover, Spillover, 멀티 리전 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/04-aoai-high-availability/) |
 
 ### 읽는 순서 추천
 
