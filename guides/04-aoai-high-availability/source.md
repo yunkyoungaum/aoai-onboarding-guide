@@ -6,6 +6,10 @@
 >
 > **관련 가이드** &nbsp;·&nbsp; [01 온보딩](../01-oai-to-aoai-onboarding/) · [02 기본 개념](../02-aoai-foundations/) · [03 배포 & 운영 모니터링](../03-aoai-deployment-monitoring/)
 
+> 📌 **Spillover와 게이트웨이 Failover는 서로 다른 기능입니다.**
+> 이 문서의 **엔터프라이즈 PTU 풀 3단 체인**(워크로드 PTU → 엔터프라이즈 풀 → Standard)은 **APIM 등 게이트웨이 라우팅으로 구현**합니다.
+> **Spillover는 PTU 간 전환 기능이 아니며**, 지원되는 프로비저닝 배포에서 **동일 리소스 안의 PAYG 배포**로 넘기는 별개 기능입니다.
+
 ---
 
 ## 0. TL;DR
@@ -16,12 +20,12 @@
 |---|---|---|---|
 | **L0** | 단일 리전 · 단일 배포 · 재시도 없음 | 없음 | PoC |
 | **L1** | + 지수 백오프 재시도, `Retry-After` 준수, 타임아웃 정합성 | 순간적 429/5xx | 내부 도구 |
-| **L2** | + **Spillover** (PTU → 표준, 동일 리소스) | **용량 포화(429)** | 일반 Production |
+| **L2** | + **Spillover** (PTU → 표준, 동일 리소스) | PTU 포화 및 Spillover가 처리하는 요청 오류(**429/400/500/503**) | 데이터 경계·비용·지연 변동을 허용하는 Production |
 | **L3** | + **APIM 백엔드 풀** (다중 리전, 우선순위 + 서킷 브레이커) + **리전 반상관 배치** | 용량 + **리전 장애** | 중요 서비스 |
 | **L4** | + Front Door 다중 APIM, **엔터프라이즈 PTU 풀 3단 체인**, 다중 구독 쿼터 분산, 성능 저하 모드 | 게이트웨이·구독 단위 장애 | 미션 크리티컬 |
 
 > 💡 **핵심 원칙 3가지**
-> 1. **Spillover는 용량 장애만** 해결하고, **APIM 백엔드 풀은 엔드포인트 장애까지** 해결합니다. 대체가 아니라 보완 관계입니다(§5.5).
+> 1. **Spillover는 동일 리소스 안에서** PTU 포화·일부 장문 컨텍스트 제한·일부 서버 오류를 표준 배포로 우회합니다. 다만 **리소스 엔드포인트 도달 불가에는 대응하지 못하므로**, 멀티 리소스 게이트웨이와 **보완 관계**입니다(§5.5).
 > 2. **Global 배포라도 엔드포인트는 리전 고정**입니다. 글로벌 라우팅은 **용량 가용성**을 높일 뿐 **엔드포인트 가용성**을 높이지 않습니다(§3.1).
 > 3. **PTU와 그 백업을 같은 리전에 두지 마세요.** 리전 장애 시 둘 다 사라집니다(§3.5 반상관 원칙).
 
@@ -41,7 +45,6 @@
 - [ ] **배포 유형별 쿼터 풀**이 분리되어 있음을 반영했다 (§8.2)
 - [ ] 모델 **버전 은퇴(retirement) 일정**을 추적하고 있다 (§9)
 - [ ] **성능 저하 모드(graceful degradation)** 가 정의되어 있다 (§10)
-- [ ] Failover를 **정기적으로 테스트**한다
 
 ---
 
@@ -110,7 +113,7 @@ Global 계열 배포를 "리전 장애에 자동으로 안전하다"고 이해�
 | **추론 처리(inference)** | Azure 글로벌 인프라가 **가용 데이터센터로 동적 라우팅** ✅ |
 | **리소스 엔드포인트** | `https://<resource>.openai.azure.com` 은 **리소스가 만들어진 리전에 고정** ❌ |
 
-즉 처리 용량은 글로벌에서 끌어오더라도, **엔드포인트가 있는 리전이 장애를 겪으면 호출 자체가 도달하지 못합니다.**
+즉 처리 용량은 글로벌에서 끌어오더라도, **리소스 엔드포인트가 지역 장애의 영향으로 도달 불가해질 경우 Global·Data Zone 배포가 다른 리소스 엔드포인트로 자동 Failover해 주지는 않습니다.**
 
 **결론: Global 라우팅은 "용량 가용성"을 높이지 "엔드포인트 가용성"을 높이지 않습니다.** 리전 장애 대비는 여전히 **다중 리소스 + 게이트웨이**가 필요합니다(§6~7).
 
@@ -146,7 +149,7 @@ Global 계열 배포를 "리전 장애에 자동으로 안전하다"고 이해�
 
 > *"Provisioned types provide **guaranteed throughput and lower latency variance**. Standard types offer **best-effort** service. Developer deployments **don't include an SLA**."*
 
-즉 **지연 SLA가 필요한 워크로드는 Standard로 Failover하는 순간 SLA 밖으로 나갑니다.** 이 점을 성능 저하 모드(§10)에 명시적으로 반영해야 합니다.
+즉 **일관된 지연이 필요한 워크로드는 Standard로 Failover하는 순간 지연 목표 적용 대상에서 벗어납니다.** 이 점을 성능 저하 모드(§10)에 명시적으로 반영해야 합니다.
 
 ---
 
@@ -171,7 +174,7 @@ flowchart TB
 | **노이지 네이버 차단** | 공용 Standard가 혼잡해도 **조직 전용 용량**은 보장됨 |
 | **우선순위 제어** | 용량 경합 시 **어느 앱이 먼저 느려질지** 조직이 결정 |
 | **높은 활용률** | 개별 워크로드는 스파이크가 심하지만, **합치면 평탄해져** PTU 낭비가 줄어듦 |
-| **지연 SLA 유지** | 워크로드 PTU가 100%를 넘어도 **여전히 PTU 엔드포인트가 처리** → 높은 지연 SLA 유지 |
+| **지연 목표 유지** | 워크로드 PTU가 100%를 넘어도 **여전히 PTU 엔드포인트가 처리** → 모델별 latency target 적용 조건을 충족하는 한 Standard로 내려가는 것보다 일관된 지연 유지에 유리 |
 
 #### 🔑 리전 반(反)상관 원칙
 
@@ -193,8 +196,8 @@ flowchart TB
 **PTU는 기저 부하, Standard는 스파이크** — 이 역할 분담이 핵심입니다.
 
 > ⚠️ **엔터프라이즈 PTU 풀의 배포 유형 선택**
-> 상주 요건이 없다면 **Global Provisioned**가 가장 유연합니다(예약이 리전 무관, §8.3).
-> US/EU 데이터 경계가 필요하면 **Data Zone Provisioned**를 쓸 수 있지만, **APAC에서는 제공되지 않습니다**(§3.2). APAC 리전에서 데이터 상주가 필요하면 **Regional Provisioned**로 구성해야 하며, 이 경우 최소 PTU와 예약 비용이 올라갑니다.
+> **공식 HA 가이드가 예시로 드는 기본 패턴은 Data Zone PTU 단일 배포**입니다. 데이터 처리 경계가 허용되고 더 넓은 글로벌 처리 범위가 필요하다면 **Global Provisioned를 별도 설계 선택지로 검토**할 수 있습니다(예약이 리전 무관, §8.3).
+> 단 **APAC에서는 Data Zone Provisioned가 제공되지 않습니다**(§3.2). APAC 리전에서 데이터 상주가 필요하면 **Regional Provisioned**로 구성해야 하며, 이 경우 최소 PTU와 예약 비용이 올라갑니다.
 
 #### 데이터 상주 주의
 
@@ -306,15 +309,19 @@ sequenceDiagram
 
 #### Spillover 대상 유형 선택 — 페어링이 중요합니다
 
-문서상 대상은 **"standard(pay-as-you-go) 배포"** 이기만 하면 되고, **SKU 제한은 없습니다.** 즉 `Standard` / `GlobalStandard` / `DataZoneStandard` 모두 대상이 될 수 있습니다. 명시적 페어링 규칙도 없습니다.
-
-**그러나 어떤 유형을 고르느냐에 따라 결과가 크게 달라집니다.**
+Spillover 대상은 **동일 리소스 안의 호환되는 PAYG 배포**이며 **모델과 버전이 일치**해야 합니다. 데이터 처리 경계를 유지하려면 아래 페어링을 따르세요.
 
 | PTU 유형 | 권장 Spillover 대상 | 이유 |
 |---|---|---|
 | **Global Provisioned** | **Global Standard** | 오버플로도 글로벌 라우팅 → 리전 용량 편중 흡수. 규모가 큰 쿼터 |
 | **Data Zone Provisioned** | **Data Zone Standard**(동일 존) | ⚠️ **데이터 경계 유지** — 아래 경고 참조 |
-| **Regional Provisioned** | **`Standard`(동일 리전)** | **상주 요건을 유지하면서 피크 흡수.** 유효한 구성 |
+| **Regional Provisioned** | **`Standard`(동일 리전)** | 상주 요건을 유지하면서 피크 흡수 <!-- 리뷰 필요: 지원 범위 재확인 --> |
+
+> 📋 **리뷰 필요 — Regional Provisioned의 Spillover 지원 범위**
+> 공식 Spillover 문서의 권장 문구는 *"enable spillover for **all global and data zone** provisioned deployments"* 로 **Global과 Data Zone만 명시**합니다. Regional Provisioned에 대한 금지 조항은 없으나 **지원 범위로 명시되어 있지도 않습니다.**
+> 위 표의 Regional 행은 **적용 전 최신 배포 유형 가용성 문서와 포털·API 동작으로 재확인**하세요. 미지원으로 확인되면 Regional PTU의 오버플로는 **Spillover가 아니라 APIM·애플리케이션 라우팅으로 별도 배포에 전환**하도록 설계해야 합니다.
+
+> ⚠️ 다른 SKU 교차 조합(예: Data Zone PTU → Global Standard)의 지원 여부는 **배포 시점의 포털 및 API 검증**을 기준으로 판단하세요. 공개 문서가 모든 조합을 명시적으로 보장하지는 않습니다.
 
 > 🚨 **컴플라이언스 함정**: **Data Zone Provisioned → Global Standard로 Spillover를 걸면, 오버플로 트래픽이 데이터 존 밖에서 처리될 수 있습니다.**
 > 데이터 경계를 지키려고 Data Zone PTU를 선택했는데, 피크 시간대에 조용히 그 경계를 벗어나게 됩니다. 기능적으로는 아무 오류도 나지 않으므로 **감사 시점에야 발견되는 유형의 사고**입니다.
@@ -541,7 +548,7 @@ resource backend 'Microsoft.ApiManagement/service/backends@2024-05-01' = {
 }
 ```
 
-> - `acceptRetryAfter: true`로 두면 응답에 `Retry-After`가 있을 때 그 시간만큼 기다린 뒤 해당 백엔드로 다시 보냅니다. 이것이 §4.2에서 설명한 "긴 `Retry-After` = 경로 전환" 원칙의 게이트웨이 구현입니다. (포털에서는 **Check 'Retry-After' header in HTTP response → True (Accept)**)
+> - `acceptRetryAfter: true`는 AOAI가 반환한 `Retry-After` 값을 **서킷 브레이커의 차단 기간 결정에 반영**하도록 허용합니다. **현재 요청을 그 시간만큼 대기시켰다가 재전송하는 옵션이 아닙니다.** 회로가 열린 동안 해당 백엔드는 라우팅 대상에서 제외되고, 클라이언트에는 **503**이 반환됩니다. (포털에서는 **Check 'Retry-After' header in HTTP response → True (Accept)**)
 > - 위 `count` / `interval` / `tripDuration` 값은 **예시**입니다. 문서 기본값은 실패 간격·차단 기간 모두 1시간이며, AOAI처럼 회복이 빠른 백엔드에는 분 단위가 더 적합한 경우가 많습니다. **반드시 부하 테스트로 튜닝**하세요.
 
 ### 6.4 우선순위 기반 Failover 풀 예시
@@ -615,6 +622,12 @@ resource pool 'Microsoft.ApiManagement/service/backends@2024-05-01' = {
 ```
 
 > ⚠️ **재시도와 서킷 브레이커의 역할 분리**: 게이트웨이에서 재시도 횟수를 크게 잡으면 서킷 브레이커가 열리기 전에 부하를 계속 밀어 넣게 됩니다. **짧은 재시도 + 명확한 서킷 브레이커** 조합이 원칙입니다.
+
+> 🔴 **`<retry>`는 우선순위 Failover가 아닙니다 — 가장 흔한 오해**
+> `<retry>`는 **정책 블록을 다시 실행**할 뿐입니다. 하위 우선순위 그룹이 사용되는 조건은 오직 **상위 그룹의 모든 백엔드 회로가 열린 상태**입니다.
+> 게다가 서킷 브레이커 상태는 **게이트웨이 인스턴스별 근사값이며 인스턴스 간 동기화되지 않습니다.**
+>
+> 따라서 **"429를 한 번 받으면 즉시 다음 리전으로 넘어간다"는 보장은 없습니다.** 실제 차단·전환 시점은 반드시 **부하 테스트로 측정**해 임계값을 조정하세요.
 
 ### 6.6 타임아웃 예산 설계 — 가장 많이 틀리는 부분
 
@@ -708,19 +721,25 @@ AOAI        │ 계속 생성 ──────│ (아무도 읽지 않을 결
 | **가용 쿼터를 전부 한 배포에 할당** | *"Full allocation provides **higher throughput** compared to splitting quota across multiple deployments."* |
 | 구독 쿼터가 소진되면 **새 구독을 추가**해 게이트웨이 뒤에 배치 | 구독 단위 한계 우회 |
 
-#### 💡 Private Endpoint를 이용한 리전 분리
+#### 📌 Private Endpoint에 대한 주의
 
-> *"You can deploy an Azure OpenAI resource to **any supported region** and then create a **private endpoint for that resource in a region closer to your application**. After traffic enters the Azure OpenAI boundary, the service optimizes routing and processing across available compute in the data zone."*
+Private Endpoint는 **AOAI 리소스에 대한 사설 네트워크 접근 경로**를 제공하는 보안 기능입니다.
 
-즉 **리소스 리전과 애플리케이션 리전이 반드시 같을 필요가 없습니다.** 용량이 있는 리전에 리소스를 만들고, 앱 근처에 Private Endpoint를 두는 방식으로 **쿼터 제약과 네트워크 지연을 분리해 해결**할 수 있습니다.
+**Private Endpoint를 다른 리전에 두더라도 리소스 리전, 모델 용량, 쿼터, 데이터 처리 위치는 바뀌지 않습니다.** 리전 장애의 자동 Failover 수단도 아닙니다.
+
+멀티 리전 HA에서는 **각 리소스마다 Private Endpoint · Private DNS · 라우팅 · 게이트웨이 경로를 독립적으로 구성하고 테스트**해야 합니다.
 
 ### 7.3 Active-Active vs Active-Passive
 
-| 방식 | RTO(참고) | RPO(참고) | 장점 | 단점 |
-|---|---|---|---|---|
-| **Hot/Hot** | 분 단위 | 거의 0 | 경로가 상시 검증됨, 전환 즉시성 | 비용 증가, 용량 분산 |
-| **Hot/Warm** | 30분~2시간 | 분~시간 | 비용 균형 | 전환에 조작 필요 |
-| **Hot/Cold** | 2~8시간 | 시간 | 최저 비용 | 프로덕션 부적합 |
+| 방식 | 전환 특성 | 장점 | 단점 |
+|---|---|---|---|
+| **Hot/Hot** | 양쪽 경로가 상시 활성 → **가장 낮은 전환 지연을 목표로 설계 가능** | 경로가 상시 검증됨 | 비용 증가, 용량 분산 |
+| **Hot/Warm** | 백업 경로와 용량 일부만 준비 → **확대 또는 운영 절차 필요** | 비용 균형 | 전환에 조작 필요 |
+| **Hot/Cold** | 장애 후 배포 또는 용량 확보부터 시작 | 최저 비용 | **미션 크리티컬 추론 경로에는 부적합** |
+
+> ⚠️ **RTO/RPO는 참고 숫자로 정하지 마세요.** 실제 전환 시간은 상태 저장 계층, DNS TTL, 서킷 브레이커 차단 시점, 애플리케이션 세션, 수동 절차 유무에 따라 달라집니다.
+> 또한 **AOAI 추론 API 자체는 대화 상태의 RPO를 정의하지 않습니다.** RPO는 Cosmos DB·Redis·앱 DB 등 상태 저장 계층의 설계에 달려 있습니다.
+> **부하 테스트와 복구 훈련으로 측정한 값**을 목표로 삼으세요.
 
 > 💡 **가장 위험한 구성은 "한 번도 트래픽이 흘러본 적 없는 Failover 경로"** 입니다.
 > Hot/Warm 이하를 택하더라도 **소량의 상시 트래픽(예: 1~5%)을 백업 리전에 흘려** 경로를 살아 있게 유지하세요(카나리 트래픽).
@@ -789,7 +808,7 @@ flowchart LR
 ```bash
 # 배포 전/정기 점검 스크립트에 편입 권장
 az rest --method get \
-  --url "https://management.azure.com/subscriptions/$SUB/providers/Microsoft.CognitiveServices/modelCapacities?api-version=2024-06-01-preview&modelFormat=OpenAI&modelName=gpt-4.1&modelVersion=2025-04-14"
+  --url "https://management.azure.com/subscriptions/$SUB/providers/Microsoft.CognitiveServices/modelCapacities?api-version=2024-10-01&modelFormat=OpenAI&modelName=gpt-4.1&modelVersion=2025-04-14"
 ```
 
 ### 8.2 쿼터는 **배포 유형별로 분리된 풀**입니다
@@ -922,8 +941,8 @@ Client → Front Door
 
 > *"Configure the failover chain so the workload-dedicated deployment **fails over first to the enterprise PTU pool** and **then to the Standard deployment**."*
 
-- **P1→P2 단계에서도 PTU 엔드포인트가 처리** → 지연 SLA 유지
-- P3(Standard) 도달 시에는 SLA가 best-effort로 낮아짐 → 성능 저하 모드(§10) 발동 지점
+- **P1→P2 단계에서도 PTU 엔드포인트가 처리** → 모델별 latency target 적용 조건을 충족하는 한 일관된 지연 유지에 유리
+- P3(Standard) 도달 시에는 지연 목표 없이 best-effort → 성능 저하 모드(§10) 발동 지점
 - 게이트웨이 이중화 + 상시 카나리 트래픽으로 경로 검증
 - 비용: 높음
 
@@ -933,7 +952,7 @@ Client → Front Door
 |---|---|---|
 | 클라이언트 재시도/백오프 | 순간 429·5xx | 작은 장애가 큰 장애로 증폭 |
 | Spillover | PTU 포화(동일 리전) | 피크마다 사용자 실패 |
-| **엔터프라이즈 PTU 풀** | 워크로드 PTU 포화 | 지연 SLA를 잃고 곧장 Standard로 추락 |
+| **엔터프라이즈 PTU 풀** | 워크로드 PTU 포화 | 지연 목표를 잃고 곧장 Standard로 추락 |
 | **리전 반상관 배치** | 리전 장애 | PTU와 백업이 **동시에** 소실 |
 | APIM 서킷 브레이커 | 지속 실패 백엔드 | 죽은 백엔드로 계속 전송 |
 | APIM 우선순위 풀 | 리전 장애 | 리전 인시던트 = 서비스 중단 |
@@ -950,7 +969,7 @@ Client → Front Door
 - [ ] RTO/RPO에 준하는 목표(Failover 소요 시간 목표)가 문서화되어 있다
 - [ ] Failover 후보 리전이 데이터 상주 요건을 만족한다
 - [ ] **Global / Data Zone / Regional 중 어느 유형인지 의식적으로 결정**하고 근거가 문서화되어 있다
-- [ ] 선택한 배포 유형이 **대상 리전에서 실제로 제공되는지 가용성 표로 확인**했다 (예: APAC에는 Data Zone Provisioned 없음, §3.2)
+- [ ] 선택한 배포 유형이 **대상 리전에서 실제로 제공되는지 모델 리전 가용성 표로 확인**했다 (예: APAC에는 Data Zone Provisioned 없음)
 - [ ] **PTU · 엔터프라이즈 풀 · Standard가 서로 다른 리전**에 배치되어 있다(반상관)
 - [ ] "Global이니까 리전 장애에 안전하다"는 가정을 하지 않았다(엔드포인트는 리전 고정)
 
@@ -958,10 +977,10 @@ Client → Front Door
 - [ ] 클라이언트가 `Retry-After`를 해석하고, 과도한 값이면 경로를 전환한다
 - [ ] **Spillover가 있어도 클라이언트 재시도 로직을 유지**한다 (표준 배포도 실패하면 오류가 그대로 전달됨, §5.6)
 - [ ] 타임아웃 총 예산 = **(시도 횟수 × 백엔드 timeout) + 재시도 간격 합** 이 클라이언트 타임아웃 이내다 (§6.6)
-- [ ] 스트리밍을 쓴다면 APIM에 **`buffer-response="false"`** 가 설정되어 있다 (§6.6)
-- [ ] 재시도를 쓴다면 **`buffer-request-body="true"`** 가 설정되어 있다 (§6.6)
+- [ ] 스트리밍을 쓴다면 APIM에 **`buffer-response="false"`** 가 설정되어 있다
+- [ ] 재시도를 쓴다면 **`buffer-request-body="true"`** 가 설정되어 있다
 - [ ] PTU 배포에 Spillover 표준 배포가 연결되어 있다
-- [ ] APIM 백엔드가 Managed Identity로 인증하며, 역할은 **`Cognitive Services OpenAI User`**(키 조회 권한 없음)이다
+- [ ] APIM 백엔드가 Managed Identity로 인증하며, 역할은 **`Cognitive Services OpenAI User`** 다(추론 전용 최소 권한)
 - [ ] 백엔드 풀이 우선순위 기반이고, **모든 백엔드에 서킷 브레이커**가 있다
 - [ ] 서킷 브레이커가 **429와 `Retry-After`를 수용**하도록 설정되어 있다
 - [ ] 응답에 처리 백엔드 식별 헤더가 포함된다
@@ -978,7 +997,6 @@ Client → Front Door
 - [ ] `IsSpillover`, `AzureOpenAIAvailabilityRate`, 429/5xx 알림이 설정되어 있다
 - [ ] **표준 배포의 429**에 알림이 걸려 있다 (실사용자 영향 지표, §5.7)
 - [ ] Spillover 비율에 **비용 알림**도 함께 걸려 있다 (과금 방식 전환, §5.8)
-- [ ] 분기 1회 이상 Failover 훈련을 수행한다
 - [ ] 성능 저하 모드가 구현되어 있고 테스트되었다
 
 ---
@@ -995,11 +1013,11 @@ Client → Front Door
 8. **게이트웨이 재시도 과다** — 서킷 브레이커가 열리기 전에 부하 가중
 9. **APIM 단일 리전** — 게이트웨이가 SPOF
 10. **성능 저하 모드 부재** — 전면 포화 시 완전 실패
-11. **APIM 관리 ID에 `Cognitive Services User` 부여** — 게이트웨이가 AOAI 계정 키를 조회할 수 있게 됨 (§6.1)
+11. **APIM 관리 ID에 광범위한 `Cognitive Services User` 부여** — 계정 키 조회를 포함한 불필요한 권한이 추가됨. AOAI 추론만 필요하면 **`Cognitive Services OpenAI User`를 우선 검토** (§6.1)
 12. **PTU 포화를 429 카운트로 판단** — Spillover된 요청은 PTU에 429로 기록되지 않아 **포화를 놓침** (§5.7)
 13. **Spillover가 있으니 클라이언트 재시도는 불필요하다고 판단** — 표준 배포도 실패하면 오류가 그대로 전달됨 (§5.6)
 14. **게이트웨이 `timeout`을 총 예산으로 오해** — 시도 1회당 값이므로 재시도 횟수만큼 곱해야 함 (§6.6)
-15. **스트리밍인데 `buffer-response="false"` 미설정** — 토큰이 8KB 단위로 뭉쳐 스트리밍 이점 소멸 (§6.6)
+15. **스트리밍인데 `buffer-response="false"` 미설정** — 응답이 버퍼링되어 스트리밍 이점 소멸
 16. **"Global 배포니까 리전 장애에 안전하다"** — 처리는 글로벌이어도 **엔드포인트는 리전 고정** (§3.1)
 17. **PTU를 하나의 유형으로 취급** — Global/Data Zone/Regional은 최소 PTU·쿼터 풀·예약·리전 가용성이 모두 다름 (§3.2)
 18. **PTU와 백업 Standard를 같은 리전에 배치** — 리전 장애 시 동시 소실 (§3.5 반상관 원칙)
@@ -1009,7 +1027,7 @@ Client → Front Door
 22. **Regional Provisioned로 다중 리전 HA 시도** — 최소 PTU가 크고 리전마다 별도 예약 필요 → 비용 급증 (§3.2, §8.3)
 23. 🚨 **Data Zone PTU를 Global Standard로 Spillover** — 피크 때 오버플로가 **데이터 존 밖에서 처리**되어 상주 요건 위반. 오류가 나지 않아 감사 때 발견됨 (§5.2)
 24. **Global PTU를 리전 `Standard`로 Spillover** — 오버플로가 단일 리전 공유 쿼터에 묶여 Global의 이점 상실 (§5.2)
-25. **APAC에서 Data Zone Provisioned를 계획** — 제공되지 않음. 개념 문서가 아니라 **가용성 표**로 확인해야 함 (§3.2)
+25. **APAC에서 Data Zone Provisioned를 계획** — 제공되지 않음. 개념 문서가 아니라 **모델 리전 가용성 표**로 확인해야 함
 26. **Spillover를 "리전 이중화"로 오해** — 두 배포가 **같은 엔드포인트**를 공유하므로 엔드포인트 장애에는 무력 (§5.2, §5.5)
 
 ## 부록 B. 참고 문서
