@@ -2057,8 +2057,6 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
 <li>[ ] 클라이언트가 <code>Retry-After</code>를 해석하고, 과도한 값이면 경로를 전환한다</li>
 <li>[ ] <strong>Spillover가 있어도 클라이언트 재시도 로직을 유지</strong>한다 (표준 배포도 실패하면 오류가 그대로 전달됨, §5.6)</li>
 <li>[ ] 타임아웃 총 예산 = <strong>(시도 횟수 × 백엔드 timeout) + 재시도 간격 합</strong> 이 클라이언트 타임아웃 이내다 (§6.6)</li>
-<li>[ ] 스트리밍을 쓴다면 APIM에 <strong><code>buffer-response="false"</code></strong> 가 설정되어 있다</li>
-<li>[ ] 재시도를 쓴다면 <strong><code>buffer-request-body="true"</code></strong> 가 설정되어 있다</li>
 <li>[ ] PTU 배포에 Spillover 표준 배포가 연결되어 있다</li>
 <li>[ ] APIM 백엔드가 Managed Identity로 인증하며, 역할은 <strong><code>Cognitive Services OpenAI User</code></strong> 다(추론 전용 최소 권한)</li>
 <li>[ ] 백엔드 풀이 우선순위 기반이고, <strong>모든 백엔드에 서킷 브레이커</strong>가 있다</li>

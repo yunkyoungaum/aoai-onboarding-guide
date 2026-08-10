@@ -946,8 +946,6 @@ Client → Front Door
 - [ ] 클라이언트가 `Retry-After`를 해석하고, 과도한 값이면 경로를 전환한다
 - [ ] **Spillover가 있어도 클라이언트 재시도 로직을 유지**한다 (표준 배포도 실패하면 오류가 그대로 전달됨, §5.6)
 - [ ] 타임아웃 총 예산 = **(시도 횟수 × 백엔드 timeout) + 재시도 간격 합** 이 클라이언트 타임아웃 이내다 (§6.6)
-- [ ] 스트리밍을 쓴다면 APIM에 **`buffer-response="false"`** 가 설정되어 있다
-- [ ] 재시도를 쓴다면 **`buffer-request-body="true"`** 가 설정되어 있다
 - [ ] PTU 배포에 Spillover 표준 배포가 연결되어 있다
 - [ ] APIM 백엔드가 Managed Identity로 인증하며, 역할은 **`Cognitive Services OpenAI User`** 다(추론 전용 최소 권한)
 - [ ] 백엔드 풀이 우선순위 기반이고, **모든 백엔드에 서킷 브레이커**가 있다
