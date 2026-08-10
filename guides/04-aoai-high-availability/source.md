@@ -5,8 +5,6 @@
 > **범위** &nbsp;·&nbsp; 장애 유형 분류 → 계층별 HA 설계 → Spillover/APIM/멀티 리전 → 용량·모델 수명주기
 >
 > **관련 가이드** &nbsp;·&nbsp; [01 온보딩](../01-oai-to-aoai-onboarding/) · [02 기본 개념](../02-aoai-foundations/) · [03 배포 & 운영 모니터링](../03-aoai-deployment-monitoring/)
->
-> **검증 기준** &nbsp;·&nbsp; Foundry HA/resiliency 가이드, Provisioned throughput 개념·사이징·청구, Deployment types, Spillover, API Management Backends(`2024-05-01`), Azure RBAC 문서 (2026-08 확인)
 
 ---
 
