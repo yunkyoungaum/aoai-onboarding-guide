@@ -35,7 +35,7 @@ window.GUIDES = [
       "리소스와 배포의 관계, 배포 유형 전체 지도, 쿼터와 용량의 차이, PTU 쿼터 신청부터 Azure 예약 구매까지의 순서를 정리했습니다. 헷갈리기 쉬운 개념을 먼저 잡고 싶다면 여기서 시작하세요.",
     tags: ["기본 개념", "쿼터", "용량", "PTU", "예약"],
     updated: "2026-08-07",
-    status: "draft",
+    status: "published",
     source: "source.md"
   },
   {

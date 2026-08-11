@@ -6,10 +6,6 @@
 >
 > **관련 가이드** &nbsp;·&nbsp; [01 온보딩](../01-oai-to-aoai-onboarding/) · [02 기본 개념](../02-aoai-foundations/) · [03 배포 & 운영 모니터링](../03-aoai-deployment-monitoring/)
 
-> 📌 **Spillover와 게이트웨이 Failover는 서로 다른 기능입니다.**
-> 이 문서의 **엔터프라이즈 PTU 풀 3단 체인**(워크로드 PTU → 엔터프라이즈 풀 → Standard)은 **APIM 등 게이트웨이 라우팅으로 구현**합니다.
-> **Spillover는 PTU 간 전환 기능이 아니며**, 지원되는 프로비저닝 배포에서 **동일 리소스 안의 PAYG 배포**로 넘기는 별개 기능입니다.
-
 ---
 
 ## 0. TL;DR
