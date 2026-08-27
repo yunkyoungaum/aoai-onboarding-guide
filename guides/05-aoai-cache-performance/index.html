@@ -365,7 +365,8 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <ul>
 <li><a href="#0-tldr">0. TL;DR</a><ul>
 <li><a href="#3">캐시 히트율 개선 3단계</a></li>
-<li><a href="#_1">최소 체크리스트</a></li>
+<li><a href="#_1">모델 계열별 사용 가능한 파라미터</a></li>
+<li><a href="#_2">최소 체크리스트</a></li>
 </ul>
 </li>
 <li><a href="#1">1. 프롬프트 캐싱이란</a><ul>
@@ -415,7 +416,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </ul>
 </li>
 <li><a href="#10">10. 트러블슈팅 빠른 참조</a></li>
-<li><a href="#_2">참고 자료</a></li>
+<li><a href="#_3">참고 자료</a></li>
 </ul>
 </div>
 
@@ -442,6 +443,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <th>단계</th>
 <th>조치</th>
 <th>해결하는 문제</th>
+<th>적용 모델</th>
 </tr>
 </thead>
 <tbody>
@@ -449,32 +451,73 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <td><strong>1</strong></td>
 <td><strong>앞 1,024 토큰을 문자 단위로 동일하게 유지</strong></td>
 <td>프롬프트 불안정으로 인한 구조적 miss</td>
+<td><strong>전 모델</strong></td>
 </tr>
 <tr>
 <td><strong>2</strong></td>
-<td><strong>캐시 보존 기간 연장</strong> (<code>prompt_cache_retention</code>, 최대 24시간)</td>
+<td><strong>캐시 보존 기간 연장</strong> (최대 24시간)</td>
 <td>유휴 구간에서 캐시가 만료되는 문제</td>
+<td>확장 캐싱 지원 모델 (§4.1)</td>
 </tr>
 <tr>
 <td><strong>3</strong></td>
 <td><strong><code>prefix</code> + <code>prompt_cache_key</code> 조합의 농도 조절</strong> (~15 RPM 임계)</td>
 <td>라우팅 분산·과밀로 인한 miss</td>
+<td><strong>GPT-5.6 이상만</strong></td>
 </tr>
 </tbody>
 </table>
 <blockquote>
+<p>⚠️ <strong>3단계는 GPT-5.6 이상 전용입니다.</strong> <code>prompt_cache_key</code>는 문서상 GPT-5.6 이상 모델 계열에만 정의되어 있습니다. 그 이전 모델을 쓴다면 3단계를 건너뛰고 <strong>§4 → §6(배포 유형) → §7(APIM)</strong> 순으로 진행하세요.</p>
 <p>💡 <strong>3단계의 핵심 문장</strong>
 재사용될 만큼은 <strong>뭉치되</strong>, 한 머신이 넘칠 만큼 뭉치지는 <strong>마세요</strong>.
 <em>"concentrated enough for reuse, but not overloaded."</em></p>
 </blockquote>
-<h3 id="_1">최소 체크리스트</h3>
+<h3 id="_1">모델 계열별 사용 가능한 파라미터</h3>
+<table>
+<thead>
+<tr>
+<th>기능</th>
+<th>GPT-4o ~ 5.5</th>
+<th>GPT-5.6+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>프롬프트 캐싱 (자동)</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>prompt_cache_retention</code> (<code>24h</code>)</td>
+<td>✅ (지원 모델 한정, §4.1)</td>
+<td>❌ deprecated</td>
+</tr>
+<tr>
+<td><code>prompt_cache_key</code></td>
+<td>❌ 문서화되지 않음</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>prompt_cache_options</code></td>
+<td>❌ → <strong><code>400</code> 오류</strong></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>prompt_cache_breakpoint</code></td>
+<td>❌ → <strong><code>400</code> 오류</strong></td>
+<td>✅ (PTU-M 제외)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_2">최소 체크리스트</h3>
 <ul>
 <li>[ ] 앞 1,024 토큰에 <strong>가변 값</strong>(타임스탬프, 사용자 ID, UUID)이 <strong>없다</strong> (§3.2)</li>
 <li>[ ] 대화 컨텍스트를 <strong>append-only</strong>로 유지한다 (§3.3)</li>
 <li>[ ] 도구 정의와 출력 스키마의 <strong>직렬화 순서가 고정</strong>되어 있다 (§3.2)</li>
 <li>[ ] 모델에 맞는 <strong>보존 정책</strong>을 명시적으로 설정했다 (§4)</li>
-<li>[ ] <code>prompt_cache_key</code>가 <strong>안정적 해시</strong>로 샤딩되어 있다 (§5.3)</li>
-<li>[ ] 키당 트래픽이 <strong>~15 RPM 이하</strong>다 (§5.2)</li>
+<li>[ ] <em>(5.6+)</em> <code>prompt_cache_key</code>가 <strong>안정적 해시</strong>로 샤딩되어 있다 (§5.3)</li>
+<li>[ ] <em>(5.6+)</em> 키당 트래픽이 <strong>~15 RPM 이하</strong>다 (§5.2)</li>
 <li>[ ] <strong><code>cached_tokens</code>를 로깅</strong>하고 키별로 집계한다 (§9.1)</li>
 <li>[ ] GPT-5.6+ 사용 시 <strong><code>cache_write_tokens</code>(쓰기 과금)</strong> 를 함께 본다 (§8.2)</li>
 <li>[ ] 배포 유형이 <strong>locality 관점에서</strong> 선택되었다 (§6)</li>
@@ -827,6 +870,11 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </blockquote>
 <hr />
 <h2 id="5-3-prefix-prompt_cache_key">5. 개선 3단계 — <code>prefix</code> + <code>prompt_cache_key</code> 농도 조절</h2>
+<blockquote>
+<p>⚠️ <strong>적용 범위 — GPT-5.6 이상 모델 계열 전용</strong></p>
+<p><code>prompt_cache_key</code>는 문서상 <strong>GPT-5.6 이상</strong>에만 정의되어 있습니다. 그 이전 모델(GPT-4o ~ 5.5)을 쓴다면 이 장을 건너뛰고 <strong>§4 보존 기간 연장</strong> → <strong>§6 배포 유형</strong> → <strong>§7 APIM</strong> 순으로 진행하세요.</p>
+<p>문서가 명시한 <code>400</code> 오류 대상은 <code>prompt_cache_options</code> / <code>prompt_cache_breakpoint</code> 두 가지이고 <code>prompt_cache_key</code>는 그 목록에 없습니다. 따라서 이전 모델에 보내도 오류 없이 <strong>무시될 가능성</strong>은 있지만, <strong>효과가 있다는 보장은 없습니다.</strong> 검증된 동작이 아니므로 의존하지 마세요.</p>
+</blockquote>
 <p><strong>"캐시는 머신 로컬"</strong> 성질이 정면으로 드러나는 영역입니다.</p>
 <h3 id="51-prompt_cache_key">5.1 <code>prompt_cache_key</code>는 저장이 아니라 라우팅입니다</h3>
 <p><code>prompt_cache_key</code>는 <strong>"같은 키의 요청을 같은 머신으로 보내라"는 힌트</strong>입니다. 캐시를 저장하는 게 아니라 <strong>어디로 보낼지</strong>를 결정합니다.</p>
@@ -1249,6 +1297,11 @@ SLO:  &quot;캐시 히트 요청의 TTFT p95 &lt; X ms&quot;
 <td>§5.1</td>
 </tr>
 <tr>
+<td><code>prompt_cache_key</code>가 효과 없음</td>
+<td><strong>GPT-5.6 미만 모델인가</strong> (미지원)</td>
+<td>§5 도입부</td>
+</tr>
+<tr>
 <td>세션 중간에 느려짐</td>
 <td>유휴 5~10분 후 첫 요청인가</td>
 <td>§4</td>
@@ -1281,7 +1334,7 @@ SLO:  &quot;캐시 히트 요청의 TTFT p95 &lt; X ms&quot;
 </tbody>
 </table>
 <hr />
-<h2 id="_2">참고 자료</h2>
+<h2 id="_3">참고 자료</h2>
 <ul>
 <li>Prompt caching with Azure OpenAI in Microsoft Foundry Models: https://learn.microsoft.com/azure/foundry/openai/how-to/prompt-caching</li>
 <li>Provisioned throughput (PTU) 개념: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput</li>
@@ -1300,7 +1353,7 @@ SLO:  &quot;캐시 히트 요청의 TTFT p95 &lt; X ms&quot;
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 <script>
 (function () {
-  var DIAGRAMS = ["flowchart LR\n    R1[\"요청 1\"] --> P1[\"prefill: 전체 계산\"]\n    P1 --> C[(\"KV 캐시<br/>(추론 머신 로컬)\")]\n    R2[\"요청 2<br/>(같은 prefix)\"] --> H{\"prefix 일치?\"}\n    C --> H\n    H -->|\"HIT\"| S[\"앞부분 건너뜀<br/>→ TTFT 단축 · 비용 할인\"]\n    H -->|\"MISS\"| F[\"전체 재계산\"]", "flowchart TB\n    subgraph G[\"Global Standard — 넓은 풀\"]\n        GR[\"요청들\"] --> N1[\"Node 1<br/>캐시 A\"]\n        GR --> N2[\"Node 2<br/>캐시 없음\"]\n        GR --> N3[\"Node 3<br/>캐시 없음\"]\n    end\n    subgraph P[\"Regional / PTU — 좁은 풀\"]\n        PR[\"요청들\"] --> M1[\"전용 노드<br/>캐시 A (warm 유지)\"]\n    end", "flowchart TB\n    Q{\"미스를 어디서 체감하는가?\"}\n    Q -->|\"세션 안에서<br/>(대화 중 갑자기 느려짐)\"| A[\"원인: 캐시 수명<br/>→ Extended retention 우선\"]\n    Q -->|\"분산된 요청 전반<br/>(전체적으로 히트율이 낮음)\"| B[\"원인: 라우팅 locality<br/>→ PTU / Regional 논의\"]\n    A --> C[\"§3 · §4 로 대부분 해결\"]\n    B --> D[\"§5 키 설계 → §6 배포 유형 → §7 APIM\"]", "flowchart TB\n    R[\"요청 스트림\"] --> H[\"라우터<br/>hash(prefix + prompt_cache_key)\"]\n    H -->|\"~15 RPM까지\"| A[\"Machine A<br/>캐시 O → HIT ✅\"]\n    H -->|\"초과분 overflow\"| B[\"Machine B<br/>캐시 X → MISS ❌\"]\n    H -->|\"초과분 overflow\"| C[\"Machine C<br/>캐시 X → MISS ❌\"]", "flowchart TB\n    S[\"캐시 히트율이 목표 미달\"] --> A{\"앞 1,024 토큰이<br/>항상 동일한가?\"}\n    A -->|\"아니오\"| A1[\"§3 프롬프트 레이아웃 수정\"]\n    A -->|\"예\"| B{\"요청 사이 유휴가<br/>5~10분 이상 있는가?\"}\n    B -->|\"예\"| B1[\"§4 Extended retention (24h)\"]\n    B -->|\"아니오\"| C{\"키당 트래픽이<br/>15 RPM을 넘는가?\"}\n    C -->|\"예\"| C1[\"§5 키 샤딩으로 분산\"]\n    C -->|\"아니오\"| D{\"키가 과도하게<br/>흩어져 있는가?\"}\n    D -->|\"예\"| D1[\"§5 키 개수 축소\"]\n    D -->|\"아니오\"| E[\"§6 Regional / PTU 전환\"]\n    E --> F[\"§7 APIM 게이트웨이 계층\"]", "flowchart LR\n    U[\"Client\"] --> G[\"APIM AI Gateway\"]\n    G --> S{\"Semantic cache<br/>유사 질문 존재?\"}\n    S -->|\"HIT\"| R1[\"저장된 응답 즉시 반환<br/>(모델 호출 0)\"]\n    S -->|\"MISS\"| M[\"Azure OpenAI\"]\n    M --> P{\"Prompt cache<br/>prefix 일치?\"}\n    P -->|\"HIT\"| R2[\"prefill 생략<br/>TTFT ↓ 비용 ↓\"]\n    P -->|\"MISS\"| R3[\"전체 계산\"]"];
+  var DIAGRAMS = ["flowchart LR\n    R1[\"요청 1\"] --> P1[\"prefill: 전체 계산\"]\n    P1 --> C[(\"KV 캐시<br/>(추론 머신 로컬)\")]\n    R2[\"요청 2<br/>(같은 prefix)\"] --> H{\"prefix 일치?\"}\n    C --> H\n    H -->|\"HIT\"| S[\"앞부분 건너뜀<br/>→ TTFT 단축 · 비용 할인\"]\n    H -->|\"MISS\"| F[\"전체 재계산\"]", "flowchart TB\n    subgraph G[\"Global Standard — 넓은 풀\"]\n        GR[\"요청들\"] --> N1[\"Node 1<br/>캐시 A\"]\n        GR --> N2[\"Node 2<br/>캐시 없음\"]\n        GR --> N3[\"Node 3<br/>캐시 없음\"]\n    end\n    subgraph P[\"Regional / PTU — 좁은 풀\"]\n        PR[\"요청들\"] --> M1[\"전용 노드<br/>캐시 A (warm 유지)\"]\n    end", "flowchart TB\n    Q{\"미스를 어디서 체감하는가?\"}\n    Q -->|\"세션 안에서<br/>(대화 중 갑자기 느려짐)\"| A[\"원인: 캐시 수명<br/>→ Extended retention 우선\"]\n    Q -->|\"분산된 요청 전반<br/>(전체적으로 히트율이 낮음)\"| B[\"원인: 라우팅 locality<br/>→ PTU / Regional 논의\"]\n    A --> C[\"§3 · §4 로 대부분 해결\"]\n    B --> D[\"§5 키 설계 → §6 배포 유형 → §7 APIM\"]", "flowchart TB\n    R[\"요청 스트림\"] --> H[\"라우터<br/>hash(prefix + prompt_cache_key)\"]\n    H -->|\"~15 RPM까지\"| A[\"Machine A<br/>캐시 O → HIT ✅\"]\n    H -->|\"초과분 overflow\"| B[\"Machine B<br/>캐시 X → MISS ❌\"]\n    H -->|\"초과분 overflow\"| C[\"Machine C<br/>캐시 X → MISS ❌\"]", "flowchart TB\n    S[\"캐시 히트율이 목표 미달\"] --> A{\"앞 1,024 토큰이<br/>항상 동일한가?\"}\n    A -->|\"아니오\"| A1[\"§3 프롬프트 레이아웃 수정\"]\n    A -->|\"예\"| B{\"요청 사이 유휴가<br/>5~10분 이상 있는가?\"}\n    B -->|\"예\"| B1[\"§4 Extended retention (24h)\"]\n    B -->|\"아니오\"| M{\"GPT-5.6 이상인가?\"}\n    M -->|\"아니오\"| E[\"§6 Regional / PTU 전환\"]\n    M -->|\"예\"| C{\"키당 트래픽이<br/>15 RPM을 넘는가?\"}\n    C -->|\"예\"| C1[\"§5 키 샤딩으로 분산\"]\n    C -->|\"아니오\"| D{\"키가 과도하게<br/>흩어져 있는가?\"}\n    D -->|\"예\"| D1[\"§5 키 개수 축소\"]\n    D -->|\"아니오\"| E\n    E --> F[\"§7 APIM 게이트웨이 계층\"]", "flowchart LR\n    U[\"Client\"] --> G[\"APIM AI Gateway\"]\n    G --> S{\"Semantic cache<br/>유사 질문 존재?\"}\n    S -->|\"HIT\"| R1[\"저장된 응답 즉시 반환<br/>(모델 호출 0)\"]\n    S -->|\"MISS\"| M[\"Azure OpenAI\"]\n    M --> P{\"Prompt cache<br/>prefix 일치?\"}\n    P -->|\"HIT\"| R2[\"prefill 생략<br/>TTFT ↓ 비용 ↓\"]\n    P -->|\"MISS\"| R3[\"전체 계산\"]"];
   var toggle = document.getElementById("themeToggle");
 
   function currentTheme() { return document.documentElement.getAttribute("data-theme"); }
