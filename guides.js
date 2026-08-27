@@ -59,5 +59,16 @@ window.GUIDES = [
     updated: "2026-08-10",
     status: "published",
     source: "source.md"
+  },
+  {
+    no: "05",
+    slug: "05-aoai-cache-performance",
+    title: "Azure OpenAI 캐시 성능 최적화 가이드 — 프롬프트 캐싱으로 TTFT와 비용 줄이기",
+    summary:
+      "프롬프트 캐싱 동작 원리부터 히트율 진단, 앞 1,024 토큰 고정 · 보존 기간 연장 · prompt_cache_key 농도 조절 3단계 개선, 배포 유형과 APIM 계층 선택, 비용 모델과 SLO 연결까지 다룹니다. (작성 중)",
+    tags: ["프롬프트 캐싱", "TTFT", "비용 최적화", "PTU", "APIM"],
+    updated: "2026-08-27",
+    status: "draft",
+    source: "source.md"
   }
 ];
