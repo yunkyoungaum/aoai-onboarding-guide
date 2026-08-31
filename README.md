@@ -14,7 +14,8 @@
 | 02 | Azure OpenAI 기본 개념 *(draft)* | 리소스·배포·쿼터·용량·PTU 신청·예약 구매 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/02-aoai-foundations/) |
 | 03 | Azure OpenAI 배포 & 운영 모니터링 가이드 | 모니터링, PTU, KQL, Alert, APIM | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/03-aoai-deployment-monitoring/) |
 | 04 | Azure OpenAI 고가용성(HA) 아키텍처 가이드 | HA, Failover, Spillover, 멀티 리전 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/04-aoai-high-availability/) |
-| 05 | Azure OpenAI 캐시 성능 최적화 가이드 *(draft · WIP)* | 프롬프트 캐싱, TTFT, 비용 최적화, PTU, APIM | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/05-aoai-cache-performance/) |
+| 05 | Azure OpenAI Model Router 가이드 *(draft · WIP)* | 모델 라우팅, 비용 최적화, 배포, 거버넌스 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/05-aoai-model-router/) |
+| 06 | Azure OpenAI 캐시 성능 최적화 가이드 *(draft · WIP)* | 프롬프트 캐싱, TTFT, 비용 최적화, PTU, APIM | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/06-aoai-cache-performance/) |
 
 ### 읽는 순서 추천
 
@@ -22,7 +23,8 @@
 처음이라면        01 온보딩 → 02 기본 개념
 운영 준비 중이면   02 기본 개념 → 03 모니터링
 가용성 설계 중이면 04 고가용성
-성능·비용 튜닝이면 05 캐시 성능 최적화
+비용 최적화라면    05 Model Router
+성능·비용 튜닝이면 06 캐시 성능 최적화
 ```
 
 > 목록의 **정본(Single Source of Truth)은 [`guides.js`](guides.js)** 입니다.
@@ -50,11 +52,15 @@
 │   ├── 04-aoai-high-availability/
 │   │   ├── index.html
 │   │   └── source.md
-│   ├── 05-aoai-cache-performance/       # draft / WIP
+│   ├── 05-aoai-model-router/           # draft / WIP
+│   │   ├── index.html
+│   │   └── source.md
+│   ├── 06-aoai-cache-performance/      # draft / WIP
 │   │   ├── index.html
 │   │   └── source.md
 │   ├── 02-aoai-deployment-monitoring/   # 리다이렉트 스텁 (구 번호 → 03)
 │   ├── 03-aoai-high-availability/       # 리다이렉트 스텁 (구 번호 → 04)
+│   ├── 05-aoai-cache-performance/       # 리다이렉트 스텁 (구 번호 → 06)
 │   └── _template/
 │       └── index.html          # 새 가이드 시작용 빈 템플릿
 └── README.md
@@ -63,12 +69,14 @@
 ### 번호 변경 이력
 
 2026-08-07에 기본 개념 가이드를 02로 추가하면서 이후 번호를 한 칸씩 밀었습니다.
+2026-08-31에 Model Router 가이드를 05로 추가하면서 캐시 성능 가이드를 06으로 옮겼습니다.
 이전에 공유된 링크가 깨지지 않도록 **구 경로에 리다이렉트 스텁**을 남겨두었습니다.
 
 | 이전 | 현재 |
 |---|---|
 | `02-aoai-deployment-monitoring` | `03-aoai-deployment-monitoring` |
 | `03-aoai-high-availability` | `04-aoai-high-availability` |
+| `05-aoai-cache-performance` | `06-aoai-cache-performance` |
 
 ---
 

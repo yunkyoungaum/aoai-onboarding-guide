@@ -6,7 +6,7 @@
 >
 > **범위** &nbsp;·&nbsp; 캐싱 원리 → 히트율 진단 → 3단계 개선 → 배포 유형·게이트웨이 선택 → 관측과 SLO
 >
-> **관련 가이드** &nbsp;·&nbsp; [01 온보딩](../01-oai-to-aoai-onboarding/) · [02 기본 개념](../02-aoai-foundations/) · [03 배포 & 운영 모니터링](../03-aoai-deployment-monitoring/) · [04 고가용성(HA)](../04-aoai-high-availability/)
+> **관련 가이드** &nbsp;·&nbsp; [01 온보딩](../01-oai-to-aoai-onboarding/) · [02 기본 개념](../02-aoai-foundations/) · [03 배포 & 운영 모니터링](../03-aoai-deployment-monitoring/) · [04 고가용성(HA)](../04-aoai-high-availability/) · [05 Model Router](../05-aoai-model-router/)
 
 ---
 

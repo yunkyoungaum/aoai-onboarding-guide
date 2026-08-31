@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Azure OpenAI 캐시 성능 최적화 가이드</title>
+<script>
+  (() => {
+    const param = new URLSearchParams(window.location.search).get("scoutTheme");
+    const theme =
+      param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+<style>
+:root {
+  color-scheme: light;
+  --cp-bg: #f7f4ef;
+  --cp-bg-elevated: #fcfbf8;
+  --cp-surface: #ffffff;
+  --cp-surface-soft: #f5f5f5;
+  --cp-border: #dedede;
+  --cp-border-strong: #919191;
+  --cp-text: #242424;
+  --cp-text-muted: #5c5c5c;
+  --cp-text-soft: #6f6f6f;
+  --cp-accent: #b11f4b;
+  --cp-accent-hover: #9a1a41;
+  --cp-accent-soft: rgba(177, 31, 75, 0.08);
+  --cp-accent-fg: #ffffff;
+  --cp-success: #16a34a;
+  --cp-danger: #dc2626;
+  --cp-warning: #f59e0b;
+  --cp-link: #0078d4;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+  --cp-highlight: rgba(177, 31, 75, 0.12);
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --cp-bg: #3d3b3a;
+  --cp-bg-elevated: #343231;
+  --cp-surface: #292929;
+  --cp-surface-soft: #2e2e2e;
+  --cp-border: #474747;
+  --cp-border-strong: #5f5f5f;
+  --cp-text: #dedede;
+  --cp-text-muted: #919191;
+  --cp-text-soft: #b0b0b0;
+  --cp-accent: #fd8ea1;
+  --cp-accent-hover: #fb7b91;
+  --cp-accent-soft: rgba(253, 142, 161, 0.14);
+  --cp-accent-fg: #1a1a1a;
+  --cp-success: #4ade80;
+  --cp-danger: #f87171;
+  --cp-warning: #fbbf24;
+  --cp-link: #4da6ff;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+  --cp-highlight: rgba(253, 142, 161, 0.12);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--cp-bg);
+  color: var(--cp-text);
+  font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15.5px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+.layout { display: flex; align-items: flex-start; max-width: 1400px; margin: 0 auto; gap: 24px; padding: 24px; }
+
+.sidebar {
+  position: sticky; top: 24px; flex: 0 0 290px; max-height: calc(100vh - 48px);
+  overflow-y: auto; background: var(--cp-surface); border: 1px solid var(--cp-border);
+  border-radius: 16px; padding: 20px 18px;
+  box-shadow: 0 0 2px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.14);
+}
+.sidebar h2 {
+  margin: 0 0 12px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--cp-text-muted); border: none; padding: 0;
+}
+.sidebar h2::before { content: none; }
+.sidebar ul { list-style: none; margin: 0; padding: 0; }
+.sidebar ul ul { padding-left: 12px; }
+.sidebar li { margin: 2px 0; }
+.sidebar a {
+  display: block; padding: 5px 10px; border-radius: 0.625rem; font-size: 13.5px;
+  color: var(--cp-text-muted); text-decoration: none; border-left: 2px solid transparent;
+}
+.sidebar a:hover { background: var(--cp-accent-soft); color: var(--cp-accent); }
+.sidebar a.active { background: var(--cp-accent-soft); color: var(--cp-accent); border-left-color: var(--cp-accent); font-weight: 600; }
+
+main {
+  flex: 1 1 auto; min-width: 0; background: var(--cp-surface);
+  border: 1px solid var(--cp-border); border-radius: 16px; padding: 44px 52px;
+  box-shadow: 0 0 2px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.14);
+}
+
+h1, h2, h3, h4 { font-weight: 650; line-height: 1.35; scroll-margin-top: 24px; }
+h1 { font-size: 2.05rem; margin: 0 0 8px; letter-spacing: -0.02em; }
+h2 {
+  font-size: 1.45rem; margin: 2.6rem 0 1rem; padding-bottom: .5rem;
+  border-bottom: 2px solid var(--cp-border);
+}
+h2::before {
+  content: ""; display: inline-block; width: 6px; height: 1.05em; border-radius: 3px;
+  background: var(--cp-accent); margin-right: 10px; vertical-align: -0.16em;
+}
+h3 { font-size: 1.14rem; margin: 1.9rem 0 .6rem; }
+h4 { font-size: 1rem; margin: 1.4rem 0 .5rem; color: var(--cp-text-muted); }
+
+p { margin: .8rem 0; }
+a { color: var(--cp-link); text-decoration: none; word-break: break-word; }
+a:hover { text-decoration: underline; }
+hr { border: none; border-top: 1px solid var(--cp-border); margin: 2.4rem 0; }
+
+ul, ol { padding-left: 1.5rem; }
+li { margin: .3rem 0; }
+li::marker { color: var(--cp-accent); }
+strong { font-weight: 650; }
+
+table {
+  width: 100%; border-collapse: separate; border-spacing: 0; margin: 1.2rem 0;
+  font-size: 14px; border: 1px solid var(--cp-border); border-radius: 12px; overflow: hidden;
+}
+thead th {
+  background: var(--cp-surface-soft); color: var(--cp-text); font-weight: 650;
+  text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--cp-border);
+}
+tbody td { padding: 10px 14px; border-bottom: 1px solid var(--cp-border); vertical-align: top; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--cp-accent-soft); }
+
+code {
+  font-family: Consolas, "Courier New", Courier, monospace;
+  font-size: .88em; background: var(--cp-surface-soft); color: var(--cp-accent);
+  padding: .12em .38em; border-radius: 5px; border: 1px solid var(--cp-border);
+  white-space: nowrap;
+}
+pre {
+  background: var(--cp-bg-elevated); border: 1px solid var(--cp-border);
+  border-radius: 12px; padding: 16px 18px; overflow-x: auto; margin: 1.1rem 0;
+  line-height: 1.6;
+}
+html[data-theme="dark"] pre { background: #1f1f1f; }
+pre code {
+  background: none; border: none; padding: 0; color: var(--cp-text); font-size: 13px;
+  white-space: pre;
+}
+.codehilite { background: none !important; }
+
+blockquote {
+  margin: 1.2rem 0; padding: 12px 18px; background: var(--cp-accent-soft);
+  border-left: 4px solid var(--cp-accent); border-radius: 0 10px 10px 0;
+}
+blockquote p { margin: .35rem 0; }
+
+.mermaid {
+  text-align: center; margin: 1.4rem 0; background: var(--cp-bg-elevated);
+  border: 1px solid var(--cp-border); border-radius: 12px; padding: 18px; overflow-x: auto;
+}
+.mermaid svg { max-width: 100%; height: auto; }
+.mermaid-fallback {
+  text-align: left; font-family: Consolas, "Courier New", Courier, monospace;
+  font-size: 12.5px; white-space: pre; color: var(--cp-text-muted);
+}
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1px solid var(--cp-border);
+}
+.meta { color: var(--cp-text-soft); font-size: 13px; }
+.badge {
+  display: inline-block; background: var(--cp-accent); color: var(--cp-accent-fg);
+  font-size: 11px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 999px;
+}
+.toggle {
+  cursor: pointer; border: 1px solid var(--cp-border); background: var(--cp-surface-soft);
+  color: var(--cp-text); border-radius: 0.625rem; padding: 7px 14px; font-size: 13px;
+  font-family: inherit;
+}
+.toggle:hover { border-color: var(--cp-accent); color: var(--cp-accent); }
+
+@media (max-width: 1024px) {
+  .sidebar { display: none; }
+  main { padding: 28px 20px; }
+  .layout { padding: 14px; }
+}
+@media print {
+  .sidebar, .toggle { display: none; }
+  main { border: none; box-shadow: none; padding: 0; }
+}
+
+pre { line-height: 125%; }
+td.linenos .normal { color: #666666; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: #666666; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+.codehilite .hll { background-color: #ffffcc }
+.codehilite { background: #f0f0f0; }
+.codehilite .c { color: #60A0B0; font-style: italic } /* Comment */
+.codehilite .err { border: 1px solid #F00 } /* Error */
+.codehilite .k { color: #007020; font-weight: bold } /* Keyword */
+.codehilite .o { color: #666 } /* Operator */
+.codehilite .ch { color: #60A0B0; font-style: italic } /* Comment.Hashbang */
+.codehilite .cm { color: #60A0B0; font-style: italic } /* Comment.Multiline */
+.codehilite .cp { color: #007020 } /* Comment.Preproc */
+.codehilite .cpf { color: #60A0B0; font-style: italic } /* Comment.PreprocFile */
+.codehilite .c1 { color: #60A0B0; font-style: italic } /* Comment.Single */
+.codehilite .cs { color: #60A0B0; background-color: #FFF0F0 } /* Comment.Special */
+.codehilite .gd { color: #A00000 } /* Generic.Deleted */
+.codehilite .ge { font-style: italic } /* Generic.Emph */
+.codehilite .ges { font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.codehilite .gr { color: #F00 } /* Generic.Error */
+.codehilite .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.codehilite .gi { color: #00A000 } /* Generic.Inserted */
+.codehilite .go { color: #888 } /* Generic.Output */
+.codehilite .gp { color: #C65D09; font-weight: bold } /* Generic.Prompt */
+.codehilite .gs { font-weight: bold } /* Generic.Strong */
+.codehilite .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.codehilite .gt { color: #04D } /* Generic.Traceback */
+.codehilite .kc { color: #007020; font-weight: bold } /* Keyword.Constant */
+.codehilite .kd { color: #007020; font-weight: bold } /* Keyword.Declaration */
+.codehilite .kn { color: #007020; font-weight: bold } /* Keyword.Namespace */
+.codehilite .kp { color: #007020 } /* Keyword.Pseudo */
+.codehilite .kr { color: #007020; font-weight: bold } /* Keyword.Reserved */
+.codehilite .kt { color: #902000 } /* Keyword.Type */
+.codehilite .m { color: #40A070 } /* Literal.Number */
+.codehilite .s { color: #4070A0 } /* Literal.String */
+.codehilite .na { color: #4070A0 } /* Name.Attribute */
+.codehilite .nb { color: #007020 } /* Name.Builtin */
+.codehilite .nc { color: #0E84B5; font-weight: bold } /* Name.Class */
+.codehilite .no { color: #60ADD5 } /* Name.Constant */
+.codehilite .nd { color: #555; font-weight: bold } /* Name.Decorator */
+.codehilite .ni { color: #D55537; font-weight: bold } /* Name.Entity */
+.codehilite .ne { color: #007020 } /* Name.Exception */
+.codehilite .nf { color: #06287E } /* Name.Function */
+.codehilite .nl { color: #002070; font-weight: bold } /* Name.Label */
+.codehilite .nn { color: #0E84B5; font-weight: bold } /* Name.Namespace */
+.codehilite .nt { color: #062873; font-weight: bold } /* Name.Tag */
+.codehilite .nv { color: #BB60D5 } /* Name.Variable */
+.codehilite .ow { color: #007020; font-weight: bold } /* Operator.Word */
+.codehilite .w { color: #BBB } /* Text.Whitespace */
+.codehilite .mb { color: #40A070 } /* Literal.Number.Bin */
+.codehilite .mf { color: #40A070 } /* Literal.Number.Float */
+.codehilite .mh { color: #40A070 } /* Literal.Number.Hex */
+.codehilite .mi { color: #40A070 } /* Literal.Number.Integer */
+.codehilite .mo { color: #40A070 } /* Literal.Number.Oct */
+.codehilite .sa { color: #4070A0 } /* Literal.String.Affix */
+.codehilite .sb { color: #4070A0 } /* Literal.String.Backtick */
+.codehilite .sc { color: #4070A0 } /* Literal.String.Char */
+.codehilite .dl { color: #4070A0 } /* Literal.String.Delimiter */
+.codehilite .sd { color: #4070A0; font-style: italic } /* Literal.String.Doc */
+.codehilite .s2 { color: #4070A0 } /* Literal.String.Double */
+.codehilite .se { color: #4070A0; font-weight: bold } /* Literal.String.Escape */
+.codehilite .sh { color: #4070A0 } /* Literal.String.Heredoc */
+.codehilite .si { color: #70A0D0; font-style: italic } /* Literal.String.Interpol */
+.codehilite .sx { color: #C65D09 } /* Literal.String.Other */
+.codehilite .sr { color: #235388 } /* Literal.String.Regex */
+.codehilite .s1 { color: #4070A0 } /* Literal.String.Single */
+.codehilite .ss { color: #517918 } /* Literal.String.Symbol */
+.codehilite .bp { color: #007020 } /* Name.Builtin.Pseudo */
+.codehilite .fm { color: #06287E } /* Name.Function.Magic */
+.codehilite .vc { color: #BB60D5 } /* Name.Variable.Class */
+.codehilite .vg { color: #BB60D5 } /* Name.Variable.Global */
+.codehilite .vi { color: #BB60D5 } /* Name.Variable.Instance */
+.codehilite .vm { color: #BB60D5 } /* Name.Variable.Magic */
+.codehilite .il { color: #40A070 } /* Literal.Number.Integer.Long */
+pre { line-height: 125%; }
+td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+html[data-theme="dark"] .codehilite .hll { background-color: #49483e }
+html[data-theme="dark"] .codehilite { background: #272822; color: #F8F8F2 }
+html[data-theme="dark"] .codehilite .c { color: #959077 } /* Comment */
+html[data-theme="dark"] .codehilite .err { color: #ED007E; background-color: #1E0010 } /* Error */
+html[data-theme="dark"] .codehilite .esc { color: #F8F8F2 } /* Escape */
+html[data-theme="dark"] .codehilite .g { color: #F8F8F2 } /* Generic */
+html[data-theme="dark"] .codehilite .k { color: #66D9EF } /* Keyword */
+html[data-theme="dark"] .codehilite .l { color: #AE81FF } /* Literal */
+html[data-theme="dark"] .codehilite .n { color: #F8F8F2 } /* Name */
+html[data-theme="dark"] .codehilite .o { color: #FF4689 } /* Operator */
+html[data-theme="dark"] .codehilite .x { color: #F8F8F2 } /* Other */
+html[data-theme="dark"] .codehilite .p { color: #F8F8F2 } /* Punctuation */
+html[data-theme="dark"] .codehilite .ch { color: #959077 } /* Comment.Hashbang */
+html[data-theme="dark"] .codehilite .cm { color: #959077 } /* Comment.Multiline */
+html[data-theme="dark"] .codehilite .cp { color: #959077 } /* Comment.Preproc */
+html[data-theme="dark"] .codehilite .cpf { color: #959077 } /* Comment.PreprocFile */
+html[data-theme="dark"] .codehilite .c1 { color: #959077 } /* Comment.Single */
+html[data-theme="dark"] .codehilite .cs { color: #959077 } /* Comment.Special */
+html[data-theme="dark"] .codehilite .gd { color: #FF4689 } /* Generic.Deleted */
+html[data-theme="dark"] .codehilite .ge { color: #F8F8F2; font-style: italic } /* Generic.Emph */
+html[data-theme="dark"] .codehilite .ges { color: #F8F8F2; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+html[data-theme="dark"] .codehilite .gr { color: #F8F8F2 } /* Generic.Error */
+html[data-theme="dark"] .codehilite .gh { color: #F8F8F2 } /* Generic.Heading */
+html[data-theme="dark"] .codehilite .gi { color: #A6E22E } /* Generic.Inserted */
+html[data-theme="dark"] .codehilite .go { color: #66D9EF } /* Generic.Output */
+html[data-theme="dark"] .codehilite .gp { color: #FF4689; font-weight: bold } /* Generic.Prompt */
+html[data-theme="dark"] .codehilite .gs { color: #F8F8F2; font-weight: bold } /* Generic.Strong */
+html[data-theme="dark"] .codehilite .gu { color: #959077 } /* Generic.Subheading */
+html[data-theme="dark"] .codehilite .gt { color: #F8F8F2 } /* Generic.Traceback */
+html[data-theme="dark"] .codehilite .kc { color: #66D9EF } /* Keyword.Constant */
+html[data-theme="dark"] .codehilite .kd { color: #66D9EF } /* Keyword.Declaration */
+html[data-theme="dark"] .codehilite .kn { color: #FF4689 } /* Keyword.Namespace */
+html[data-theme="dark"] .codehilite .kp { color: #66D9EF } /* Keyword.Pseudo */
+html[data-theme="dark"] .codehilite .kr { color: #66D9EF } /* Keyword.Reserved */
+html[data-theme="dark"] .codehilite .kt { color: #66D9EF } /* Keyword.Type */
+html[data-theme="dark"] .codehilite .ld { color: #E6DB74 } /* Literal.Date */
+html[data-theme="dark"] .codehilite .m { color: #AE81FF } /* Literal.Number */
+html[data-theme="dark"] .codehilite .s { color: #E6DB74 } /* Literal.String */
+html[data-theme="dark"] .codehilite .na { color: #A6E22E } /* Name.Attribute */
+html[data-theme="dark"] .codehilite .nb { color: #F8F8F2 } /* Name.Builtin */
+html[data-theme="dark"] .codehilite .nc { color: #A6E22E } /* Name.Class */
+html[data-theme="dark"] .codehilite .no { color: #66D9EF } /* Name.Constant */
+html[data-theme="dark"] .codehilite .nd { color: #A6E22E } /* Name.Decorator */
+html[data-theme="dark"] .codehilite .ni { color: #F8F8F2 } /* Name.Entity */
+html[data-theme="dark"] .codehilite .ne { color: #A6E22E } /* Name.Exception */
+html[data-theme="dark"] .codehilite .nf { color: #A6E22E } /* Name.Function */
+html[data-theme="dark"] .codehilite .nl { color: #F8F8F2 } /* Name.Label */
+html[data-theme="dark"] .codehilite .nn { color: #F8F8F2 } /* Name.Namespace */
+html[data-theme="dark"] .codehilite .nx { color: #A6E22E } /* Name.Other */
+html[data-theme="dark"] .codehilite .py { color: #F8F8F2 } /* Name.Property */
+html[data-theme="dark"] .codehilite .nt { color: #FF4689 } /* Name.Tag */
+html[data-theme="dark"] .codehilite .nv { color: #F8F8F2 } /* Name.Variable */
+html[data-theme="dark"] .codehilite .ow { color: #FF4689 } /* Operator.Word */
+html[data-theme="dark"] .codehilite .pm { color: #F8F8F2 } /* Punctuation.Marker */
+html[data-theme="dark"] .codehilite .w { color: #F8F8F2 } /* Text.Whitespace */
+html[data-theme="dark"] .codehilite .mb { color: #AE81FF } /* Literal.Number.Bin */
+html[data-theme="dark"] .codehilite .mf { color: #AE81FF } /* Literal.Number.Float */
+html[data-theme="dark"] .codehilite .mh { color: #AE81FF } /* Literal.Number.Hex */
+html[data-theme="dark"] .codehilite .mi { color: #AE81FF } /* Literal.Number.Integer */
+html[data-theme="dark"] .codehilite .mo { color: #AE81FF } /* Literal.Number.Oct */
+html[data-theme="dark"] .codehilite .sa { color: #E6DB74 } /* Literal.String.Affix */
+html[data-theme="dark"] .codehilite .sb { color: #E6DB74 } /* Literal.String.Backtick */
+html[data-theme="dark"] .codehilite .sc { color: #E6DB74 } /* Literal.String.Char */
+html[data-theme="dark"] .codehilite .dl { color: #E6DB74 } /* Literal.String.Delimiter */
+html[data-theme="dark"] .codehilite .sd { color: #E6DB74 } /* Literal.String.Doc */
+html[data-theme="dark"] .codehilite .s2 { color: #E6DB74 } /* Literal.String.Double */
+html[data-theme="dark"] .codehilite .se { color: #AE81FF } /* Literal.String.Escape */
+html[data-theme="dark"] .codehilite .sh { color: #E6DB74 } /* Literal.String.Heredoc */
+html[data-theme="dark"] .codehilite .si { color: #E6DB74 } /* Literal.String.Interpol */
+html[data-theme="dark"] .codehilite .sx { color: #E6DB74 } /* Literal.String.Other */
+html[data-theme="dark"] .codehilite .sr { color: #E6DB74 } /* Literal.String.Regex */
+html[data-theme="dark"] .codehilite .s1 { color: #E6DB74 } /* Literal.String.Single */
+html[data-theme="dark"] .codehilite .ss { color: #E6DB74 } /* Literal.String.Symbol */
+html[data-theme="dark"] .codehilite .bp { color: #F8F8F2 } /* Name.Builtin.Pseudo */
+html[data-theme="dark"] .codehilite .fm { color: #A6E22E } /* Name.Function.Magic */
+html[data-theme="dark"] .codehilite .vc { color: #F8F8F2 } /* Name.Variable.Class */
+html[data-theme="dark"] .codehilite .vg { color: #F8F8F2 } /* Name.Variable.Global */
+html[data-theme="dark"] .codehilite .vi { color: #F8F8F2 } /* Name.Variable.Instance */
+html[data-theme="dark"] .codehilite .vm { color: #F8F8F2 } /* Name.Variable.Magic */
+html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Integer.Long */
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav class="sidebar">
+    <h2>목차</h2>
+<div class="toc">
+<ul>
+<li><a href="#0-tldr">0. TL;DR</a><ul>
+<li><a href="#3">캐시 히트율 개선 3단계</a></li>
+<li><a href="#_1">모델 계열별 사용 가능한 파라미터</a></li>
+<li><a href="#_2">최소 체크리스트</a></li>
+</ul>
+</li>
+<li><a href="#1">1. 프롬프트 캐싱이란</a><ul>
+<li><a href="#11">1.1 동작 원리</a></li>
+<li><a href="#12">1.2 적용 조건</a></li>
+<li><a href="#13">1.3 무엇이 캐싱되는가</a></li>
+<li><a href="#14">1.4 히트 확인 방법</a></li>
+</ul>
+</li>
+<li><a href="#2">2. 히트율이 낮게 느껴지는 이유</a><ul>
+<li><a href="#21-gpu-local-global-standard-fan-out">2.1 캐시는 GPU-local, Global Standard는 fan-out 한다</a></li>
+<li><a href="#22">2.2 진단 — 미스를 어느 층위에서 체감하는가</a></li>
+</ul>
+</li>
+<li><a href="#3-1-1024">3. 개선 1단계 — 앞 1,024 토큰을 고정하라</a><ul>
+<li><a href="#31">3.1 프롬프트 레이아웃 원칙</a></li>
+<li><a href="#32">3.2 캐시를 깨는 흔한 패턴</a></li>
+<li><a href="#33-append-only">3.3 대화 컨텍스트는 append-only</a></li>
+</ul>
+</li>
+<li><a href="#4-2">4. 개선 2단계 — 캐시 보존 기간을 늘려라</a><ul>
+<li><a href="#41-in-memory-vs-extended">4.1 in-memory vs extended</a></li>
+<li><a href="#42">4.2 모델별 설정 방법</a></li>
+<li><a href="#43-gpt-56-ttl">4.3 GPT-5.6 이상의 ttl — 의미가 반대입니다</a></li>
+<li><a href="#44">4.4 데이터 레지던시 영향</a></li>
+</ul>
+</li>
+<li><a href="#5-3-prefix-prompt_cache_key">5. 개선 3단계 — prefix + prompt_cache_key 농도 조절</a><ul>
+<li><a href="#51-prompt_cache_key">5.1 prompt_cache_key는 저장이 아니라 라우팅입니다</a></li>
+<li><a href="#52">5.2 양쪽 극단이 모두 나쁩니다</a></li>
+<li><a href="#53">5.3 샤딩 구현</a></li>
+<li><a href="#54">5.4 반드시 기억할 두 가지</a></li>
+<li><a href="#55-gpt-56-breakpoint">5.5 GPT-5.6+ — 명시적 캐시 breakpoint</a></li>
+</ul>
+</li>
+<li><a href="#6-locality">6. 배포 유형으로 locality를 확보하라</a></li>
+<li><a href="#7-apim">7. 게이트웨이 계층 — APIM으로 한 겹 더</a></li>
+<li><a href="#8">8. 비용 모델</a><ul>
+<li><a href="#81">8.1 캐시 읽기 — 할인</a></li>
+<li><a href="#82-gpt-56">8.2 캐시 쓰기 — GPT-5.6부터 과금될 수 있음</a></li>
+</ul>
+</li>
+<li><a href="#9">9. 관측</a><ul>
+<li><a href="#91">9.1 핵심 지표</a></li>
+<li><a href="#92">9.2 해석 규칙</a></li>
+<li><a href="#93-slo">9.3 SLO 베이스라인으로 연결하기</a></li>
+</ul>
+</li>
+<li><a href="#10">10. 트러블슈팅 빠른 참조</a></li>
+<li><a href="#_3">참고 자료</a></li>
+</ul>
+</div>
+
+  </nav>
+  <main>
+    <div class="topbar">
+      <span class="badge">Azure OpenAI · Cache Performance</span>
+      <button class="toggle" id="themeToggle" type="button">테마 전환</button>
+    </div>
+<h1 id="azure-openai-ttft">Azure OpenAI 캐시 성능 최적화 가이드 — 프롬프트 캐싱으로 TTFT와 비용 줄이기</h1>
+<blockquote>
+<p>🚧 <strong>WIP / Draft</strong> &nbsp;·&nbsp; 계속 갱신 중인 문서입니다. 수치와 파라미터는 배포 전 공식 문서로 재확인하세요.</p>
+<p><strong>대상</strong> &nbsp;·&nbsp; AOAI에서 <strong>TTFT(첫 토큰 지연)</strong> 또는 <strong>입력 토큰 비용</strong>을 줄여야 하는 애플리케이션 팀, 플랫폼 팀</p>
+<p><strong>범위</strong> &nbsp;·&nbsp; 캐싱 원리 → 히트율 진단 → 3단계 개선 → 배포 유형·게이트웨이 선택 → 관측과 SLO</p>
+<p><strong>관련 가이드</strong> &nbsp;·&nbsp; <a href="../01-oai-to-aoai-onboarding/">01 온보딩</a> · <a href="../02-aoai-foundations/">02 기본 개념</a> · <a href="../03-aoai-deployment-monitoring/">03 배포 &amp; 운영 모니터링</a> · <a href="../04-aoai-high-availability/">04 고가용성(HA)</a> · <a href="../05-aoai-model-router/">05 Model Router</a></p>
+</blockquote>
+<hr />
+<h2 id="0-tldr">0. TL;DR</h2>
+<p>프롬프트 캐싱은 <strong>동일한 프롬프트 앞부분(prefix)의 KV 연산 결과를 재사용</strong>해 TTFT와 입력 토큰 비용을 줄입니다. 지원 모델에서 <strong>기본 활성화</strong>되어 있으므로 실무의 과제는 전부 <strong>히트율을 어떻게 올리느냐</strong>입니다. 캐시는 특정 추론 머신에 <strong>로컬로</strong> 존재하므로, 히트율은 ① 프롬프트가 얼마나 안정적인가 ② 캐시가 얼마나 오래 살아있는가 ③ 요청이 같은 머신으로 얼마나 잘 모이는가로 결정됩니다.</p>
+<h3 id="3">캐시 히트율 개선 3단계</h3>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>조치</th>
+<th>해결하는 문제</th>
+<th>적용 모델</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1</strong></td>
+<td><strong>앞 1,024 토큰을 문자 단위로 동일하게 유지</strong></td>
+<td>프롬프트 불안정으로 인한 구조적 miss</td>
+<td><strong>전 모델</strong></td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td><strong>캐시 보존 기간 연장</strong> (최대 24시간)</td>
+<td>유휴 구간에서 캐시가 만료되는 문제</td>
+<td>확장 캐싱 지원 모델 (§4.1)</td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td><strong><code>prefix</code> + <code>prompt_cache_key</code> 조합의 농도 조절</strong> (~15 RPM 임계)</td>
+<td>라우팅 분산·과밀로 인한 miss</td>
+<td><strong>GPT-5.6 이상만</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>3단계는 GPT-5.6 이상 전용입니다.</strong> <code>prompt_cache_key</code>는 문서상 GPT-5.6 이상 모델 계열에만 정의되어 있습니다. 그 이전 모델을 쓴다면 3단계를 건너뛰고 <strong>§4 → §6(배포 유형) → §7(APIM)</strong> 순으로 진행하세요.</p>
+<p>💡 <strong>3단계의 핵심 문장</strong>
+재사용될 만큼은 <strong>뭉치되</strong>, 한 머신이 넘칠 만큼 뭉치지는 <strong>마세요</strong>.
+<em>"concentrated enough for reuse, but not overloaded."</em></p>
+</blockquote>
+<h3 id="_1">모델 계열별 사용 가능한 파라미터</h3>
+<table>
+<thead>
+<tr>
+<th>기능</th>
+<th>GPT-4o ~ 5.5</th>
+<th>GPT-5.6+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>프롬프트 캐싱 (자동)</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>prompt_cache_retention</code> (<code>24h</code>)</td>
+<td>✅ (지원 모델 한정, §4.1)</td>
+<td>❌ deprecated</td>
+</tr>
+<tr>
+<td><code>prompt_cache_key</code></td>
+<td>❌ 문서화되지 않음</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>prompt_cache_options</code></td>
+<td>❌ → <strong><code>400</code> 오류</strong></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>prompt_cache_breakpoint</code></td>
+<td>❌ → <strong><code>400</code> 오류</strong></td>
+<td>✅ (PTU-M 제외)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_2">최소 체크리스트</h3>
+<ul>
+<li>[ ] 앞 1,024 토큰에 <strong>가변 값</strong>(타임스탬프, 사용자 ID, UUID)이 <strong>없다</strong> (§3.2)</li>
+<li>[ ] 대화 컨텍스트를 <strong>append-only</strong>로 유지한다 (§3.3)</li>
+<li>[ ] 도구 정의와 출력 스키마의 <strong>직렬화 순서가 고정</strong>되어 있다 (§3.2)</li>
+<li>[ ] 모델에 맞는 <strong>보존 정책</strong>을 명시적으로 설정했다 (§4)</li>
+<li>[ ] <em>(5.6+)</em> <code>prompt_cache_key</code>가 <strong>안정적 해시</strong>로 샤딩되어 있다 (§5.3)</li>
+<li>[ ] <em>(5.6+)</em> 키당 트래픽이 <strong>~15 RPM 이하</strong>다 (§5.2)</li>
+<li>[ ] <strong><code>cached_tokens</code>를 로깅</strong>하고 키별로 집계한다 (§9.1)</li>
+<li>[ ] GPT-5.6+ 사용 시 <strong><code>cache_write_tokens</code>(쓰기 과금)</strong> 를 함께 본다 (§8.2)</li>
+<li>[ ] 배포 유형이 <strong>locality 관점에서</strong> 선택되었다 (§6)</li>
+<li>[ ] TTFT <strong>p95를 캐시 히트율과 함께</strong> 본다 (§9.3)</li>
+</ul>
+<hr />
+<h2 id="1">1. 프롬프트 캐싱이란</h2>
+<h3 id="11">1.1 동작 원리</h3>
+<p>LLM은 입력 토큰마다 Key/Value 텐서를 계산합니다(prefill). 프롬프트 앞부분이 이전 요청과 완전히 같다면 그 계산을 다시 할 이유가 없습니다. 프롬프트 캐싱은 이 KV 연산 결과를 임시 보관했다가 재사용합니다.</p>
+<div class="mermaid" data-idx="0"></div>
+<p><strong>기억할 성질 3가지</strong></p>
+<ol>
+<li><strong>출력은 바뀌지 않습니다</strong> — 지연시간과 비용에만 영향을 줍니다.</li>
+<li><strong>prefix 기반입니다</strong> — 어딘가가 같은 게 아니라 <strong>맨 앞부터</strong> 같아야 합니다.</li>
+<li><strong>캐시는 로컬입니다</strong> — 전역 저장소가 아니라 요청을 처리하는 머신에 붙어 있습니다. 이 성질이 §5의 라우팅 문제를 만듭니다.</li>
+</ol>
+<h3 id="12">1.2 적용 조건</h3>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>조건</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>최소 길이</strong></td>
+<td>프롬프트 <strong>1,024 토큰 이상</strong></td>
+</tr>
+<tr>
+<td><strong>일치 요건</strong></td>
+<td>앞 <strong>1,024 토큰이 문자 단위로 동일</strong></td>
+</tr>
+<tr>
+<td><strong>증분 단위</strong></td>
+<td>GPT-5.5 이하 — 1,024 이후 <strong>128 토큰 단위</strong> / GPT-5.6+ — 반올림 없음</td>
+</tr>
+<tr>
+<td><strong>활성화</strong></td>
+<td>지원 모델에서 <strong>기본 활성화</strong></td>
+</tr>
+<tr>
+<td><strong>격리</strong></td>
+<td><strong>Azure 구독 간 캐시 공유 없음</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ 앞 1,024 토큰에서 <strong>한 글자만 달라도</strong> 전체가 miss입니다(<code>cached_tokens = 0</code>). "거의 같은" 프롬프트는 캐시 관점에서 "완전히 다른" 프롬프트입니다.</p>
+</blockquote>
+<h3 id="13">1.3 무엇이 캐싱되는가</h3>
+<table>
+<thead>
+<tr>
+<th>대상</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Messages</strong></td>
+<td>system · developer · user · assistant 전체 메시지 배열</td>
+</tr>
+<tr>
+<td><strong>Images</strong></td>
+<td>user 메시지의 이미지 (링크 / base64). <code>detail</code> 파라미터가 요청 간 동일해야 함</td>
+</tr>
+<tr>
+<td><strong>Tool use</strong></td>
+<td>메시지 배열 + <strong>도구 정의(tool definitions)</strong></td>
+</tr>
+<tr>
+<td><strong>Structured outputs</strong></td>
+<td>출력 스키마는 <strong>system 메시지 앞에 prefix로 덧붙여짐</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 도구 정의와 출력 스키마도 캐싱 대상입니다. 에이전트처럼 도구가 많은 워크로드는 <strong>도구 정의만으로 1,024 토큰을 넘겨</strong> 이득이 크고, 반대로 도구 목록이 요청마다 바뀌면 <strong>캐시가 통째로 깨집니다.</strong></p>
+</blockquote>
+<h3 id="14">1.4 히트 확인 방법</h3>
+<p>응답 본문의 <code>usage</code>에서 확인합니다.</p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;usage&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;prompt_tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1566</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;completion_tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1518</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;prompt_tokens_details&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;cached_tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1408</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;cache_write_tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<table>
+<thead>
+<tr>
+<th>필드</th>
+<th>의미</th>
+<th>노출 조건</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cached_tokens</code></td>
+<td><strong>캐시 읽기</strong> — 재사용된 입력 토큰 수</td>
+<td>지원 모델 전체</td>
+</tr>
+<tr>
+<td><code>cache_write_tokens</code></td>
+<td><strong>캐시 쓰기</strong> — 새로 기록된 토큰 수</td>
+<td>GPT-5.6+ <strong>Standard 종량제</strong>만</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span><code>캐시 히트율 = cached_tokens / prompt_tokens
+</code></pre></div>
+
+<blockquote>
+<p>⚠️ 히트율은 요청 단위 boolean이 아니라 <strong>토큰 비율</strong>입니다. "히트/미스"로 세지 말고 토큰 가중 평균으로 집계하세요.</p>
+</blockquote>
+<hr />
+<h2 id="2">2. 히트율이 낮게 느껴지는 이유</h2>
+<p>원인은 크게 <strong>캐시 수명</strong>과 <strong>라우팅 locality</strong> 둘 중 하나입니다.</p>
+<h3 id="21-gpu-local-global-standard-fan-out">2.1 캐시는 GPU-local, Global Standard는 fan-out 한다</h3>
+<p>캐시는 GPU에 로컬입니다. 확장 캐싱의 동작 설명에도 이 성질이 드러납니다.</p>
+<blockquote>
+<p>"Extended prompt caching works by <strong>offloading the key/value tensors to GPU-local storage</strong> when memory is full…"</p>
+</blockquote>
+<p>여기에 <strong>Global Standard</strong> 배포는 용량 가용성을 위해 요청을 넓은 풀로 분산시킵니다. 캐시 locality 관점에서는 이 분산이 불리합니다 — 요청이 퍼질수록 "내 캐시가 있는 그 머신"에 도착할 확률이 떨어집니다.</p>
+<div class="mermaid" data-idx="1"></div>
+<blockquote>
+<p>⚠️ 위 설명은 문서화된 동작에서 도출한 <strong>추정</strong>입니다. 확정된 인과관계가 아니므로 §2.2의 진단으로 실제 원인을 가르세요.</p>
+</blockquote>
+<h3 id="22">2.2 진단 — 미스를 어느 층위에서 체감하는가</h3>
+<p><strong>고객이 캐시 미스를 어디서 느끼는가</strong>를 물으면 처방이 갈립니다.</p>
+<div class="mermaid" data-idx="2"></div>
+<p><strong>세션 레벨에서 체감하는 경우</strong></p>
+<p>Foundry를 포함한 대부분의 모델 제공자는 <strong>prefix-hash 기반 라우팅</strong>을 씁니다. 같은 세션의 요청은 같은 GPU 노드로 떨어져 배치로 처리되는 것이 정상 동작입니다. 그런데도 세션 도중 미스를 느낀다면 라우팅이 아니라 <strong>캐시가 살아있는 시간</strong>이 문제일 가능성이 큽니다. 이 경우 <strong>확장 캐싱(§4)만으로도 체감이 크게 개선</strong>될 가능성이 높습니다.</p>
+<p><strong>분산 요청에서 드롭아웃되는 경우</strong></p>
+<p>세션 경계를 넘어 광범위하게 히트율이 낮다면 논의는 <strong>배포 유형</strong>으로 넘어갑니다. Regional 엔드포인트나 PTU로 트래픽을 집중시켜 locality를 확보하는 방향이고(§6), 그 다음이 <strong>APIM 계층</strong>입니다(§7).</p>
+<hr />
+<h2 id="3-1-1024">3. 개선 1단계 — 앞 1,024 토큰을 고정하라</h2>
+<p>가장 싸고 효과가 큰 단계입니다. 코드 몇 줄로 히트율이 0%에서 70%대로 뛰는 경우가 흔합니다.</p>
+<h3 id="31">3.1 프롬프트 레이아웃 원칙</h3>
+<p><strong>고정 콘텐츠는 앞, 가변 콘텐츠는 뒤.</strong></p>
+<div class="codehilite"><pre><span></span><code>┌─────────────────────────────────────┐
+│ ① 도구 정의 / 출력 스키마            │  ← 고정
+│ ② 시스템 프롬프트 (지침, 정책)       │  ← 고정      캐시 대상 prefix
+│ ③ 참조 문서 / few-shot 예시          │  ← 준고정
+├─────────────────────────────────────┤  ← 여기까지 1,024 토큰 이상
+│ ④ 대화 이력                          │  ← append-only
+│ ⑤ 이번 사용자 입력                   │  ← 가변
+└─────────────────────────────────────┘
+</code></pre></div>
+
+<blockquote>
+<p>💡 prefix가 1,024 토큰에 못 미치면 캐싱이 아예 동작하지 않습니다. 지침이 짧다면 <strong>few-shot 예시나 용어집을 앞에 배치</strong>해 임계를 넘기는 편이 이득일 수 있습니다.</p>
+</blockquote>
+<h3 id="32">3.2 캐시를 깨는 흔한 패턴</h3>
+<table>
+<thead>
+<tr>
+<th>안티패턴</th>
+<th>왜 깨지는가</th>
+<th>수정</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>시스템 프롬프트에 <strong>현재 시각</strong></td>
+<td>매 요청 문자열이 달라짐</td>
+<td>뒤쪽으로 이동, 또는 시간 단위 절삭</td>
+</tr>
+<tr>
+<td>앞부분에 <strong>사용자 이름 / 세션 ID</strong></td>
+<td>사용자마다 prefix가 달라짐</td>
+<td>뒤쪽으로 이동</td>
+</tr>
+<tr>
+<td><strong>도구 목록을 동적 생성</strong></td>
+<td>순서가 매번 달라짐</td>
+<td>정렬 고정, 전체 목록 항상 전달</td>
+</tr>
+<tr>
+<td>JSON 스키마를 <strong>dict 순서 그대로 직렬화</strong></td>
+<td>런타임마다 키 순서 변동</td>
+<td><code>sort_keys=True</code></td>
+</tr>
+<tr>
+<td>프롬프트를 <strong>A/B로 매번 변형</strong></td>
+<td>variant마다 별도 캐시</td>
+<td>variant를 소수로 고정</td>
+</tr>
+<tr>
+<td>대화 이력을 <strong>중간부터 요약·삭제</strong></td>
+<td>prefix 자체가 변경됨</td>
+<td>§3.3 참조</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span><code><span class="c1"># ❌ 캐시가 절대 안 걸림</span>
+<span class="n">system</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;당신은 상담원입니다. 현재 시각: </span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="si">}</span><span class="s2">. 사용자: </span><span class="si">{</span><span class="n">user_name</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">POLICY</span>
+
+<span class="c1"># ✅ 고정 prefix + 가변 정보는 뒤로</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">POLICY</span>                       <span class="c1"># 1,024 토큰 이상, 항상 동일</span>
+<span class="n">user</span>   <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;[시각 </span><span class="si">{</span><span class="n">now_hour</span><span class="si">}</span><span class="s2">] [사용자 </span><span class="si">{</span><span class="n">user_name</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="si">{</span><span class="n">question</span><span class="si">}</span><span class="s2">&quot;</span>
+</code></pre></div>
+
+<h3 id="33-append-only">3.3 대화 컨텍스트는 append-only</h3>
+<p>멀티턴에서 캐시가 유지되려면 <strong>앞선 턴들이 그대로 남아 있어야</strong> 합니다.</p>
+<div class="codehilite"><pre><span></span><code>턴 1:  [S][U1]                    → prefix [S] 캐시
+턴 2:  [S][U1][A1][U2]            → prefix [S][U1][A1] 히트 ✅
+턴 3:  [S][요약(U1,A1)][U3]       → prefix 변경 → 전체 miss ❌
+</code></pre></div>
+
+<p>압축이 필요하다면 <strong>매 턴 요약하지 말고</strong>, 임계 도달 시 <strong>한 번에 잘라내고 새 prefix를 확립</strong>하세요. 압축 빈도를 낮추는 것이 히트율에 유리합니다.</p>
+<blockquote>
+<p>💡 GPT-5.6+ Responses API에는 서버 측 압축(<code>context_management</code> + <code>compact_threshold</code>) 옵션이 있습니다. 압축 시점이 캐시 경계와 맞물리므로 직접 구현한 요약 로직보다 캐시 친화적입니다.</p>
+</blockquote>
+<hr />
+<h2 id="4-2">4. 개선 2단계 — 캐시 보존 기간을 늘려라</h2>
+<p><strong>파라미터 한 줄</strong>이라 시도 비용이 거의 없습니다. 요청 사이에 공백이 있는 워크로드에 특히 효과적입니다.</p>
+<h3 id="41-in-memory-vs-extended">4.1 in-memory vs extended</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>In-memory</strong> (기본)</th>
+<th><strong>Extended</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>최대 보존</td>
+<td>마지막 사용 후 <strong>1시간</strong></td>
+<td><strong>최대 24시간</strong></td>
+</tr>
+<tr>
+<td>유휴 제거</td>
+<td>보통 <strong>5~10분</strong></td>
+<td>더 길게 유지 시도</td>
+</tr>
+<tr>
+<td>저장 방식</td>
+<td>GPU 메모리</td>
+<td>메모리 부족 시 <strong>GPU-local 스토리지로 오프로드</strong></td>
+</tr>
+<tr>
+<td>지원 범위</td>
+<td>GPT-4o 이상 전 모델</td>
+<td>아래 목록 한정</td>
+</tr>
+<tr>
+<td>가격</td>
+<td><strong>두 정책 동일</strong></td>
+<td><strong>두 정책 동일</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 <strong>보존 기간을 늘려도 추가 비용이 없습니다.</strong> 지원 모델이라면 켜지 않을 이유가 거의 없습니다.</p>
+</blockquote>
+<p><strong>확장 캐싱 지원 모델</strong></p>
+<p><code>gpt-5.5</code> · <code>gpt-5.4</code> · <code>gpt-5.3-codex</code> · <code>gpt-5.2</code> · <code>gpt-5.1-codex-max</code> · <code>gpt-5.1</code> · <code>gpt-5.1-codex</code> · <code>gpt-5.1-codex-mini</code> · <code>gpt-5.1-chat</code> · <code>gpt-5</code> · <code>gpt-5-codex</code> · <code>gpt-4.1</code></p>
+<h3 id="42">4.2 모델별 설정 방법</h3>
+<table>
+<thead>
+<tr>
+<th>모델</th>
+<th>설정</th>
+<th>기본값</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gpt-5.4</code> 및 이전</td>
+<td><code>"prompt_cache_retention": "24h"</code></td>
+<td><code>in_memory</code></td>
+</tr>
+<tr>
+<td><code>gpt-5.5</code></td>
+<td>(설정 불필요)</td>
+<td><strong>확장 캐싱 기본 활성화</strong></td>
+</tr>
+<tr>
+<td><code>gpt-5.6</code> 이상</td>
+<td><code>prompt_cache_options.ttl</code> (§4.3)</td>
+<td><code>30m</code></td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;your-gpt-5.4-deployment-name&gt;&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;input&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Your prompt goes here...&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;prompt_cache_retention&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;24h&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<blockquote>
+<p>⚠️ 허용값은 <code>in_memory</code> 와 <code>24h</code> 두 가지뿐입니다. 임의의 기간은 설정할 수 없습니다.</p>
+</blockquote>
+<h3 id="43-gpt-56-ttl">4.3 GPT-5.6 이상의 <code>ttl</code> — 의미가 반대입니다</h3>
+<table>
+<thead>
+<tr>
+<th>파라미터</th>
+<th>의미</th>
+<th>값</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>prompt_cache_retention</code> (~5.5)</td>
+<td><strong>최대 보존 정책 선택</strong></td>
+<td><code>in_memory</code> / <code>24h</code></td>
+</tr>
+<tr>
+<td><code>prompt_cache_options.ttl</code> (5.6+)</td>
+<td><strong>최소 수명 보장</strong></td>
+<td><code>30m</code> (유일한 값, 기본값)</td>
+</tr>
+</tbody>
+</table>
+<p><code>ttl: "30m"</code>은 "30분만 유지"가 아니라 <strong>"최소 30분은 보장하고 더 길게 유지될 수도 있다"</strong> 는 뜻입니다. 저장 정책이나 최대 보존 기간을 선택하는 값이 <strong>아닙니다.</strong></p>
+<blockquote>
+<p>⚠️ GPT-5.6 이전 모델에 <code>prompt_cache_options</code> / <code>prompt_cache_breakpoint</code>를 보내면 <strong><code>400</code> 오류</strong>입니다. 모델 계열별로 요청 스키마를 분기하세요.</p>
+</blockquote>
+<h3 id="44">4.4 데이터 레지던시 영향</h3>
+<table>
+<thead>
+<tr>
+<th>정책</th>
+<th>데이터 경계</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>In-memory</strong></td>
+<td>모든 데이터 레지던시 리전과 호환</td>
+</tr>
+<tr>
+<td><strong>Extended</strong></td>
+<td>GPU 머신에 <strong>임시 저장</strong>. Data Zone은 <strong>데이터 존 경계 내</strong>, Regional은 <strong>리전 경계 내</strong> 유지</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 규제 산업 고객에게는 반드시 짚어야 할 지점입니다. 경계를 벗어나지는 않지만 <strong>"임시 저장이 발생한다"</strong> 는 사실 자체가 검토 대상이 되는 경우가 있습니다.</p>
+</blockquote>
+<hr />
+<h2 id="5-3-prefix-prompt_cache_key">5. 개선 3단계 — <code>prefix</code> + <code>prompt_cache_key</code> 농도 조절</h2>
+<blockquote>
+<p>⚠️ <strong>적용 범위 — GPT-5.6 이상 모델 계열 전용</strong></p>
+<p><code>prompt_cache_key</code>는 문서상 <strong>GPT-5.6 이상</strong>에만 정의되어 있습니다. 그 이전 모델(GPT-4o ~ 5.5)을 쓴다면 이 장을 건너뛰고 <strong>§4 보존 기간 연장</strong> → <strong>§6 배포 유형</strong> → <strong>§7 APIM</strong> 순으로 진행하세요.</p>
+<p>문서가 명시한 <code>400</code> 오류 대상은 <code>prompt_cache_options</code> / <code>prompt_cache_breakpoint</code> 두 가지이고 <code>prompt_cache_key</code>는 그 목록에 없습니다. 따라서 이전 모델에 보내도 오류 없이 <strong>무시될 가능성</strong>은 있지만, <strong>효과가 있다는 보장은 없습니다.</strong> 검증된 동작이 아니므로 의존하지 마세요.</p>
+</blockquote>
+<p><strong>"캐시는 머신 로컬"</strong> 성질이 정면으로 드러나는 영역입니다.</p>
+<h3 id="51-prompt_cache_key">5.1 <code>prompt_cache_key</code>는 저장이 아니라 라우팅입니다</h3>
+<p><code>prompt_cache_key</code>는 <strong>"같은 키의 요청을 같은 머신으로 보내라"는 힌트</strong>입니다. 캐시를 저장하는 게 아니라 <strong>어디로 보낼지</strong>를 결정합니다.</p>
+<blockquote>
+<p>동일 <strong>prefix + <code>prompt_cache_key</code></strong> 조합의 요청이 <strong>분당 약 15건</strong>을 넘으면 일부 요청이 <strong>넘쳐서(overflow) 추가 머신으로 라우팅</strong>되고, 그 요청들은 캐시를 놓칠 수 있습니다.</p>
+</blockquote>
+<div class="mermaid" data-idx="3"></div>
+<h3 id="52">5.2 양쪽 극단이 모두 나쁩니다</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>키가 <strong>너무 적음</strong></th>
+<th>키가 <strong>너무 많음</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>라우팅</td>
+<td>한 머신에 집중</td>
+<td>여러 머신으로 분산</td>
+</tr>
+<tr>
+<td>실패 모드</td>
+<td><strong>15 RPM 초과 → overflow → miss</strong></td>
+<td>재사용 전 캐시 만료 → <strong>cold miss</strong></td>
+</tr>
+<tr>
+<td>비유</td>
+<td>창구 하나에 줄이 넘쳐 옆으로 밀림</td>
+<td>매번 다른 창구 — 아무도 기억 못 함</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span><code>필요한 키 개수 ≈ (해당 prefix의 총 RPM) ÷ 15
+</code></pre></div>
+
+<p>예) 동일 시스템 프롬프트로 <strong>150 RPM</strong> → <strong>약 10개 키</strong>. 버스트를 감안해 <strong>12~15개</strong> 여유를 두는 편이 안전합니다.</p>
+<h3 id="53">5.3 샤딩 구현</h3>
+<p><strong>원칙: 키 ↔ prefix 매핑을 안정적으로 고정하세요.</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># ❌ 매 요청 랜덤 → 머신도 랜덤 → cold miss</span>
+<span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;prompt-v2:</span><span class="si">{</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<span class="c1"># ❌ 요청마다 고유 → 캐시 공유 자체가 불가능</span>
+<span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;prompt-v2:</span><span class="si">{</span><span class="n">uuid4</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<span class="c1"># ✅ 안정적 해시로 샤딩 — 같은 사용자는 항상 같은 샤드</span>
+<span class="n">shard</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">crc32</span><span class="p">(</span><span class="n">user_id</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span> <span class="o">%</span> <span class="mi">10</span>
+<span class="n">key</span>   <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;prompt-v2:shard-</span><span class="si">{</span><span class="n">shard</span><span class="si">}</span><span class="s2">&quot;</span>
+</code></pre></div>
+
+<table>
+<thead>
+<tr>
+<th>샤딩 기준</th>
+<th>장점</th>
+<th>주의</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>session_id</code></td>
+<td>세션 내 연속 요청이 같은 머신 → 히트율 최상</td>
+<td>세션 수가 적으면 편중</td>
+</tr>
+<tr>
+<td><code>user_id</code></td>
+<td>안정적이고 자연스러운 분산</td>
+<td>헤비 유저가 한 샤드를 과점</td>
+</tr>
+<tr>
+<td><code>tenant_id</code></td>
+<td>멀티테넌트 격리와 정합</td>
+<td>테넌트별 트래픽 편차</td>
+</tr>
+<tr>
+<td>순환 카운터 <code>% N</code></td>
+<td>균등 분산 보장</td>
+<td>세션 연속성 없음</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 <strong>prefix 버전을 키에 넣으세요.</strong> 프롬프트를 수정하면 <code>prompt-v2</code> → <code>prompt-v3</code>으로 올려 옛 캐시와 섞이지 않게 하면 디버깅과 롤백이 쉽습니다.</p>
+</blockquote>
+<h3 id="54">5.4 반드시 기억할 두 가지</h3>
+<blockquote>
+<p>⚠️ <strong>키가 같아도 prefix가 다르면 소용없습니다.</strong> <code>prompt_cache_key</code>는 라우팅 힌트일 뿐이고, 앞 1,024 토큰이 동일해야 실제 히트가 납니다. 두 조건은 <strong>AND</strong>입니다.</p>
+<p>💡 <strong>overflow가 영구적 손실은 아닙니다.</strong> 넘쳐 간 머신도 곧 자기 캐시를 만들기 때문에 지속적인 트래픽에서는 여러 머신이 각각 warm 상태가 됩니다. 다만 그 과정에서 <strong>cache write 비용</strong>(§8.2)과 초기 TTFT 저하가 발생합니다.</p>
+</blockquote>
+<h3 id="55-gpt-56-breakpoint">5.5 GPT-5.6+ — 명시적 캐시 breakpoint</h3>
+<p>GPT-5.6 이상에서는 재사용 prefix의 끝을 <strong>직접 표시</strong>할 수 있습니다. Responses / Chat Completions API 모두 지원합니다.</p>
+<blockquote>
+<p>⚠️ <strong>Standard 종량제 배포만 지원합니다.</strong> PTU-M은 프롬프트 캐싱은 되지만 breakpoint를 지원하지 않고 <code>cache_write_tokens</code>도 노출하지 않습니다.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>모드</th>
+<th>동작</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>implicit</code> (기본)</td>
+<td><strong>최신 메시지에 자동 breakpoint</strong> + 명시적 breakpoint도 함께 사용</td>
+</tr>
+<tr>
+<td><code>explicit</code></td>
+<td><strong>명시한 breakpoint만</strong> 사용. 하나도 없으면 캐싱을 쓰지 않고 <strong>쓰기 과금도 없음</strong></td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;your-gpt-5.6-deployment-name&gt;&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;prompt_cache_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;tenant:contoso:support-policy-v2&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;prompt_cache_options&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;explicit&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ttl&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;30m&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;messages&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;system&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;text&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;at least 1,024 tokens of reusable instructions&gt;&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;prompt_cache_breakpoint&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;explicit&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">      </span><span class="p">}]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;variable user input&gt;&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>주요 제한</strong></p>
+<ul>
+<li>요청당 <strong>신규 캐시 쓰기 최대 4개</strong> (<code>implicit</code>은 자동 breakpoint가 1개를 소모해 명시적 3개)</li>
+<li>이전 턴의 breakpoint는 <strong>읽기 전용</strong> — 매칭은 되지만 다시 기록되지 않음</li>
+<li>캐시 읽기는 <strong>최근 50개 breakpoint</strong>까지 고려</li>
+<li>breakpoint까지의 prefix가 <strong>1,024 토큰 이상</strong>이어야 함</li>
+</ul>
+<hr />
+<h2 id="6-locality">6. 배포 유형으로 locality를 확보하라</h2>
+<p>§3~§5를 다 했는데도 히트율이 낮다면, 문제는 애플리케이션이 아니라 <strong>트래픽이 도달하는 풀의 넓이</strong>일 수 있습니다.</p>
+<table>
+<thead>
+<tr>
+<th>배포 유형</th>
+<th>용량 가용성</th>
+<th>캐시 locality (추정)</th>
+<th>비고</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Global Standard</strong></td>
+<td>최상</td>
+<td>낮음 — 넓은 풀로 fan-out</td>
+<td>가장 흔한 기본 선택</td>
+</tr>
+<tr>
+<td><strong>Data Zone Standard</strong></td>
+<td>중간</td>
+<td>중간</td>
+<td>데이터 존 경계 내</td>
+</tr>
+<tr>
+<td><strong>Regional Standard</strong></td>
+<td>낮음</td>
+<td>높음 — 리전 내로 집중</td>
+<td>용량 확보 난이도 ↑</td>
+</tr>
+<tr>
+<td><strong>Provisioned (PTU)</strong></td>
+<td>예약된 만큼 보장</td>
+<td><strong>가장 높음</strong> — 전용 용량</td>
+<td>캐시 읽기 <strong>최대 100% 할인</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>locality 열은 추정입니다.</strong> 배포 유형별 캐시 적중 특성은 공식 수치로 문서화되어 있지 않습니다. 반드시 고객 트래픽으로 A/B 측정해 검증하세요.</p>
+<p>💡 <strong>PTU의 이중 이득</strong> — 캐시 읽기가 <strong>최대 100% 할인</strong>되어 비용이 줄 뿐 아니라, <strong>PTU 사용률 자체가 낮아져</strong> 같은 PTU로 더 많은 트래픽을 처리할 수 있습니다. 캐시 히트율 개선이 <strong>곧 용량 증설 효과</strong>입니다.</p>
+</blockquote>
+<div class="mermaid" data-idx="4"></div>
+<hr />
+<h2 id="7-apim">7. 게이트웨이 계층 — APIM으로 한 겹 더</h2>
+<p>모델 계층에서 할 수 있는 것을 다 했다면, 그 앞단에 캐시를 한 겹 더 둘 수 있습니다.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>Prompt caching</strong> (모델 계층)</th>
+<th><strong>Semantic caching</strong> (APIM 계층)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>매칭 방식</strong></td>
+<td>prefix <strong>정확 일치</strong></td>
+<td>프롬프트의 <strong>벡터 유사도</strong></td>
+</tr>
+<tr>
+<td><strong>캐싱 대상</strong></td>
+<td>입력 토큰 연산 (KV)</td>
+<td><strong>출력 응답 전체</strong></td>
+</tr>
+<tr>
+<td><strong>응답 변화</strong></td>
+<td>없음 — 모델이 정상 생성</td>
+<td>있음 — <strong>이전 응답 그대로 반환</strong></td>
+</tr>
+<tr>
+<td><strong>절감 효과</strong></td>
+<td>입력 토큰 비용 + TTFT</td>
+<td><strong>요청이 모델에 도달하지 않음</strong></td>
+</tr>
+<tr>
+<td><strong>리스크</strong></td>
+<td>없음</td>
+<td>유사하지만 다른 질문에 <strong>오답 가능</strong></td>
+</tr>
+</tbody>
+</table>
+<p>두 캐시는 경쟁이 아니라 <strong>직렬 관계</strong>입니다.</p>
+<div class="mermaid" data-idx="5"></div>
+<table>
+<thead>
+<tr>
+<th>Semantic caching이 맞는 워크로드</th>
+<th>피해야 할 워크로드</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FAQ · 고객 지원 봇</td>
+<td>개인화 응답</td>
+</tr>
+<tr>
+<td>사내 문서 Q&amp;A</td>
+<td>최신성이 중요한 질의 (재고, 시세)</td>
+</tr>
+<tr>
+<td>카탈로그·상품 설명 생성</td>
+<td>정확도 요구가 높은 도메인 (의료, 법률, 금융)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ semantic caching은 <strong>유사도 임계값 튜닝이 핵심</strong>입니다. 느슨하면 오답을, 빡빡하면 히트율 0을 얻습니다. 오프라인 평가셋으로 임계를 정하고 <strong>캐시 히트 응답을 샘플링 검수</strong>하는 절차를 함께 두세요.</p>
+<p>💡 APIM은 캐싱 외에 <strong>토큰 제한·백엔드 풀·서킷 브레이커</strong>도 제공합니다. 가용성 설계와 함께 도입하면 효과가 큽니다 — <a href="../04-aoai-high-availability/">04 고가용성 가이드</a> 참조.</p>
+</blockquote>
+<hr />
+<h2 id="8">8. 비용 모델</h2>
+<h3 id="81">8.1 캐시 읽기 — 할인</h3>
+<table>
+<thead>
+<tr>
+<th>배포 유형</th>
+<th>캐시 읽기 가격</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Standard</strong></td>
+<td>입력 토큰 대비 <strong>할인</strong></td>
+</tr>
+<tr>
+<td><strong>Provisioned (PTU)</strong></td>
+<td><strong>최대 100% 할인</strong></td>
+</tr>
+</tbody>
+</table>
+<p>프롬프트 캐시 가격은 <strong>in-memory와 extended 보존 정책이 동일</strong>합니다.</p>
+<h3 id="82-gpt-56">8.2 캐시 쓰기 — GPT-5.6부터 과금될 수 있음</h3>
+<table>
+<thead>
+<tr>
+<th>모델 계열</th>
+<th>캐시 쓰기 비용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GPT-5.6 <strong>이전</strong></td>
+<td><strong>무료</strong></td>
+</tr>
+<tr>
+<td>GPT-5.6 <strong>이상</strong></td>
+<td><strong>과금될 수 있음</strong> (할인된 읽기와 별도)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ 이 변경은 전략을 바꿉니다. 5.6 이전에는 "캐싱되게만 만들면 이득"이었지만, <strong>5.6 이상에서는 쓰기가 읽기보다 많으면 손해</strong>일 수 있습니다.</p>
+</blockquote>
+<p><strong>5.6+ 최적화 원칙</strong></p>
+<ol>
+<li>재사용 콘텐츠를 <strong>요청 간 정확히 동일하게</strong> 유지 — 쓰기보다 읽기가 많아지도록</li>
+<li><code>cache_write_tokens</code> 대비 이후 <code>cached_tokens</code> 볼륨을 <strong>비교 모니터링</strong></li>
+<li>재사용 가능성이 낮은 일회성 긴 프롬프트는 <code>explicit</code> 모드 + breakpoint 없음으로 <strong>쓰기 회피</strong></li>
+<li>요청당 신규 쓰기가 <strong>4개로 제한</strong>됨을 감안해 breakpoint를 아껴 배치</li>
+</ol>
+<blockquote>
+<p>💡 정확한 단가는 <a href="https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/">Azure OpenAI 가격 페이지</a>에서 확인하세요.</p>
+</blockquote>
+<hr />
+<h2 id="9">9. 관측</h2>
+<h3 id="91">9.1 핵심 지표</h3>
+<table>
+<thead>
+<tr>
+<th>지표</th>
+<th>계산식</th>
+<th>목표 방향</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>캐시 히트율</strong></td>
+<td><code>cached_tokens / prompt_tokens</code></td>
+<td>↑</td>
+</tr>
+<tr>
+<td><strong>읽기/쓰기 비</strong></td>
+<td><code>Σ cached_tokens / Σ cache_write_tokens</code></td>
+<td>↑ (1보다 충분히 커야 함)</td>
+</tr>
+<tr>
+<td><strong>TTFT p95 / p99</strong></td>
+<td>클라이언트 측정</td>
+<td>↓</td>
+</tr>
+<tr>
+<td><strong>키별 RPM</strong></td>
+<td><code>prompt_cache_key</code> 단위 요청 수</td>
+<td>~15 이하 유지</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong><code>cached_tokens</code>는 응답 본문에만 있습니다.</strong> AOAI 진단 로그에는 응답 본문이 포함되지 않으므로, 히트율은 <strong>애플리케이션 또는 APIM 정책에서 직접 추출해 커스텀 메트릭으로</strong> 내보내야 합니다.</p>
+</blockquote>
+<p><strong>함께 남길 차원(dimension)</strong> — <code>prompt_cache_key</code> · <code>prefix_version</code> · <code>deployment_name</code> / <code>region</code> · <code>model</code> · <code>session_id</code></p>
+<h3 id="92">9.2 해석 규칙</h3>
+<table>
+<thead>
+<tr>
+<th>관측</th>
+<th>진단</th>
+<th>조치</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>히트율 낮음 + 키당 RPM 높음</td>
+<td><strong>overflow</strong></td>
+<td>키 개수를 늘린다 (§5.2)</td>
+</tr>
+<tr>
+<td>히트율 낮음 + 키당 RPM 낮음</td>
+<td><strong>cold / 분산 과다</strong></td>
+<td>키 개수를 줄인다 (§5.2)</td>
+</tr>
+<tr>
+<td>세션 첫 요청만 miss, 이후 hit</td>
+<td><strong>정상 동작</strong></td>
+<td>조치 불필요</td>
+</tr>
+<tr>
+<td>세션 중간부터 갑자기 miss</td>
+<td><strong>캐시 만료</strong></td>
+<td>Extended retention (§4)</td>
+</tr>
+<tr>
+<td>전 구간 <code>cached_tokens = 0</code></td>
+<td><strong>prefix 불안정 또는 1,024 미만</strong></td>
+<td>§3 · §1.2 재점검</td>
+</tr>
+<tr>
+<td>쓰기 &gt;&gt; 읽기 (5.6+)</td>
+<td><strong>비용 역효과</strong></td>
+<td>prefix 안정화 또는 캐싱 회피 (§8.2)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="93-slo">9.3 SLO 베이스라인으로 연결하기</h3>
+<p>캐시는 <strong>TTFT SLO를 움직이는 가장 큰 단일 레버</strong>입니다. 다만 히트/미스에 따라 TTFT 분포가 이봉(bimodal)이 되므로 지표 설계에 주의가 필요합니다.</p>
+<div class="codehilite"><pre><span></span><code>SLI:  TTFT p95 (스트리밍 첫 토큰까지)
+SLO:  &quot;캐시 히트 요청의 TTFT p95 &lt; X ms&quot;
+      &quot;전체 요청의 TTFT p95 &lt; Y ms&quot;  (X &lt; Y)
+보조: &quot;캐시 히트율 ≥ Z%&quot;
+</code></pre></div>
+
+<blockquote>
+<p>💡 <strong>평균 TTFT 하나로 SLO를 잡지 마세요.</strong> 두 봉우리의 평균은 어느 쪽도 대표하지 않습니다. 히트율을 별도 보조 지표로 두고 TTFT는 히트/미스를 분리해 보는 편이 진단 가능합니다.</p>
+<p>💡 고객의 SLO 베이스라인을 수집하는 단계라면 <strong>캐시 히트율을 함께 물어보세요.</strong> 제시된 TTFT 목표가 warm 기준인지 cold 기준인지에 따라 필요한 용량이 크게 달라집니다.</p>
+</blockquote>
+<hr />
+<h2 id="10">10. 트러블슈팅 빠른 참조</h2>
+<table>
+<thead>
+<tr>
+<th>증상</th>
+<th>우선 확인</th>
+<th>관련 절</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cached_tokens</code>가 항상 0</td>
+<td>프롬프트가 1,024 토큰 이상인가</td>
+<td>§1.2</td>
+</tr>
+<tr>
+<td><code>cached_tokens</code>가 항상 0</td>
+<td>앞부분에 타임스탬프·ID가 섞이지 않았나</td>
+<td>§3.2</td>
+</tr>
+<tr>
+<td>히트율이 들쭉날쭉</td>
+<td>키당 RPM이 15를 넘나드는가</td>
+<td>§5.1</td>
+</tr>
+<tr>
+<td><code>prompt_cache_key</code>가 효과 없음</td>
+<td><strong>GPT-5.6 미만 모델인가</strong> (미지원)</td>
+<td>§5 도입부</td>
+</tr>
+<tr>
+<td>세션 중간에 느려짐</td>
+<td>유휴 5~10분 후 첫 요청인가</td>
+<td>§4</td>
+</tr>
+<tr>
+<td><code>400</code> 오류 발생</td>
+<td>5.6 이전 모델에 <code>prompt_cache_options</code>를 보냈는가</td>
+<td>§4.3</td>
+</tr>
+<tr>
+<td>breakpoint가 무시됨</td>
+<td>PTU-M 배포인가 (미지원)</td>
+<td>§5.5</td>
+</tr>
+<tr>
+<td>비용이 오히려 증가 (5.6+)</td>
+<td>쓰기/읽기 비율을 확인</td>
+<td>§8.2</td>
+</tr>
+<tr>
+<td>이미지 포함 요청이 miss</td>
+<td><code>detail</code> 파라미터가 요청 간 동일한가</td>
+<td>§1.3</td>
+</tr>
+<tr>
+<td>도구 사용 요청이 miss</td>
+<td>도구 정의 순서가 고정인가</td>
+<td>§1.3 · §3.2</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="_3">참고 자료</h2>
+<ul>
+<li>Prompt caching with Azure OpenAI in Microsoft Foundry Models: https://learn.microsoft.com/azure/foundry/openai/how-to/prompt-caching</li>
+<li>Provisioned throughput (PTU) 개념: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput</li>
+<li>Model router — 라우팅과 프롬프트 캐싱: https://learn.microsoft.com/azure/foundry/openai/concepts/model-router</li>
+<li>Azure OpenAI Responses API (<code>context_management</code>, 서버 측 압축): https://learn.microsoft.com/azure/foundry/openai/how-to/responses</li>
+<li>Azure OpenAI v1 API 라이프사이클: https://learn.microsoft.com/azure/foundry/openai/api-version-lifecycle</li>
+<li>Claude models in Microsoft Foundry (automatic prompt caching): https://learn.microsoft.com/azure/foundry/foundry-models/concepts/claude-models</li>
+<li>AI gateway capabilities in Azure API Management (semantic caching): https://learn.microsoft.com/azure/api-management/genai-gateway-capabilities</li>
+<li>Azure OpenAI 가격: https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/</li>
+</ul>
+    <hr>
+    <p class="meta">최종 수정 2026-08-27 · Microsoft Scout</p>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+(function () {
+  var DIAGRAMS = ["flowchart LR\n    R1[\"요청 1\"] --> P1[\"prefill: 전체 계산\"]\n    P1 --> C[(\"KV 캐시<br/>(추론 머신 로컬)\")]\n    R2[\"요청 2<br/>(같은 prefix)\"] --> H{\"prefix 일치?\"}\n    C --> H\n    H -->|\"HIT\"| S[\"앞부분 건너뜀<br/>→ TTFT 단축 · 비용 할인\"]\n    H -->|\"MISS\"| F[\"전체 재계산\"]", "flowchart TB\n    subgraph G[\"Global Standard — 넓은 풀\"]\n        GR[\"요청들\"] --> N1[\"Node 1<br/>캐시 A\"]\n        GR --> N2[\"Node 2<br/>캐시 없음\"]\n        GR --> N3[\"Node 3<br/>캐시 없음\"]\n    end\n    subgraph P[\"Regional / PTU — 좁은 풀\"]\n        PR[\"요청들\"] --> M1[\"전용 노드<br/>캐시 A (warm 유지)\"]\n    end", "flowchart TB\n    Q{\"미스를 어디서 체감하는가?\"}\n    Q -->|\"세션 안에서<br/>(대화 중 갑자기 느려짐)\"| A[\"원인: 캐시 수명<br/>→ Extended retention 우선\"]\n    Q -->|\"분산된 요청 전반<br/>(전체적으로 히트율이 낮음)\"| B[\"원인: 라우팅 locality<br/>→ PTU / Regional 논의\"]\n    A --> C[\"§3 · §4 로 대부분 해결\"]\n    B --> D[\"§5 키 설계 → §6 배포 유형 → §7 APIM\"]", "flowchart TB\n    R[\"요청 스트림\"] --> H[\"라우터<br/>hash(prefix + prompt_cache_key)\"]\n    H -->|\"~15 RPM까지\"| A[\"Machine A<br/>캐시 O → HIT ✅\"]\n    H -->|\"초과분 overflow\"| B[\"Machine B<br/>캐시 X → MISS ❌\"]\n    H -->|\"초과분 overflow\"| C[\"Machine C<br/>캐시 X → MISS ❌\"]", "flowchart TB\n    S[\"캐시 히트율이 목표 미달\"] --> A{\"앞 1,024 토큰이<br/>항상 동일한가?\"}\n    A -->|\"아니오\"| A1[\"§3 프롬프트 레이아웃 수정\"]\n    A -->|\"예\"| B{\"요청 사이 유휴가<br/>5~10분 이상 있는가?\"}\n    B -->|\"예\"| B1[\"§4 Extended retention (24h)\"]\n    B -->|\"아니오\"| M{\"GPT-5.6 이상인가?\"}\n    M -->|\"아니오\"| E[\"§6 Regional / PTU 전환\"]\n    M -->|\"예\"| C{\"키당 트래픽이<br/>15 RPM을 넘는가?\"}\n    C -->|\"예\"| C1[\"§5 키 샤딩으로 분산\"]\n    C -->|\"아니오\"| D{\"키가 과도하게<br/>흩어져 있는가?\"}\n    D -->|\"예\"| D1[\"§5 키 개수 축소\"]\n    D -->|\"아니오\"| E\n    E --> F[\"§7 APIM 게이트웨이 계층\"]", "flowchart LR\n    U[\"Client\"] --> G[\"APIM AI Gateway\"]\n    G --> S{\"Semantic cache<br/>유사 질문 존재?\"}\n    S -->|\"HIT\"| R1[\"저장된 응답 즉시 반환<br/>(모델 호출 0)\"]\n    S -->|\"MISS\"| M[\"Azure OpenAI\"]\n    M --> P{\"Prompt cache<br/>prefix 일치?\"}\n    P -->|\"HIT\"| R2[\"prefill 생략<br/>TTFT ↓ 비용 ↓\"]\n    P -->|\"MISS\"| R3[\"전체 계산\"]"];
+  var toggle = document.getElementById("themeToggle");
+
+  function currentTheme() { return document.documentElement.getAttribute("data-theme"); }
+
+  function renderMermaid() {
+    var nodes = document.querySelectorAll(".mermaid");
+    if (!window.mermaid) {
+      nodes.forEach(function (el) {
+        var i = parseInt(el.getAttribute("data-idx"), 10);
+        el.classList.add("mermaid-fallback");
+        el.textContent = DIAGRAMS[i];
+      });
+      return;
+    }
+    window.mermaid.initialize({
+      startOnLoad: false,
+      theme: currentTheme() === "dark" ? "dark" : "default",
+      securityLevel: "loose",
+      flowchart: { htmlLabels: true, curve: "basis" }
+    });
+    nodes.forEach(function (el, n) {
+      var i = parseInt(el.getAttribute("data-idx"), 10);
+      var def = DIAGRAMS[i];
+      var id = "mmd-" + i + "-" + Date.now() + "-" + n;
+      try {
+        window.mermaid.render(id, def).then(function (res) {
+          el.innerHTML = res.svg;
+          el.classList.remove("mermaid-fallback");
+        }).catch(function (err) {
+          el.classList.add("mermaid-fallback");
+          el.textContent = def;
+          console.error("mermaid render failed", err);
+        });
+      } catch (err) {
+        el.classList.add("mermaid-fallback");
+        el.textContent = def;
+        console.error("mermaid threw", err);
+      }
+    });
+  }
+
+  toggle.addEventListener("click", function () {
+    document.documentElement.setAttribute("data-theme", currentTheme() === "dark" ? "light" : "dark");
+    renderMermaid();
+  });
+
+  window.addEventListener("load", renderMermaid);
+
+  var links = Array.prototype.slice.call(document.querySelectorAll(".sidebar a"));
+  var targets = links.map(function (a) {
+    try { return document.querySelector(a.getAttribute("href")); } catch (e) { return null; }
+  });
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      var i = targets.indexOf(e.target);
+      if (i < 0) return;
+      links.forEach(function (l) { l.classList.remove("active"); });
+      links[i].classList.add("active");
+    });
+  }, { rootMargin: "-8% 0px -80% 0px" });
+  targets.forEach(function (t) { if (t) obs.observe(t); });
+})();
+</script>
+<script src="../../assets/guide-nav.js"></script>
+</body>
+</html>

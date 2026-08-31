@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Azure OpenAI Model Router 가이드</title>
+<script>
+  (() => {
+    const param = new URLSearchParams(window.location.search).get("scoutTheme");
+    const theme =
+      param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+<style>
+:root {
+  color-scheme: light;
+  --cp-bg: #f7f4ef;
+  --cp-bg-elevated: #fcfbf8;
+  --cp-surface: #ffffff;
+  --cp-surface-soft: #f5f5f5;
+  --cp-border: #dedede;
+  --cp-border-strong: #919191;
+  --cp-text: #242424;
+  --cp-text-muted: #5c5c5c;
+  --cp-text-soft: #6f6f6f;
+  --cp-accent: #b11f4b;
+  --cp-accent-hover: #9a1a41;
+  --cp-accent-soft: rgba(177, 31, 75, 0.08);
+  --cp-accent-fg: #ffffff;
+  --cp-success: #16a34a;
+  --cp-danger: #dc2626;
+  --cp-warning: #f59e0b;
+  --cp-link: #0078d4;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+  --cp-highlight: rgba(177, 31, 75, 0.12);
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --cp-bg: #3d3b3a;
+  --cp-bg-elevated: #343231;
+  --cp-surface: #292929;
+  --cp-surface-soft: #2e2e2e;
+  --cp-border: #474747;
+  --cp-border-strong: #5f5f5f;
+  --cp-text: #dedede;
+  --cp-text-muted: #919191;
+  --cp-text-soft: #b0b0b0;
+  --cp-accent: #fd8ea1;
+  --cp-accent-hover: #fb7b91;
+  --cp-accent-soft: rgba(253, 142, 161, 0.14);
+  --cp-accent-fg: #1a1a1a;
+  --cp-success: #4ade80;
+  --cp-danger: #f87171;
+  --cp-warning: #fbbf24;
+  --cp-link: #4da6ff;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+  --cp-highlight: rgba(253, 142, 161, 0.12);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--cp-bg);
+  color: var(--cp-text);
+  font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15.5px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+.layout { display: flex; align-items: flex-start; max-width: 1400px; margin: 0 auto; gap: 24px; padding: 24px; }
+
+.sidebar {
+  position: sticky; top: 24px; flex: 0 0 290px; max-height: calc(100vh - 48px);
+  overflow-y: auto; background: var(--cp-surface); border: 1px solid var(--cp-border);
+  border-radius: 16px; padding: 20px 18px;
+  box-shadow: 0 0 2px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.14);
+}
+.sidebar h2 {
+  margin: 0 0 12px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--cp-text-muted); border: none; padding: 0;
+}
+.sidebar h2::before { content: none; }
+.sidebar ul { list-style: none; margin: 0; padding: 0; }
+.sidebar ul ul { padding-left: 12px; }
+.sidebar li { margin: 2px 0; }
+.sidebar a {
+  display: block; padding: 5px 10px; border-radius: 0.625rem; font-size: 13.5px;
+  color: var(--cp-text-muted); text-decoration: none; border-left: 2px solid transparent;
+}
+.sidebar a:hover { background: var(--cp-accent-soft); color: var(--cp-accent); }
+.sidebar a.active { background: var(--cp-accent-soft); color: var(--cp-accent); border-left-color: var(--cp-accent); font-weight: 600; }
+
+main {
+  flex: 1 1 auto; min-width: 0; background: var(--cp-surface);
+  border: 1px solid var(--cp-border); border-radius: 16px; padding: 44px 52px;
+  box-shadow: 0 0 2px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.14);
+}
+
+h1, h2, h3, h4 { font-weight: 650; line-height: 1.35; scroll-margin-top: 24px; }
+h1 { font-size: 2.05rem; margin: 0 0 8px; letter-spacing: -0.02em; }
+h2 {
+  font-size: 1.45rem; margin: 2.6rem 0 1rem; padding-bottom: .5rem;
+  border-bottom: 2px solid var(--cp-border);
+}
+h2::before {
+  content: ""; display: inline-block; width: 6px; height: 1.05em; border-radius: 3px;
+  background: var(--cp-accent); margin-right: 10px; vertical-align: -0.16em;
+}
+h3 { font-size: 1.14rem; margin: 1.9rem 0 .6rem; }
+h4 { font-size: 1rem; margin: 1.4rem 0 .5rem; color: var(--cp-text-muted); }
+
+p { margin: .8rem 0; }
+a { color: var(--cp-link); text-decoration: none; word-break: break-word; }
+a:hover { text-decoration: underline; }
+hr { border: none; border-top: 1px solid var(--cp-border); margin: 2.4rem 0; }
+
+ul, ol { padding-left: 1.5rem; }
+li { margin: .3rem 0; }
+li::marker { color: var(--cp-accent); }
+strong { font-weight: 650; }
+
+table {
+  width: 100%; border-collapse: separate; border-spacing: 0; margin: 1.2rem 0;
+  font-size: 14px; border: 1px solid var(--cp-border); border-radius: 12px; overflow: hidden;
+}
+thead th {
+  background: var(--cp-surface-soft); color: var(--cp-text); font-weight: 650;
+  text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--cp-border);
+}
+tbody td { padding: 10px 14px; border-bottom: 1px solid var(--cp-border); vertical-align: top; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--cp-accent-soft); }
+
+code {
+  font-family: Consolas, "Courier New", Courier, monospace;
+  font-size: .88em; background: var(--cp-surface-soft); color: var(--cp-accent);
+  padding: .12em .38em; border-radius: 5px; border: 1px solid var(--cp-border);
+  white-space: nowrap;
+}
+pre {
+  background: var(--cp-bg-elevated); border: 1px solid var(--cp-border);
+  border-radius: 12px; padding: 16px 18px; overflow-x: auto; margin: 1.1rem 0;
+  line-height: 1.6;
+}
+html[data-theme="dark"] pre { background: #1f1f1f; }
+pre code {
+  background: none; border: none; padding: 0; color: var(--cp-text); font-size: 13px;
+  white-space: pre;
+}
+.codehilite { background: none !important; }
+
+blockquote {
+  margin: 1.2rem 0; padding: 12px 18px; background: var(--cp-accent-soft);
+  border-left: 4px solid var(--cp-accent); border-radius: 0 10px 10px 0;
+}
+blockquote p { margin: .35rem 0; }
+
+.mermaid {
+  text-align: center; margin: 1.4rem 0; background: var(--cp-bg-elevated);
+  border: 1px solid var(--cp-border); border-radius: 12px; padding: 18px; overflow-x: auto;
+}
+.mermaid svg { max-width: 100%; height: auto; }
+.mermaid-fallback {
+  text-align: left; font-family: Consolas, "Courier New", Courier, monospace;
+  font-size: 12.5px; white-space: pre; color: var(--cp-text-muted);
+}
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  margin-bottom: 22px; padding-bottom: 16px; border-bottom: 1px solid var(--cp-border);
+}
+.meta { color: var(--cp-text-soft); font-size: 13px; }
+.badge {
+  display: inline-block; background: var(--cp-accent); color: var(--cp-accent-fg);
+  font-size: 11px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 999px;
+}
+.toggle {
+  cursor: pointer; border: 1px solid var(--cp-border); background: var(--cp-surface-soft);
+  color: var(--cp-text); border-radius: 0.625rem; padding: 7px 14px; font-size: 13px;
+  font-family: inherit;
+}
+.toggle:hover { border-color: var(--cp-accent); color: var(--cp-accent); }
+
+@media (max-width: 1024px) {
+  .sidebar { display: none; }
+  main { padding: 28px 20px; }
+  .layout { padding: 14px; }
+}
+@media print {
+  .sidebar, .toggle { display: none; }
+  main { border: none; box-shadow: none; padding: 0; }
+}
+
+pre { line-height: 125%; }
+td.linenos .normal { color: #666666; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: #666666; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+.codehilite .hll { background-color: #ffffcc }
+.codehilite { background: #f0f0f0; }
+.codehilite .c { color: #60A0B0; font-style: italic } /* Comment */
+.codehilite .err { border: 1px solid #F00 } /* Error */
+.codehilite .k { color: #007020; font-weight: bold } /* Keyword */
+.codehilite .o { color: #666 } /* Operator */
+.codehilite .ch { color: #60A0B0; font-style: italic } /* Comment.Hashbang */
+.codehilite .cm { color: #60A0B0; font-style: italic } /* Comment.Multiline */
+.codehilite .cp { color: #007020 } /* Comment.Preproc */
+.codehilite .cpf { color: #60A0B0; font-style: italic } /* Comment.PreprocFile */
+.codehilite .c1 { color: #60A0B0; font-style: italic } /* Comment.Single */
+.codehilite .cs { color: #60A0B0; background-color: #FFF0F0 } /* Comment.Special */
+.codehilite .gd { color: #A00000 } /* Generic.Deleted */
+.codehilite .ge { font-style: italic } /* Generic.Emph */
+.codehilite .ges { font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.codehilite .gr { color: #F00 } /* Generic.Error */
+.codehilite .gh { color: #000080; font-weight: bold } /* Generic.Heading */
+.codehilite .gi { color: #00A000 } /* Generic.Inserted */
+.codehilite .go { color: #888 } /* Generic.Output */
+.codehilite .gp { color: #C65D09; font-weight: bold } /* Generic.Prompt */
+.codehilite .gs { font-weight: bold } /* Generic.Strong */
+.codehilite .gu { color: #800080; font-weight: bold } /* Generic.Subheading */
+.codehilite .gt { color: #04D } /* Generic.Traceback */
+.codehilite .kc { color: #007020; font-weight: bold } /* Keyword.Constant */
+.codehilite .kd { color: #007020; font-weight: bold } /* Keyword.Declaration */
+.codehilite .kn { color: #007020; font-weight: bold } /* Keyword.Namespace */
+.codehilite .kp { color: #007020 } /* Keyword.Pseudo */
+.codehilite .kr { color: #007020; font-weight: bold } /* Keyword.Reserved */
+.codehilite .kt { color: #902000 } /* Keyword.Type */
+.codehilite .m { color: #40A070 } /* Literal.Number */
+.codehilite .s { color: #4070A0 } /* Literal.String */
+.codehilite .na { color: #4070A0 } /* Name.Attribute */
+.codehilite .nb { color: #007020 } /* Name.Builtin */
+.codehilite .nc { color: #0E84B5; font-weight: bold } /* Name.Class */
+.codehilite .no { color: #60ADD5 } /* Name.Constant */
+.codehilite .nd { color: #555; font-weight: bold } /* Name.Decorator */
+.codehilite .ni { color: #D55537; font-weight: bold } /* Name.Entity */
+.codehilite .ne { color: #007020 } /* Name.Exception */
+.codehilite .nf { color: #06287E } /* Name.Function */
+.codehilite .nl { color: #002070; font-weight: bold } /* Name.Label */
+.codehilite .nn { color: #0E84B5; font-weight: bold } /* Name.Namespace */
+.codehilite .nt { color: #062873; font-weight: bold } /* Name.Tag */
+.codehilite .nv { color: #BB60D5 } /* Name.Variable */
+.codehilite .ow { color: #007020; font-weight: bold } /* Operator.Word */
+.codehilite .w { color: #BBB } /* Text.Whitespace */
+.codehilite .mb { color: #40A070 } /* Literal.Number.Bin */
+.codehilite .mf { color: #40A070 } /* Literal.Number.Float */
+.codehilite .mh { color: #40A070 } /* Literal.Number.Hex */
+.codehilite .mi { color: #40A070 } /* Literal.Number.Integer */
+.codehilite .mo { color: #40A070 } /* Literal.Number.Oct */
+.codehilite .sa { color: #4070A0 } /* Literal.String.Affix */
+.codehilite .sb { color: #4070A0 } /* Literal.String.Backtick */
+.codehilite .sc { color: #4070A0 } /* Literal.String.Char */
+.codehilite .dl { color: #4070A0 } /* Literal.String.Delimiter */
+.codehilite .sd { color: #4070A0; font-style: italic } /* Literal.String.Doc */
+.codehilite .s2 { color: #4070A0 } /* Literal.String.Double */
+.codehilite .se { color: #4070A0; font-weight: bold } /* Literal.String.Escape */
+.codehilite .sh { color: #4070A0 } /* Literal.String.Heredoc */
+.codehilite .si { color: #70A0D0; font-style: italic } /* Literal.String.Interpol */
+.codehilite .sx { color: #C65D09 } /* Literal.String.Other */
+.codehilite .sr { color: #235388 } /* Literal.String.Regex */
+.codehilite .s1 { color: #4070A0 } /* Literal.String.Single */
+.codehilite .ss { color: #517918 } /* Literal.String.Symbol */
+.codehilite .bp { color: #007020 } /* Name.Builtin.Pseudo */
+.codehilite .fm { color: #06287E } /* Name.Function.Magic */
+.codehilite .vc { color: #BB60D5 } /* Name.Variable.Class */
+.codehilite .vg { color: #BB60D5 } /* Name.Variable.Global */
+.codehilite .vi { color: #BB60D5 } /* Name.Variable.Instance */
+.codehilite .vm { color: #BB60D5 } /* Name.Variable.Magic */
+.codehilite .il { color: #40A070 } /* Literal.Number.Integer.Long */
+pre { line-height: 125%; }
+td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+html[data-theme="dark"] .codehilite .hll { background-color: #49483e }
+html[data-theme="dark"] .codehilite { background: #272822; color: #F8F8F2 }
+html[data-theme="dark"] .codehilite .c { color: #959077 } /* Comment */
+html[data-theme="dark"] .codehilite .err { color: #ED007E; background-color: #1E0010 } /* Error */
+html[data-theme="dark"] .codehilite .esc { color: #F8F8F2 } /* Escape */
+html[data-theme="dark"] .codehilite .g { color: #F8F8F2 } /* Generic */
+html[data-theme="dark"] .codehilite .k { color: #66D9EF } /* Keyword */
+html[data-theme="dark"] .codehilite .l { color: #AE81FF } /* Literal */
+html[data-theme="dark"] .codehilite .n { color: #F8F8F2 } /* Name */
+html[data-theme="dark"] .codehilite .o { color: #FF4689 } /* Operator */
+html[data-theme="dark"] .codehilite .x { color: #F8F8F2 } /* Other */
+html[data-theme="dark"] .codehilite .p { color: #F8F8F2 } /* Punctuation */
+html[data-theme="dark"] .codehilite .ch { color: #959077 } /* Comment.Hashbang */
+html[data-theme="dark"] .codehilite .cm { color: #959077 } /* Comment.Multiline */
+html[data-theme="dark"] .codehilite .cp { color: #959077 } /* Comment.Preproc */
+html[data-theme="dark"] .codehilite .cpf { color: #959077 } /* Comment.PreprocFile */
+html[data-theme="dark"] .codehilite .c1 { color: #959077 } /* Comment.Single */
+html[data-theme="dark"] .codehilite .cs { color: #959077 } /* Comment.Special */
+html[data-theme="dark"] .codehilite .gd { color: #FF4689 } /* Generic.Deleted */
+html[data-theme="dark"] .codehilite .ge { color: #F8F8F2; font-style: italic } /* Generic.Emph */
+html[data-theme="dark"] .codehilite .ges { color: #F8F8F2; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+html[data-theme="dark"] .codehilite .gr { color: #F8F8F2 } /* Generic.Error */
+html[data-theme="dark"] .codehilite .gh { color: #F8F8F2 } /* Generic.Heading */
+html[data-theme="dark"] .codehilite .gi { color: #A6E22E } /* Generic.Inserted */
+html[data-theme="dark"] .codehilite .go { color: #66D9EF } /* Generic.Output */
+html[data-theme="dark"] .codehilite .gp { color: #FF4689; font-weight: bold } /* Generic.Prompt */
+html[data-theme="dark"] .codehilite .gs { color: #F8F8F2; font-weight: bold } /* Generic.Strong */
+html[data-theme="dark"] .codehilite .gu { color: #959077 } /* Generic.Subheading */
+html[data-theme="dark"] .codehilite .gt { color: #F8F8F2 } /* Generic.Traceback */
+html[data-theme="dark"] .codehilite .kc { color: #66D9EF } /* Keyword.Constant */
+html[data-theme="dark"] .codehilite .kd { color: #66D9EF } /* Keyword.Declaration */
+html[data-theme="dark"] .codehilite .kn { color: #FF4689 } /* Keyword.Namespace */
+html[data-theme="dark"] .codehilite .kp { color: #66D9EF } /* Keyword.Pseudo */
+html[data-theme="dark"] .codehilite .kr { color: #66D9EF } /* Keyword.Reserved */
+html[data-theme="dark"] .codehilite .kt { color: #66D9EF } /* Keyword.Type */
+html[data-theme="dark"] .codehilite .ld { color: #E6DB74 } /* Literal.Date */
+html[data-theme="dark"] .codehilite .m { color: #AE81FF } /* Literal.Number */
+html[data-theme="dark"] .codehilite .s { color: #E6DB74 } /* Literal.String */
+html[data-theme="dark"] .codehilite .na { color: #A6E22E } /* Name.Attribute */
+html[data-theme="dark"] .codehilite .nb { color: #F8F8F2 } /* Name.Builtin */
+html[data-theme="dark"] .codehilite .nc { color: #A6E22E } /* Name.Class */
+html[data-theme="dark"] .codehilite .no { color: #66D9EF } /* Name.Constant */
+html[data-theme="dark"] .codehilite .nd { color: #A6E22E } /* Name.Decorator */
+html[data-theme="dark"] .codehilite .ni { color: #F8F8F2 } /* Name.Entity */
+html[data-theme="dark"] .codehilite .ne { color: #A6E22E } /* Name.Exception */
+html[data-theme="dark"] .codehilite .nf { color: #A6E22E } /* Name.Function */
+html[data-theme="dark"] .codehilite .nl { color: #F8F8F2 } /* Name.Label */
+html[data-theme="dark"] .codehilite .nn { color: #F8F8F2 } /* Name.Namespace */
+html[data-theme="dark"] .codehilite .nx { color: #A6E22E } /* Name.Other */
+html[data-theme="dark"] .codehilite .py { color: #F8F8F2 } /* Name.Property */
+html[data-theme="dark"] .codehilite .nt { color: #FF4689 } /* Name.Tag */
+html[data-theme="dark"] .codehilite .nv { color: #F8F8F2 } /* Name.Variable */
+html[data-theme="dark"] .codehilite .ow { color: #FF4689 } /* Operator.Word */
+html[data-theme="dark"] .codehilite .pm { color: #F8F8F2 } /* Punctuation.Marker */
+html[data-theme="dark"] .codehilite .w { color: #F8F8F2 } /* Text.Whitespace */
+html[data-theme="dark"] .codehilite .mb { color: #AE81FF } /* Literal.Number.Bin */
+html[data-theme="dark"] .codehilite .mf { color: #AE81FF } /* Literal.Number.Float */
+html[data-theme="dark"] .codehilite .mh { color: #AE81FF } /* Literal.Number.Hex */
+html[data-theme="dark"] .codehilite .mi { color: #AE81FF } /* Literal.Number.Integer */
+html[data-theme="dark"] .codehilite .mo { color: #AE81FF } /* Literal.Number.Oct */
+html[data-theme="dark"] .codehilite .sa { color: #E6DB74 } /* Literal.String.Affix */
+html[data-theme="dark"] .codehilite .sb { color: #E6DB74 } /* Literal.String.Backtick */
+html[data-theme="dark"] .codehilite .sc { color: #E6DB74 } /* Literal.String.Char */
+html[data-theme="dark"] .codehilite .dl { color: #E6DB74 } /* Literal.String.Delimiter */
+html[data-theme="dark"] .codehilite .sd { color: #E6DB74 } /* Literal.String.Doc */
+html[data-theme="dark"] .codehilite .s2 { color: #E6DB74 } /* Literal.String.Double */
+html[data-theme="dark"] .codehilite .se { color: #AE81FF } /* Literal.String.Escape */
+html[data-theme="dark"] .codehilite .sh { color: #E6DB74 } /* Literal.String.Heredoc */
+html[data-theme="dark"] .codehilite .si { color: #E6DB74 } /* Literal.String.Interpol */
+html[data-theme="dark"] .codehilite .sx { color: #E6DB74 } /* Literal.String.Other */
+html[data-theme="dark"] .codehilite .sr { color: #E6DB74 } /* Literal.String.Regex */
+html[data-theme="dark"] .codehilite .s1 { color: #E6DB74 } /* Literal.String.Single */
+html[data-theme="dark"] .codehilite .ss { color: #E6DB74 } /* Literal.String.Symbol */
+html[data-theme="dark"] .codehilite .bp { color: #F8F8F2 } /* Name.Builtin.Pseudo */
+html[data-theme="dark"] .codehilite .fm { color: #A6E22E } /* Name.Function.Magic */
+html[data-theme="dark"] .codehilite .vc { color: #F8F8F2 } /* Name.Variable.Class */
+html[data-theme="dark"] .codehilite .vg { color: #F8F8F2 } /* Name.Variable.Global */
+html[data-theme="dark"] .codehilite .vi { color: #F8F8F2 } /* Name.Variable.Instance */
+html[data-theme="dark"] .codehilite .vm { color: #F8F8F2 } /* Name.Variable.Magic */
+html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Integer.Long */
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav class="sidebar">
+    <h2>목차</h2>
+<div class="toc">
+<ul>
+<li><a href="#0-tldr">0. TL;DR</a><ul>
+<li><a href="#_1">최소 도입 순서</a></li>
+</ul>
+</li>
+<li><a href="#1-model-router">1. Model Router란</a><ul>
+<li><a href="#11">1.1 동작 원리</a></li>
+<li><a href="#12">1.2 언제 쓰고, 언제 쓰지 않나</a></li>
+</ul>
+</li>
+<li><a href="#2">2. 라우팅 모드</a></li>
+<li><a href="#3">3. 지원 모델과 리전</a><ul>
+<li><a href="#31">3.1 버전 정책</a></li>
+<li><a href="#32-2025-11-18">3.2 라우팅 풀 (2025-11-18 기준)</a></li>
+<li><a href="#33">3.3 리전</a></li>
+</ul>
+</li>
+<li><a href="#4-ui">4. 배포 — 포털(UI) 절차</a><ul>
+<li><a href="#41">4.1 사전 준비</a></li>
+<li><a href="#42-default-settings">4.2 기본 배포 (Default settings)</a></li>
+<li><a href="#43-custom-settings">4.3 커스텀 배포 (Custom settings)</a></li>
+<li><a href="#44-rest-api">4.4 REST API 배포 (자동화용)</a></li>
+</ul>
+</li>
+<li><a href="#5">5. 호출과 검증</a><ul>
+<li><a href="#51">5.1 코드에서 호출</a></li>
+<li><a href="#52">5.2 어떤 모델이 응답했는지 확인</a></li>
+<li><a href="#53">5.3 파라미터 주의</a></li>
+</ul>
+</li>
+<li><a href="#6">6. 운영 — 페일오버 · 캐싱 · 거버넌스</a><ul>
+<li><a href="#61">6.1 자동 페일오버</a></li>
+<li><a href="#62">6.2 프롬프트 캐싱</a></li>
+<li><a href="#63-azure-policy">6.3 Azure Policy 거버넌스</a></li>
+</ul>
+</li>
+<li><a href="#7">7. 관측 — 성능과 비용</a><ul>
+<li><a href="#71">7.1 성능</a></li>
+<li><a href="#72">7.2 비용</a></li>
+<li><a href="#73-3">7.3 비용을 줄이는 3가지 레버</a></li>
+<li><a href="#74">7.4 프로덕션 전 평가</a></li>
+</ul>
+</li>
+<li><a href="#8">8. 제약과 함정</a></li>
+<li><a href="#9">9. 도입 체크리스트</a></li>
+<li><a href="#_2">참고 자료</a></li>
+</ul>
+</div>
+
+  </nav>
+  <main>
+    <div class="topbar">
+      <span class="badge">Azure OpenAI · Model Router</span>
+      <button class="toggle" id="themeToggle" type="button">테마 전환</button>
+    </div>
+<h1 id="azure-openai-model-router">Azure OpenAI Model Router 가이드 — 요청별 모델 자동 선택으로 비용과 지연 줄이기</h1>
+<blockquote>
+<p>🚧 <strong>WIP / Draft</strong> &nbsp;·&nbsp; 계속 갱신 중인 문서입니다. 모델 목록·리전·가격은 배포 전 공식 문서로 재확인하세요.</p>
+<p><strong>대상</strong> &nbsp;·&nbsp; 여러 모델 사이에서 품질과 비용을 저울질하며 라우팅 로직을 직접 짜고 있는 애플리케이션·플랫폼 팀</p>
+<p><strong>범위</strong> &nbsp;·&nbsp; 개념 → 라우팅 모드 → 포털 배포 → 호출·검증 → 운영·거버넌스 → 관측과 비용</p>
+<p><strong>관련 가이드</strong> &nbsp;·&nbsp; <a href="../01-oai-to-aoai-onboarding/">01 온보딩</a> · <a href="../02-aoai-foundations/">02 기본 개념</a> · <a href="../03-aoai-deployment-monitoring/">03 배포 &amp; 운영 모니터링</a> · <a href="../04-aoai-high-availability/">04 고가용성(HA)</a> · <a href="../06-aoai-cache-performance/">06 캐시 성능 최적화</a></p>
+</blockquote>
+<hr />
+<h2 id="0-tldr">0. TL;DR</h2>
+<p><strong>Model router는 프롬프트를 실시간으로 분석해 가장 적합한 모델로 라우팅하는, 그 자체가 학습된 모델입니다.</strong> 하나의 배포(deployment)처럼 다루면 되고, 쉬운 요청은 작고 싼 모델로, 어려운 요청은 큰 모델·추론 모델로 보내 <strong>비용과 지연을 줄이면서 품질을 유지</strong>합니다.</p>
+<table>
+<thead>
+<tr>
+<th>질문</th>
+<th>답</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>하부 모델을 따로 배포해야 하나?</td>
+<td><strong>아니요.</strong> 단 <strong>Claude(Anthropic)</strong> 만 예외로 사전 배포 필요</td>
+</tr>
+<tr>
+<td>추가 요금이 있나?</td>
+<td>없음. <strong>선택된 하부 모델의 토큰 요금 합산</strong>으로 과금</td>
+</tr>
+<tr>
+<td>어떤 모델이 응답했는지 알 수 있나?</td>
+<td>응답 JSON의 <strong><code>model</code> 필드</strong>와 Playground에 표시됨</td>
+</tr>
+<tr>
+<td>라우팅 대상을 제한할 수 있나?</td>
+<td><strong>Model subset</strong>으로 가능 (컴플라이언스·비용·컨텍스트 제어)</td>
+</tr>
+<tr>
+<td>최신 버전은?</td>
+<td><strong><code>2025-11-18</code></strong> — 버전 번호 변경 없이 신규 모델이 계속 추가됨</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_1">최소 도입 순서</h3>
+<ol>
+<li>Foundry 포털에서 <code>model-router</code> 배포 (Default = Balanced + 전체 모델 풀)</li>
+<li>Playground에서 대표 프롬프트를 던져 <strong>어떤 모델이 선택되는지</strong> 확인</li>
+<li>기존 단일 모델 배포를 baseline으로 두고 <strong>품질·비용·지연 A/B 비교</strong></li>
+<li>결과에 따라 <strong>routing mode</strong> 또는 <strong>model subset</strong> 중 한 레버만 조정</li>
+<li>Azure Monitor / Cost analysis에 배포명 필터를 걸어 상시 관측</li>
+</ol>
+<hr />
+<h2 id="1-model-router">1. Model Router란</h2>
+<h3 id="11">1.1 동작 원리</h3>
+<p>Model router는 프롬프트의 <strong>복잡도, 추론 필요성, 태스크 유형</strong> 등을 실시간으로 판단하는 경량 ML 모델입니다.</p>
+<ul>
+<li>프롬프트를 <strong>저장하지 않습니다.</strong></li>
+<li>사용자의 <strong>접근 권한과 배포 유형에 맞는 모델만</strong> 후보로 삼고, <strong>데이터 존(data zone) 경계를 준수</strong>합니다.</li>
+<li>요청 단위로 모델을 고르므로, 같은 애플리케이션 안에서도 요청마다 다른 모델이 응답할 수 있습니다.</li>
+</ul>
+<h3 id="12">1.2 언제 쓰고, 언제 쓰지 않나</h3>
+<table>
+<thead>
+<tr>
+<th>잘 맞는 경우</th>
+<th>재고해야 하는 경우</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>요청 난이도가 <strong>섞여 있는</strong> 워크로드 (챗봇, 고객 지원, 사내 어시스턴트)</td>
+<td>모든 요청이 <strong>동일한 난이도</strong>로 균질한 워크로드</td>
+</tr>
+<tr>
+<td>여러 모델을 비교하며 라우팅 로직을 <strong>직접 구현 중</strong>인 팀</td>
+<td>특정 모델의 <strong>고유 출력 특성에 강하게 의존</strong>하는 파이프라인</td>
+</tr>
+<tr>
+<td>신규 모델을 빠르게 흡수하고 싶은 팀</td>
+<td><strong>긴 컨텍스트</strong>가 상시 필요한 워크로드 (§8 참고)</td>
+</tr>
+<tr>
+<td>비용 상한은 있으나 품질도 포기할 수 없는 경우</td>
+<td>응답 모델이 <strong>고정되어야 하는</strong> 규제·감사 요건</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 Model router는 "드롭인 배포"인 동시에 <strong>최적화 레이어</strong>입니다. 모델 탐색(hill-climbing)에 드는 시간을 줄여줄 뿐, 평가를 대체하지는 않습니다.</p>
+</blockquote>
+<hr />
+<h2 id="2">2. 라우팅 모드</h2>
+<p>배포 시 <strong>routing mode</strong>로 라우팅 로직의 성향을 정합니다. 지정하지 않으면 <strong>Balanced</strong>가 기본값입니다.</p>
+<table>
+<thead>
+<tr>
+<th>모드</th>
+<th>동작</th>
+<th>적합한 워크로드</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Balanced</strong> (기본)</td>
+<td>최고 품질 모델 대비 <strong>약 1~2% 품질 밴드</strong> 안에서 가장 저렴한 모델 선택</td>
+<td>범용</td>
+</tr>
+<tr>
+<td><strong>Cost</strong></td>
+<td><strong>약 5~6% 품질 밴드</strong>까지 허용하고 최저 비용 우선</td>
+<td>대량·예산 민감 (분류, 단순 Q&amp;A)</td>
+</tr>
+<tr>
+<td><strong>Quality</strong></td>
+<td>비용을 무시하고 해당 프롬프트에 <strong>최고 품질</strong> 모델 선택</td>
+<td>법률 검토, 의료 요약, 복잡 추론</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ 라우팅 모드 변경은 반영까지 <strong>최대 5분</strong> 걸립니다.</p>
+</blockquote>
+<hr />
+<h2 id="3">3. 지원 모델과 리전</h2>
+<h3 id="31">3.1 버전 정책</h3>
+<table>
+<thead>
+<tr>
+<th>버전</th>
+<th>상태</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>2025-11-18</code></td>
+<td><strong>Active (latest)</strong></td>
+<td>신규 모델·기능이 <strong>버전 번호 변경 없이 in-place로 추가</strong></td>
+</tr>
+<tr>
+<td><code>2025-08-07</code></td>
+<td>Frozen</td>
+<td>모델 세트 고정</td>
+</tr>
+<tr>
+<td><code>2025-05-19</code></td>
+<td>Frozen</td>
+<td>모델 세트 고정</td>
+</tr>
+</tbody>
+</table>
+<p>배포 시 <strong>Auto-update</strong>를 켜면 신규 버전이 자동 적용됩니다. 이때 <strong>하부 모델 구성이 바뀌면서 성능과 비용도 함께 변할 수 있다</strong>는 점을 감안하세요.</p>
+<h3 id="32-2025-11-18">3.2 라우팅 풀 (<code>2025-11-18</code> 기준)</h3>
+<table>
+<thead>
+<tr>
+<th>제공자</th>
+<th>모델</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OpenAI</td>
+<td><code>gpt-5.6-sol</code> / <code>-terra</code> / <code>-luna</code>, <code>gpt-5.5</code>, <code>gpt-5.4</code> · <code>-mini</code> · <code>-nano</code>, <code>gpt-5.2</code>, <code>gpt-5</code> · <code>-mini</code> · <code>-nano</code>, <code>o4-mini</code>, <code>gpt-4.1</code> · <code>-mini</code> · <code>-nano</code>, <code>gpt-4o</code> · <code>-mini</code>, <code>gpt-oss-120b</code></td>
+</tr>
+<tr>
+<td>Anthropic</td>
+<td><code>claude-opus-4-8</code> / <code>4-7</code> / <code>4-6</code>, <code>claude-sonnet-4-5</code>, <code>claude-haiku-4-5</code></td>
+</tr>
+<tr>
+<td>xAI</td>
+<td><code>grok-4</code>, <code>grok-4-1-fast-reasoning</code></td>
+</tr>
+<tr>
+<td>DeepSeek</td>
+<td><code>DeepSeek-V3.2</code></td>
+</tr>
+<tr>
+<td>Meta</td>
+<td><code>Llama-4-Maverick-17B-128E-Instruct-FP8</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>Claude 모델만 예외입니다.</strong> 라우팅 풀에 포함하려면 <strong>같은 Foundry 계정에 동일한 SKU로 먼저 배포</strong>해야 합니다. 배포하지 않고 <code>routing.models</code>에 넣으면 <code>InvalidResourceProperties</code> 오류가 납니다.</p>
+</blockquote>
+<h3 id="33">3.3 리전</h3>
+<p><strong>Global Standard</strong>는 Korea Central을 포함해 28개 리전에서 지원되며, 그중 대부분이 <strong>Data Zone Standard</strong>도 지원합니다. 다만 <strong>각 리전에서 라우팅 가능한 모델은 그 리전에 존재하는 하부 모델로 한정</strong>됩니다 — 리전마다 실효 라우팅 풀이 다를 수 있습니다.</p>
+<hr />
+<h2 id="4-ui">4. 배포 — 포털(UI) 절차</h2>
+<h3 id="41">4.1 사전 준비</h3>
+<ul>
+<li><a href="https://ai.azure.com">Microsoft Foundry 포털</a> 로그인 → 우측 상단 <strong>New Foundry 토글 ON</strong></li>
+<li>Foundry 리소스(또는 프로젝트) 준비</li>
+<li>Claude를 라우팅에 포함하려면 <strong>모델 카탈로그에서 Claude 먼저 배포</strong></li>
+<li>Azure Policy로 모델 배포를 통제하는 조직이라면, 허용 게시자에 <strong><code>Microsoft</code></strong>(model router의 게시자)와 포함할 모델의 게시자(예: <code>Anthropic</code>)가 모두 있어야 합니다. 없으면 배포가 차단됩니다.</li>
+</ul>
+<h3 id="42-default-settings">4.2 기본 배포 (Default settings)</h3>
+<ol>
+<li>좌측 <strong>Model catalog</strong> → <code>model-router</code> 검색 → 선택 → <strong>Deploy</strong></li>
+<li>배포 정보 입력<ul>
+<li><strong>Deployment name</strong> — 예: <code>model-router-deployment</code></li>
+<li><strong>Deployment type</strong> — <code>Global Standard</code> 또는 <code>Data Zone Standard</code></li>
+<li><strong>Model version</strong> — <code>2025-11-18</code></li>
+<li><strong>Auto-update</strong> — 신규 버전 자동 적용 여부</li>
+<li><strong>Content filter / TPM</strong> — ⚠️ <strong>여기서 한 번만</strong> 설정합니다</li>
+</ul>
+</li>
+<li><strong>Default settings</strong> 선택 → <strong>Balanced 모드 + 전체 지원 모델 풀</strong></li>
+<li><strong>Deploy</strong></li>
+</ol>
+<blockquote>
+<p>⚠️ 콘텐츠 필터와 분당 토큰(TPM) 한도는 <strong>model router 배포 단위</strong>에 적용됩니다. 하부 모델별로 따로 설정하지 마세요. 하부 모델을 별도로 배포할 필요도 없습니다(Claude 제외).</p>
+</blockquote>
+<h3 id="43-custom-settings">4.3 커스텀 배포 (Custom settings)</h3>
+<p><strong>① Routing mode 드롭다운</strong> — <code>Balanced</code> / <code>Quality</code> / <code>Cost</code> 중 선택 (§2)</p>
+<p><strong>② Route to a subset of models</strong> — 라우팅에 쓸 하부 모델을 직접 선택</p>
+<ul>
+<li>최소 1개 필요. <strong>페일오버를 살리려면 2개 이상</strong>을 고르세요 (§6.1)</li>
+<li>아무것도 고르지 않으면 해당 모드의 기본 모델 세트를 사용</li>
+<li><strong>나중에 추가되는 신규 모델은 자동 포함되지 않습니다</strong> — 명시적으로 추가해야 합니다</li>
+<li>긴 컨텍스트가 필요하면 여기서 <strong>큰 컨텍스트 모델만</strong> 선택하세요 (§8)</li>
+<li>반영까지 최대 5분</li>
+</ul>
+<h3 id="44-rest-api">4.4 REST API 배포 (자동화용)</h3>
+<pre><code class="language-bash">export AZURE_AI_AUTH_TOKEN=$(az account get-access-token \
+  --resource https://management.azure.com --query accessToken -o tsv)
+</code></pre>
+<p>기본 배포:</p>
+<pre><code class="language-bash">curl -X PUT &quot;https://management.azure.com/subscriptions/&lt;SUB_ID&gt;/resourceGroups/&lt;RG&gt;/providers/Microsoft.CognitiveServices/accounts/&lt;ACCOUNT&gt;/deployments/model-router-deployment?api-version=2025-10-01-preview&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -H &quot;Authorization: Bearer $AZURE_AI_AUTH_TOKEN&quot; \
+  -d '{
+    &quot;sku&quot;: {&quot;name&quot;: &quot;GlobalStandard&quot;, &quot;capacity&quot;: 10},
+    &quot;properties&quot;: {
+      &quot;model&quot;: {&quot;format&quot;: &quot;OpenAI&quot;, &quot;name&quot;: &quot;model-router&quot;, &quot;version&quot;: &quot;2025-11-18&quot;}
+    }
+  }'
+</code></pre>
+<p>라우팅 모드 + 모델 서브셋 지정:</p>
+<pre><code class="language-bash">  -d '{
+    &quot;sku&quot;: {&quot;name&quot;: &quot;GlobalStandard&quot;, &quot;capacity&quot;: 10},
+    &quot;properties&quot;: {
+      &quot;model&quot;: {&quot;format&quot;: &quot;OpenAI&quot;, &quot;name&quot;: &quot;model-router&quot;, &quot;version&quot;: &quot;2025-11-18&quot;},
+      &quot;routing&quot;: {
+        &quot;mode&quot;: &quot;balanced&quot;,
+        &quot;models&quot;: [
+          {&quot;format&quot;: &quot;OpenAI&quot;, &quot;name&quot;: &quot;gpt-4.1&quot;,     &quot;version&quot;: &quot;2025-04-14&quot;},
+          {&quot;format&quot;: &quot;OpenAI&quot;, &quot;name&quot;: &quot;gpt-5.6-sol&quot;, &quot;version&quot;: &quot;2026-07-09&quot;},
+          {&quot;format&quot;: &quot;Meta&quot;,   &quot;name&quot;: &quot;Llama-4-Maverick-17B-128E-Instruct-FP8&quot;, &quot;version&quot;: &quot;1&quot;}
+        ]
+      }
+    }
+  }'
+</code></pre>
+<blockquote>
+<p>💡 <code>routing</code> 블록은 <strong>기본값을 바꿀 때만</strong> 넣으면 됩니다. 이 REST 경로는 Foundry 프로젝트 없이 계정 리소스에 직접 배포하므로 기존 고객의 자동화에 적합합니다.</p>
+</blockquote>
+<hr />
+<h2 id="5">5. 호출과 검증</h2>
+<h3 id="51">5.1 코드에서 호출</h3>
+<p>일반 chat 모델과 <strong>완전히 동일하게</strong> 호출합니다. <code>model</code> 파라미터에 <strong>배포 이름</strong>을 넣으면 끝입니다.</p>
+<pre><code class="language-python"># Chat Completions (openai&gt;=1.75.0)
+response = client.chat.completions.create(
+    model=deployment,                     # model router 배포 이름
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;...&quot;}],
+)
+
+# Foundry Responses (azure-ai-projects&gt;=2.0.0)
+response = openai_client.responses.create(model=deployment, input=&quot;...&quot;)
+</code></pre>
+<h3 id="52">5.2 어떤 모델이 응답했는지 확인</h3>
+<p>응답 JSON은 표준 chat completions 스키마와 동일하며, <strong><code>model</code> 필드가 실제 선택된 하부 모델</strong>을 알려줍니다.</p>
+<pre><code class="language-json">{
+  &quot;model&quot;: &quot;gpt-5-mini-2025-08-07&quot;,
+  &quot;usage&quot;: {
+    &quot;prompt_tokens&quot;: 3254,
+    &quot;prompt_tokens_details&quot;: { &quot;cached_tokens&quot;: 3200 },
+    &quot;completion_tokens&quot;: 163,
+    &quot;completion_tokens_details&quot;: { &quot;reasoning_tokens&quot;: 128 }
+  }
+}
+</code></pre>
+<p>Playground(<strong>Models + endpoints</strong> → 배포 선택)에서도 응답마다 선택된 모델이 표시됩니다.</p>
+<h3 id="53">5.3 파라미터 주의</h3>
+<table>
+<thead>
+<tr>
+<th>파라미터</th>
+<th>동작</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>temperature</code>, <code>top_p</code>, <code>stop</code>, <code>presence_penalty</code>, <code>frequency_penalty</code>, <code>logit_bias</code>, <code>logprobs</code></td>
+<td>추론(o-series) 모델이 선택되면 <strong>무시됨</strong>. 그 외 모델에서는 정상 적용</td>
+</tr>
+<tr>
+<td><code>reasoning_effort</code></td>
+<td><code>2025-11-18</code> 버전부터 <strong>지원</strong> — 추론 모델이 선택되면 그대로 전달됨</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6">6. 운영 — 페일오버 · 캐싱 · 거버넌스</h2>
+<h3 id="61">6.1 자동 페일오버</h3>
+<p>특정 모델에 일시적 문제가 생기면 <strong>다음으로 적합한 모델로 투명하게 재라우팅</strong>됩니다. 기본 활성이며 별도 설정이 필요 없습니다.</p>
+<ul>
+<li>커스텀 배포에서도 <strong>선택한 routing mode가 페일오버 중에도 그대로 적용</strong>됩니다.</li>
+<li><strong>model subset이 곧 fallback set</strong>입니다. 승인되지 않은 모델로 프롬프트가 흘러가는 것을 막아주는 대신, <strong>1개만 선택하면 페일오버가 사라집니다.</strong> → 최소 2개 이상 선택하세요.</li>
+</ul>
+<h3 id="62">6.2 프롬프트 캐싱</h3>
+<p>하부 모델이 캐싱을 지원하면 <strong>자동으로 적용</strong>되며 별도 설정이 없습니다. 다만 캐시 효과는 <strong>같은 모델이 연속 요청을 처리할 때만</strong> 발생하므로, 라우팅 결정이 흔들리면 캐시 이득이 끊깁니다.</p>
+<blockquote>
+<p>캐시 히트율을 본격적으로 올리려면 <a href="../06-aoai-cache-performance/">06 캐시 성능 최적화 가이드</a>를 참고하세요. 안정적인 캐시가 중요한 워크로드라면 <strong>model subset을 좁혀 라우팅 변동을 줄이는 것</strong>이 한 가지 레버가 됩니다.</p>
+</blockquote>
+<h3 id="63-azure-policy">6.3 Azure Policy 거버넌스</h3>
+<p>Model router는 일반 모델 배포를 통제하는 <strong>동일한 built-in Foundry 모델 배포 정책</strong>을 따릅니다. 정책은 개발자가 <strong>model subset에 넣을 수 있는 모델 범위</strong>에 적용되며, <strong>Foundry 포털 · REST API · Azure CLI · ARM 템플릿 전반에서 일관되게</strong> 배포 시점에 강제됩니다.</p>
+<hr />
+<h2 id="7">7. 관측 — 성능과 비용</h2>
+<h3 id="71">7.1 성능</h3>
+<p>Azure Portal → 리소스 → <strong>Monitoring &gt; Metrics</strong></p>
+<ol>
+<li><strong>배포 이름</strong>으로 필터</li>
+<li>필요하면 <strong>하부 모델별로 split</strong> — 어떤 모델이 트래픽을 얼마나 가져가는지 보입니다</li>
+</ol>
+<h3 id="72">7.2 비용</h3>
+<p>Model router의 비용은 <strong>하부 모델들이 발생시킨 비용의 합</strong>입니다. 라우터 자체의 추가 과금은 없습니다.</p>
+<p>Azure Portal → <strong>Cost analysis</strong></p>
+<ol>
+<li>Azure 리소스로 필터</li>
+<li><strong>Tag</strong> 필터 → 타입 <code>Deployment</code> → 값에 <strong>model router 배포 이름</strong> 선택</li>
+</ol>
+<h3 id="73-3">7.3 비용을 줄이는 3가지 레버</h3>
+<table>
+<thead>
+<tr>
+<th>레버</th>
+<th>효과</th>
+<th>트레이드오프</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Routing mode를 <strong><code>Cost</code></strong> 로</td>
+<td>품질 밴드를 5~6%까지 열어 저렴한 모델 비중 ↑</td>
+<td>품질 소폭 하락</td>
+</tr>
+<tr>
+<td><strong>Model subset</strong>에서 고가 모델 제외</td>
+<td>비용 상한을 구조적으로 고정</td>
+<td>어려운 요청의 품질 하락 · 페일오버 폭 축소</td>
+</tr>
+<tr>
+<td><strong>프롬프트 캐싱</strong> 활용</td>
+<td>입력 토큰 비용·TTFT ↓</td>
+<td>라우팅이 흔들리면 효과 감소</td>
+</tr>
+</tbody>
+</table>
+<h3 id="74">7.4 프로덕션 전 평가</h3>
+<p><strong>첫 배포는 최종 구성이 아니라 시작 구성</strong>으로 다루세요. 프로덕션 트래픽을 넘기기 전에 기존 모델 배포를 baseline으로 두고 <strong>응답 품질 · 예상 비용 · 지연</strong>을 비교한 뒤, 한 번에 <strong>레버 하나만</strong> 바꾸며 조정합니다. 워크로드 일부는 직접 모델 배포로 남겨두는 하이브리드도 정당한 결론입니다.</p>
+<hr />
+<h2 id="8">8. 제약과 함정</h2>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>내용</th>
+<th>대응</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>컨텍스트 윈도우</strong></td>
+<td><strong>하부 모델 중 가장 작은 모델 기준</strong>으로 제한됨</td>
+<td>model subset으로 큰 컨텍스트 모델만 선택</td>
+</tr>
+<tr>
+<td><strong>파라미터 호환성</strong></td>
+<td>추론 모델 선택 시 <code>temperature</code> 등 무시</td>
+<td>결정적 출력이 필요하면 subset에서 추론 모델 제외</td>
+</tr>
+<tr>
+<td><strong>응답 모델 비고정</strong></td>
+<td>요청마다 다른 모델이 응답</td>
+<td>감사 요건이 있으면 <code>model</code> 필드를 로깅</td>
+</tr>
+<tr>
+<td><strong>Auto-update</strong></td>
+<td>하부 모델 세트가 바뀌며 성능·비용 변동</td>
+<td>변동을 원치 않으면 auto-update 끄고 subset 고정</td>
+</tr>
+<tr>
+<td><strong>Claude 사전 배포</strong></td>
+<td>미배포 시 <code>InvalidResourceProperties</code></td>
+<td>같은 계정·SKU로 먼저 배포</td>
+</tr>
+<tr>
+<td><strong>설정 반영 지연</strong></td>
+<td>mode·subset 변경에 최대 5분</td>
+<td>배포 직후 곧바로 검증하지 말 것</td>
+</tr>
+<tr>
+<td><strong>Rate limit</strong></td>
+<td>TPM은 라우터 배포 단위</td>
+<td>쿼터 상향 또는 재시도 로직</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="9">9. 도입 체크리스트</h2>
+<ul>
+<li>☐ 워크로드의 요청 난이도가 실제로 <strong>섞여 있는지</strong> 확인했다</li>
+<li>☐ Claude를 쓸 계획이면 <strong>사전 배포</strong>를 마쳤다</li>
+<li>☐ Azure Policy 허용 게시자에 <code>Microsoft</code> + 필요한 게시자가 포함되어 있다</li>
+<li>☐ Content filter와 <strong>TPM을 라우터 배포 단위로만</strong> 설정했다</li>
+<li>☐ Model subset을 쓴다면 <strong>모델을 2개 이상</strong> 선택해 페일오버를 유지했다</li>
+<li>☐ 최소 컨텍스트 윈도우가 워크로드 요구를 <strong>충족</strong>하는지 확인했다</li>
+<li>☐ 응답의 <strong><code>model</code> 필드를 로깅</strong>해 모델 분포를 추적하고 있다</li>
+<li>☐ baseline 대비 <strong>품질 · 비용 · 지연 평가</strong>를 마쳤다</li>
+<li>☐ Azure Monitor 메트릭과 <strong>Cost analysis 태그 필터</strong>를 설정했다</li>
+</ul>
+<hr />
+<h2 id="_2">참고 자료</h2>
+<ul>
+<li>Model router 개념: https://learn.microsoft.com/azure/foundry/openai/concepts/model-router</li>
+<li>라우팅 동작 원리: https://learn.microsoft.com/azure/foundry/openai/concepts/model-router-how-it-works</li>
+<li>배포와 사용 방법: https://learn.microsoft.com/azure/foundry/openai/how-to/model-router</li>
+<li>워크로드 평가: https://learn.microsoft.com/azure/foundry/openai/how-to/evaluate-model-router</li>
+<li>Foundry 에이전트와 함께 쓰기: https://learn.microsoft.com/azure/foundry/openai/how-to/model-router-agents</li>
+<li>Azure Policy로 거버넌스: https://learn.microsoft.com/azure/foundry/how-to/model-router-policy</li>
+<li>Claude 모델 배포: https://learn.microsoft.com/azure/foundry/foundry-models/how-to/use-foundry-models-claude</li>
+<li>프롬프트 캐싱: https://learn.microsoft.com/azure/foundry/openai/how-to/prompt-caching</li>
+<li>쿼터와 한도: https://learn.microsoft.com/azure/foundry/openai/quotas-limits</li>
+<li>Azure OpenAI 가격: https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/</li>
+<li>Python 샘플: https://github.com/microsoft-foundry/foundry-samples/tree/main/samples/python/foundry-models/model-router</li>
+</ul>
+
+    <hr>
+    <p class="meta">최종 수정 2026-08-31 · Microsoft Scout</p>
+  </main>
+</div>
+
+<script>
+(function () {
+  var toggle = document.getElementById("themeToggle");
+  toggle.addEventListener("click", function () {
+    var cur = document.documentElement.getAttribute("data-theme");
+    document.documentElement.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll(".sidebar a"));
+  var targets = links.map(function (a) {
+    try { return document.querySelector(a.getAttribute("href")); } catch (e) { return null; }
+  });
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      var i = targets.indexOf(e.target);
+      if (i < 0) return;
+      links.forEach(function (l) { l.classList.remove("active"); });
+      links[i].classList.add("active");
+    });
+  }, { rootMargin: "-8% 0px -80% 0px" });
+  targets.forEach(function (t) { if (t) obs.observe(t); });
+})();
+</script>
+<script src="../../assets/guide-nav.js"></script>
+</body>
+</html>
