@@ -462,7 +462,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li>Foundry 포털에서 <code>model-router</code> 배포 (Default = Balanced + 전체 모델 풀)</li>
 <li>Playground에서 대표 프롬프트를 던져 <strong>어떤 모델이 선택되는지</strong> 확인</li>
 <li>기존 단일 모델 배포를 baseline으로 두고 <strong>품질·비용·지연 A/B 비교</strong></li>
-<li>결과에 따라 <strong>routing mode</strong> 또는 <strong>model subset</strong> 중 한 레버만 조정</li>
+<li>결과에 따라 <strong>routing mode</strong>와 <strong>model subset</strong>을 <strong>한 번에 하나씩만</strong> 바꿔가며 조정 (§7.4)</li>
 <li>Azure Monitor / Cost analysis에 배포명 필터를 걸어 상시 관측</li>
 </ol>
 <hr />
@@ -737,7 +737,7 @@ response = openai_client.responses.create(model=deployment, input=&quot;...&quot
 <h3 id="71">7.1 성능</h3>
 <p>Azure Portal → 리소스 → <strong>Monitoring &gt; Metrics</strong></p>
 <ol>
-<li><strong>배포 이름</strong>으로 필터</li>
+<li><strong>model router 배포 이름</strong>으로 필터 (하부 모델은 별도 배포가 아니므로 별도 배포명이 없습니다)</li>
 <li>필요하면 <strong>하부 모델별로 split</strong> — 어떤 모델이 트래픽을 얼마나 가져가는지 보입니다</li>
 </ol>
 <h3 id="72">7.2 비용</h3>
@@ -775,7 +775,30 @@ response = openai_client.responses.create(model=deployment, input=&quot;...&quot
 </tbody>
 </table>
 <h3 id="74">7.4 프로덕션 전 평가</h3>
-<p><strong>첫 배포는 최종 구성이 아니라 시작 구성</strong>으로 다루세요. 프로덕션 트래픽을 넘기기 전에 기존 모델 배포를 baseline으로 두고 <strong>응답 품질 · 예상 비용 · 지연</strong>을 비교한 뒤, 한 번에 <strong>레버 하나만</strong> 바꾸며 조정합니다. 워크로드 일부는 직접 모델 배포로 남겨두는 하이브리드도 정당한 결론입니다.</p>
+<p><strong>첫 배포는 최종 구성이 아니라 시작 구성</strong>으로 다루세요. 프로덕션 트래픽을 넘기기 전에 기존 모델 배포를 baseline으로 두고 <strong>응답 품질 · 예상 비용 · 지연</strong>을 비교합니다.</p>
+<p>조정은 <strong>hill-climbing</strong> 방식으로 합니다 — baseline 측정 → <strong>레버 하나만 변경</strong> → 재측정 → 개선됐을 때만 유지, 아니면 롤백 → 다음 레버. Model router의 레버는 두 개입니다.</p>
+<table>
+<thead>
+<tr>
+<th>레버</th>
+<th>조정 예시</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Routing mode</strong></td>
+<td><code>Balanced</code> → <code>Cost</code> (비용 ↓, 품질 소폭 ↓)</td>
+</tr>
+<tr>
+<td><strong>Model subset</strong></td>
+<td>고가 모델 제외 · 큰 컨텍스트 모델만 남기기</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>두 레버를 동시에 바꾸지 마세요.</strong> 비용이 줄어도 원인이 모드인지 서브셋인지 알 수 없어, 다음 반복에서 판단 근거가 사라집니다. 두 레버를 <strong>함께 사용하는 것 자체는 정상</strong>이며, 문제는 "한 번에 같이 바꾸는 것"입니다.</p>
+</blockquote>
+<p>워크로드 일부는 직접 모델 배포로 남겨두는 하이브리드도 정당한 결론입니다.</p>
 <hr />
 <h2 id="8">8. 제약과 함정</h2>
 <table>
