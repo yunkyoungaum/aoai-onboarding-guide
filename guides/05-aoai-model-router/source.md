@@ -387,5 +387,3 @@ Azure Portal → **Cost analysis**
 - 평가 자동화 툴킷: https://github.com/microsoft-foundry/Model-Router-Auto-Evaluation
 - 라우팅 분포 실험 도구: https://github.com/guygregory/ModelRouter-Distribution
 - 라우팅 모드 비교 데모: https://github.com/leestott/router-demo-app
-
-> ⚠️ 위 GitHub 샘플들은 **학습·실험용**이며 프로덕션 준비 상태가 아닙니다. 파생 코드를 배포하기 전에 조직의 보안·컴플라이언스·책임 있는 AI 정책에 비추어 검토하세요.
