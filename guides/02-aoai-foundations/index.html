@@ -1,8 +1,9 @@
 <!DOCTYPE html>
+
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
 <title>Azure OpenAI 기본 개념 — 리소스 · 배포 · 쿼터 · PTU</title>
 <script>
   (() => {
@@ -357,11 +358,11 @@ html[data-theme="dark"] .codehilite .vm { color: #F8F8F2 } /* Name.Variable.Magi
 html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Integer.Long */
 </style>
 </head>
-<body>
-<div class="layout">
-  <nav class="sidebar">
-    <h2>목차</h2>
-    <div class="toc">
+<body data-lang="ko" data-title-en="Azure OpenAI Basic Concepts — Resources · Deployment · Quotas · PTU Application and Reservation" data-title-ko="Azure OpenAI 기본 개념 — 리소스 · 배포 · 쿼터 · PTU">
+<div class="layout lang-ko">
+<nav class="sidebar">
+<h2>목차</h2>
+<div class="toc">
 <ul>
 <li><a href="#0">0. 한 장 요약</a><ul>
 <li><a href="#_1">용어 관계도</a></li>
@@ -426,30 +427,18 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </li>
 </ul>
 </div>
-
-
-
-
-
-
-
-
-
-
-
-
-  </nav>
-  <main>
-    <div class="topbar">
-      <span class="badge">Azure OpenAI · Foundations</span>
-      <button class="toggle" id="themeToggle" type="button">테마 전환</button>
-    </div>
-    <h1 id="azure-openai-ptu">Azure OpenAI 기본 개념 — 리소스 · 배포 · 쿼터 · PTU 신청과 예약</h1>
+</nav>
+<main>
+<div class="topbar">
+<span class="badge">Azure OpenAI · Foundations</span>
+<button class="toggle" id="themeToggle" type="button">테마 전환</button>
+</div>
+<h1 id="azure-openai-ptu">Azure OpenAI 기본 개념 — 리소스 · 배포 · 쿼터 · PTU 신청과 예약</h1>
 <blockquote>
-<p><strong>대상</strong> &nbsp;·&nbsp; AOAI/Foundry를 처음 도입하거나, <strong>쿼터·용량·예약 개념이 헷갈리는</strong> 아키텍트·플랫폼 담당자</p>
-<p><strong>범위</strong> &nbsp;·&nbsp; 리소스 계층 구조 → 배포 유형 → 쿼터 vs 용량 → PTU 신청 절차 → Azure 예약 구매</p>
+<p><strong>대상</strong>  ·  AOAI/Foundry를 처음 도입하거나, <strong>쿼터·용량·예약 개념이 헷갈리는</strong> 아키텍트·플랫폼 담당자</p>
+<p><strong>범위</strong>  ·  리소스 계층 구조 → 배포 유형 → 쿼터 vs 용량 → PTU 신청 절차 → Azure 예약 구매</p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="0">0. 한 장 요약</h2>
 <h3 id="_1">용어 관계도</h3>
 <div class="mermaid" data-idx="0"></div>
@@ -533,13 +522,12 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li><strong>야간에 PTU 축소</strong> → 아침에 용량을 못 되찾을 수 있음 (§4.3)</li>
 <li><strong>예약을 배포 유형·리전과 안 맞춤</strong> → 할인 미적용 (§6.4)</li>
 </ol>
-<hr />
+<hr/>
 <h2 id="1">1. 리소스 — 무엇을 만드는가</h2>
 <h3 id="11-arm">1.1 ARM 리소스 타입은 하나입니다</h3>
 <p>Azure OpenAI든 Foundry든 <strong>ARM 리소스 타입은 동일</strong>합니다.</p>
 <div class="codehilite"><pre><span></span><code>Microsoft.CognitiveServices/accounts
 </code></pre></div>
-
 <p>구분은 <strong><code>kind</code></strong> 로 이루어집니다.</p>
 <table>
 <thead>
@@ -623,27 +611,25 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
 
 <span class="n">client</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">(</span>
-    <span class="n">api_key</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;AZURE_OPENAI_API_KEY&quot;</span><span class="p">),</span>
-    <span class="n">base_url</span><span class="o">=</span><span class="s2">&quot;https://&lt;resource-name&gt;.openai.azure.com/openai/v1/&quot;</span><span class="p">,</span>
+    <span class="n">api_key</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">"AZURE_OPENAI_API_KEY"</span><span class="p">),</span>
+    <span class="n">base_url</span><span class="o">=</span><span class="s2">"https://&lt;resource-name&gt;.openai.azure.com/openai/v1/"</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="n">resp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
-    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;prod-gpt5-ptu&quot;</span><span class="p">,</span>     <span class="c1"># ← 모델명이 아니라 &quot;배포 이름&quot;</span>
+    <span class="n">model</span><span class="o">=</span><span class="s2">"prod-gpt5-ptu"</span><span class="p">,</span>     <span class="c1"># ← 모델명이 아니라 "배포 이름"</span>
     <span class="n">messages</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">]</span>
 <span class="p">)</span>
 </code></pre></div>
-
 <blockquote>
 <p>🔑 <strong><code>model</code> 파라미터에는 모델명이 아니라 배포 이름이 들어갑니다.</strong> OpenAI에서 넘어온 팀이 가장 먼저 부딪히는 차이입니다(<a href="../01-oai-to-aoai-onboarding/">가이드 01</a> 참고).</p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="2-deployment">2. 배포(Deployment) — 무엇을 올리는가</h2>
 <p>배포를 만들 때 정하는 것은 <strong>3가지</strong>입니다.</p>
 <div class="codehilite"><pre><span></span><code>① 어떤 모델을      (gpt-5.1)
 ② 어떤 버전으로    (2025-11-13)
 ③ 어떤 방식으로    (Global Standard / Global Provisioned / ...)
 </code></pre></div>
-
 <p><strong>③이 "배포 유형"이며, 모델 선택과는 완전히 독립된 축</strong>입니다. 여기서 대부분의 혼란이 발생합니다.</p>
 <h3 id="21">2.1 배포 유형 전체 지도</h3>
 <p>배포 유형은 <strong>"어디서 처리되나(행) × 어떻게 과금되나(열)"</strong> 의 조합입니다.</p>
@@ -768,7 +754,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <blockquote>
 <p>💰 <strong>PTU는 "쓰든 안 쓰든" 청구됩니다.</strong> 배포를 만든 순간 미터가 시작되고 삭제해야 멈춥니다.</p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="3-ptu">3. PTU — 전용 처리 능력의 단위</h2>
 <h3 id="31-ptu">3.1 PTU의 성질</h3>
 <table>
@@ -852,7 +838,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <blockquote>
 <p>💡 <strong>출력 토큰을 통제하면 PTU가 줄어듭니다.</strong> <code>max_tokens</code> 제한과 프롬프트 캐싱은 성능뿐 아니라 <strong>필요 PTU 자체를 낮추는</strong> 수단입니다.</p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="4-quota-vs-capacity">4. 쿼터(Quota) vs 용량(Capacity) — 가장 큰 혼란</h2>
 <h3 id="41">4.1 둘은 완전히 다른 것입니다</h3>
 <table>
@@ -900,7 +886,6 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <h3 id="44">4.4 쿼터가 나뉘는 기준</h3>
 <div class="codehilite"><pre><span></span><code>쿼터 = 구독  ×  리전  ×  배포 유형
 </code></pre></div>
-
 <table>
 <thead>
 <tr>
@@ -922,7 +907,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <blockquote>
 <p>⚠️ Failover 설계에서 <strong>배포 유형을 바꾸려면</strong>(예: Regional → Global) <strong>그 유형의 쿼터를 따로 확보</strong>해야 합니다.</p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="5-1">5. 실전 절차 ① — 쿼터 신청과 용량 확인</h2>
 <h3 id="51">5.1 전체 흐름</h3>
 <div class="mermaid" data-idx="2"></div>
@@ -935,7 +920,6 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 → 구독·리전 선택 → 현재 사용량 확인
 → 부족하면 [Request Quota]
 </code></pre></div>
-
 <p><strong>신청 폼 (직접 링크)</strong>
 🔗 https://aka.ms/oai/stuquotarequest</p>
 <blockquote>
@@ -946,11 +930,10 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <h3 id="53-capacity">5.3 용량(Capacity) 확인 — 배포 전에</h3>
 <p><strong>Model capacities API</strong>로 배포 가능한 실제 용량을 조회합니다.</p>
 <div class="codehilite"><pre><span></span><code>curl<span class="w"> </span>-X<span class="w"> </span>GET<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span><span class="s2">&quot;https://management.azure.com/subscriptions/</span><span class="nv">$SUB</span><span class="s2">/providers/Microsoft.CognitiveServices/modelCapacities\</span>
-<span class="s2">?api-version=2024-10-01&amp;modelFormat=OpenAI&amp;modelName=gpt-5.1&amp;modelVersion=2025-11-13&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span>
+<span class="w">  </span><span class="s2">"https://management.azure.com/subscriptions/</span><span class="nv">$SUB</span><span class="s2">/providers/Microsoft.CognitiveServices/modelCapacities\</span>
+<span class="s2">?api-version=2024-10-01&amp;modelFormat=OpenAI&amp;modelName=gpt-5.1&amp;modelVersion=2025-11-13"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">"</span>
 </code></pre></div>
-
 <table>
 <thead>
 <tr>
@@ -984,19 +967,18 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </table>
 <p>응답은 <strong>리전 × 배포 유형(SKU)별</strong>로 반환되며, <strong><code>availableCapacity</code></strong> 가 배포 가능한 최대치입니다.</p>
 <div class="codehilite"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;location&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;koreacentral&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;format&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;OpenAI&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;gpt-5.1&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2025-11-13&quot;</span><span class="w"> </span><span class="p">},</span>
-<span class="w">        </span><span class="nt">&quot;skuName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;GlobalProvisionedManaged&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;availableCapacity&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">300</span>
+<span class="w">      </span><span class="nt">"location"</span><span class="p">:</span><span class="w"> </span><span class="s2">"koreacentral"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"model"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"format"</span><span class="p">:</span><span class="w"> </span><span class="s2">"OpenAI"</span><span class="p">,</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"gpt-5.1"</span><span class="p">,</span><span class="w"> </span><span class="nt">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2025-11-13"</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">"skuName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GlobalProvisionedManaged"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"availableCapacity"</span><span class="p">:</span><span class="w"> </span><span class="mi">300</span>
 <span class="w">      </span><span class="p">}</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div>
-
 <blockquote>
 <p>💡 <strong>HA를 운영한다면 이 API를 정기 점검에 넣으세요.</strong> Failover 대상 리전의 용량이 실제로 있는지를 <strong>장애 전에</strong> 확인할 수 있는 방법입니다.</p>
 <p>📌 <code>skuName</code>이 배포 유형입니다. 같은 리전·모델이라도 <strong><code>GlobalProvisionedManaged</code>와 <code>ProvisionedManaged</code>의 용량은 별개</strong>이므로, 실제로 배포할 유형의 값을 확인해야 합니다.</p>
@@ -1008,7 +990,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li><strong>시간을 두고 재시도</strong> — 용량은 하루 중에도 변합니다</li>
 <li>쿼터 폼으로 <strong>용량 요청</strong></li>
 </ol>
-<hr />
+<hr/>
 <h2 id="6-2-azure-reservation">6. 실전 절차 ② — Azure 예약(Reservation) 구매</h2>
 <h3 id="61">6.1 예약이란</h3>
 <p><strong>PTU 시간당 요금에 적용되는 할인 약정</strong>입니다. 1개월 또는 1년을 약정하고 낮은 단가를 받습니다.</p>
@@ -1044,12 +1026,10 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
                   →  200 PTU 분량의 약정은 그대로 청구
                   →  사용하지 못한 예약은 소멸(이월 안 됨)
 </code></pre></div>
-
 <h3 id="63">6.3 구매 절차</h3>
 <div class="codehilite"><pre><span></span><code>Azure 포털 → All services → Reservations
 → [Microsoft Foundry Provisioned Throughput] 선택
 </code></pre></div>
-
 <table>
 <thead>
 <tr>
@@ -1142,7 +1122,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </tbody>
 </table>
 <p>문서 예시: 500 PTU 예약 + 기존 300 PTU 배포 상태에서 300 PTU를 추가하면 → 200은 커버, <strong>100은 시간당 정가 청구</strong>.</p>
-<hr />
+<hr/>
 <h2 id="7">7. 운영 체크포인트</h2>
 <h3 id="71">7.1 배포 후 확인할 것</h3>
 <table>
@@ -1176,7 +1156,6 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 ③ Purge (소프트 삭제 완전 제거)
 ④ 예약은 별도로 취소·교환   ← 잊기 쉬움
 </code></pre></div>
-
 <blockquote>
 <p>🔴 <strong>배포를 지워도 예약은 자동으로 취소되지 않습니다.</strong> Azure 포털의 Reservations에서 직접 처리해야 하며, 그대로 두면 쓰지도 않는 약정이 계속 청구됩니다.</p>
 </blockquote>
@@ -1203,7 +1182,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </tr>
 </tbody>
 </table>
-<hr />
+<hr/>
 <h2 id="8">8. 자주 묻는 질문</h2>
 <p><strong>Q. 리소스를 여러 개 만들어야 하나요, 하나에 배포를 여러 개 만들어야 하나요?</strong>
 기능만 보면 하나로 충분합니다(배포 32개까지). 다만 <strong>가용성 관점에서는 리소스가 곧 엔드포인트 경계</strong>이므로, 프로덕션에서는 <strong>리전이 다른 리소스 2개</strong>를 권장합니다(<a href="../04-aoai-high-availability/">가이드 04</a>).</p>
@@ -1217,7 +1196,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 권장 구성입니다. <strong>PTU로 기저 부하, Standard로 피크</strong>를 처리합니다. Spillover를 설정하면 PTU 포화 시 자동으로 넘어갑니다(<a href="../04-aoai-high-availability/">가이드 04 §5</a>).</p>
 <p><strong>Q. 쿼터 신청은 얼마나 걸리나요?</strong>
 <strong>수일</strong>이 소요됩니다. 프로젝트 일정에 반드시 선반영하세요.</p>
-<hr />
+<hr/>
 <h2 id="_3">부록. 참고 문서</h2>
 <h3 id="_4">개념</h3>
 <ul>
@@ -1246,11 +1225,878 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <ul>
 <li>프로비저닝 배포 운영 시작: https://learn.microsoft.com/azure/foundry/openai/how-to/provisioned-get-started</li>
 </ul>
-    <hr>
-    <p class="meta">최종 수정 2026-08-10 · Microsoft Scout</p>
-  </main>
+<hr/>
+<p class="meta">최종 수정 2026-08-10 · Microsoft Scout</p>
+</main>
+</div><div class="layout lang-en">
+<nav class="sidebar">
+<h2>Table of Contents</h2>
+<div class="toc">
+<ul>
+<li><a href="#en-0">0. One-Page Summary</a><ul>
+<li><a href="#en-_1">Terminology Map</a></li>
+<li><a href="#en-_2">🔑 Point to Cover First — Resources Always Have a "Region"</a></li>
+<li><a href="#en-5">Top 5 Most Common Mistakes</a></li>
+</ul>
+</li>
+<li><a href="#en-1">1. Resources — What to Create</a><ul>
+<li><a href="#en-11-arm">1.1 There is only one ARM resource type</a></li>
+<li><a href="#en-12-hub">1.2 Hub · Project — Which one to use</a></li>
+<li><a href="#en-13">1.3 Multiple deployments to a single resource</a></li>
+<li><a href="#en-14">1.4 Endpoints and calling methods</a></li>
+</ul>
+</li>
+<li><a href="#en-2-deployment">2. Deployment — What is Deployed</a><ul>
+<li><a href="#en-21">2.1 Overview of All Deployment Types</a></li>
+<li><a href="#en-22">2.2 How to Choose</a></li>
+<li><a href="#en-23-standard-vs-provisioned">2.3 Key Differences Between Standard and Provisioned</a></li>
+</ul>
+</li>
+<li><a href="#en-3-ptu">3. PTU — Unit of Dedicated Processing Power</a><ul>
+<li><a href="#en-31-ptu">3.1 Nature of PTU</a></li>
+<li><a href="#en-32">3.2 Minimum Deployment Size and Increment</a></li>
+<li><a href="#en-33-ptu">3.3 PTU Size Estimation</a></li>
+</ul>
+</li>
+<li><a href="#en-4-quota-vs-capacity">4. Quota vs Capacity — The Biggest Confusion</a><ul>
+<li><a href="#en-41">4.1 They are completely different things</a></li>
+<li><a href="#en-42">4.2 🔴 Deployment can fail even if there is a quota</a></li>
+<li><a href="#en-43">4.3 ⚠️ Returned capacity may not come back</a></li>
+<li><a href="#en-44">4.4 The criteria for dividing quotas</a></li>
+</ul>
+</li>
+<li><a href="#en-5-1">5. Practical Procedure ① — Quota Application and Capacity Check</a><ul>
+<li><a href="#en-51">5.1 Overall Flow</a></li>
+<li><a href="#en-52">5.2 Check and Apply for Quota</a></li>
+<li><a href="#en-53-capacity">5.3 Check Capacity — Before Deployment</a></li>
+<li><a href="#en-54">5.4 When There is No Capacity</a></li>
+</ul>
+</li>
+<li><a href="#en-6-2-azure-reservation">6. Practical Procedure ② — Azure Reservation Purchase</a><ul>
+<li><a href="#en-61">6.1 What a Reservation Is</a></li>
+<li><a href="#en-62">6.2 🔑 Must Follow "Deploy → Reserve" Order</a></li>
+<li><a href="#en-63">6.3 Purchase Procedure</a></li>
+<li><a href="#en-64">6.4 ⚠️ Deployment Type and Region Matching Rules</a></li>
+<li><a href="#en-65">6.5 Over and Under</a></li>
+</ul>
+</li>
+<li><a href="#en-7">7. Operation Checkpoints</a><ul>
+<li><a href="#en-71">7.1 Things to Check After Deployment</a></li>
+<li><a href="#en-72">7.2 Cleanup (Deletion) Order</a></li>
+<li><a href="#en-73">7.3 Regular Inspection Routine</a></li>
+</ul>
+</li>
+<li><a href="#en-8">8. Frequently Asked Questions</a></li>
+<li><a href="#en-_3">Appendix. Reference Documents</a><ul>
+<li><a href="#en-_4">Concepts</a></li>
+<li><a href="#en-_5">Quota · Capacity</a></li>
+<li><a href="#en-_6">Reservation · Billing</a></li>
+<li><a href="#en-_7">Operations</a></li>
+</ul>
+</li>
+</ul>
 </div>
+</nav>
+<main>
+<div class="topbar">
+<span class="badge">Azure OpenAI · Foundations</span>
+<button class="toggle" id="en-themeToggle" type="button">Theme switch</button>
+</div>
+<h1 id="en-azure-openai-ptu">Azure OpenAI Basic Concepts — Resources · Deployment · Quotas · PTU Application and Reservation</h1>
+<blockquote>
+<p><strong>Audience</strong> · Architects and platform managers who are introducing AOAI/Foundry for the first time or are <strong>confused about quotas, capacities, and reservations</strong></p>
+<p><strong>Scope</strong> · Resource hierarchy → Deployment types → Quotas vs capacities → PTU application procedure → Azure reserved purchases</p>
+</blockquote>
+<hr/>
+<h2 id="en-0">0. One-Page Summary</h2>
+<h3 id="en-_1">Term Relationship Diagram</h3>
+<div class="mermaid" data-idx="0"></div>
+<h3 id="en-_2">🔑 First thing to note — Resources always have a "region"</h3>
+<p><strong>Even when using Global deployment, you need to choose a region when creating resources.</strong> This is where most of the confusion starts.</p>
+<div class="mermaid" data-idx="1"></div>
+<table>
+<thead>
+<tr>
+<th>Hierarchy</th>
+<th>Regional dependency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Resource (Endpoint)</strong></td>
+<td><strong>Always fixed to a specific region</strong> — the address that the client is hitting</td>
+</tr>
+<tr>
+<td><strong>Distribution processing location</strong></td>
+<td>Global / Data Zone / Single Region depending on deployment type</td>
+</tr>
+</tbody>
+</table>
+<p>In other words, <strong>a resource region is a 'gateway,' not a 'processing location.'</strong> Whether it's Global Standard or Global Provisioned, <strong>it first comes in through the gateway of Korea Central</strong>, and from there it is routed throughout the world.</p>
+<blockquote>
+<p>⚠️ So, <strong>the statement 'Since it's global, it doesn't matter which region' is only half true.</strong> The processing is global, but <strong>the gateway is fixed to a region</strong>, so if there is an issue in that region, the calls themselves cannot go through. This is the starting point of the availability design discussed in <a href="../04-aoai-high-availability/">Guide 04</a>.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>One-line definition</th>
+<th>Common Misunderstanding</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Resource</strong></td>
+<td>The containers created in Azure. Boundaries of endpoints, keys, network, and RBAC</td>
+<td>"Resource = Model" is not</td>
+</tr>
+<tr>
+<td><strong>Deployment</strong></td>
+<td>Uploading a specific model in a specific way within the resource</td>
+<td>The deployment name is the <code>model</code> value of the API</td>
+</tr>
+<tr>
+<td><strong>Deployment Type</strong></td>
+<td>Where that deployment is <strong>handled and how it is billed</strong></td>
+<td>Separate axis regardless of model type</td>
+</tr>
+<tr>
+<td><strong>Quota</strong></td>
+<td>The <strong>cap</strong> that can be distributed. No cost</td>
+<td>"quota ≠ Capacity"</td>
+</tr>
+<tr>
+<td><strong>Capacity</strong></td>
+<td>Actual <strong>physical resources</strong> that can be distributed</td>
+<td>There may be none even if there is a quota</td>
+</tr>
+<tr>
+<td><strong>PTU</strong></td>
+<td>Unit of dedicated processing capacity</td>
+<td>The same PTU produces different TPMs depending on the model</td>
+</tr>
+<tr>
+<td><strong>Reservation</strong></td>
+<td>PTU fee <strong>discount agreement</strong></td>
+<td>Does not hold capacity</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-5">The 5 Most Common Mistakes</h3>
+<ol>
+<li><strong>Assume distribution if a quota is received</strong> → Distribution fails if there is no capacity (§4.2)</li>
+<li><strong>Purchase reservation first</strong> → If distribution fails, only money is lost. <strong>Distribution → Reservation</strong> order (§6.2)</li>
+<li><strong>Does not know that quotas are divided by Deployment type</strong> → Regional distribution is not possible with a Global quota (§4.4)</li>
+<li><strong>Reducing PTU at night</strong> → May not be able to regain capacity in the morning (§4.3)</li>
+<li><strong>Reservation does not match the deployment type or region</strong> → Discount not applied (§6.4)</li>
+</ol>
+<hr/>
+<h2 id="en-1">1. Resources — What Is Made</h2>
+<h3 id="en-11-arm">1.1 There is only one ARM resource type</h3>
+<p>Whether it's Azure OpenAI or Foundry, the <strong>ARM resource types are the same</strong>.</p>
+<div class="codehilite"><pre><span></span><code>Microsoft.CognitiveServices/accounts
+</code></pre></div>
+<p>Classification is done with <strong><code>kind</code></strong>.</p>
+<table>
+<thead>
+<tr>
+<th>kind</th>
+<th>Name</th>
+<th>Personality</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>OpenAI</code></td>
+<td>Azure OpenAI Resource</td>
+<td><strong>Legacy.</strong> Only OpenAI models and API provided</td>
+</tr>
+<tr>
+<td><code>AIServices</code></td>
+<td><strong>Foundry Resources</strong></td>
+<td><strong>Currently recommended.</strong> Agent, model, tool, and evaluation in one resource</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><em>"Azure OpenAI – A specialized resource type that provides access to OpenAI models and APIs only. </em><em>For most use cases, use the Foundry resource</em><em>, which offers backward compatibility with all Azure OpenAI APIs."</em></p>
+</blockquote>
+<p><strong>If you are using existing Azure OpenAI resources</strong>, there is an upgrade path.</p>
+<blockquote>
+<p><em>"Upgrade your Azure OpenAI resource to a Foundry resource </em><em>while preserving your endpoint, API keys, and existing state</em><em>."</em></p>
+</blockquote>
+<p>In other words, you can switch <strong>while keeping the endpoint and key</strong>, minimizing changes to the application code.</p>
+<h3 id="en-12-hub">1.2 Hub · Project — Which one to use</h3>
+<table>
+<thead>
+<tr>
+<th>Concept</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Azure AI Hub</strong></td>
+<td>Legacy. Transferring functions to Foundry resources starting from 2025-06</td>
+</tr>
+<tr>
+<td><strong>Hub-Based Project</strong></td>
+<td>Accessible only from the Foundry (classic) portal. <strong>Not a new investment target</strong></td>
+</tr>
+<tr>
+<td><strong>Foundry Project</strong></td>
+<td><strong>Currently recommended.</strong> Default of the new portal</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><em>"Hub-based projects are accessible in the Foundry (classic) portal. </em><em>New investments are focused on Foundry projects in the new portal.</em><em>"</em></p>
+</blockquote>
+<h3 id="en-13">1.3 Multiple deployments to a single resource</h3>
+<p><strong>Resource : Distribution = 1 : N</strong> relationship.</p>
+<table>
+<thead>
+<tr>
+<th>Limit</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Maximum Standard deployments per resource</td>
+<td><strong>32</strong></td>
+</tr>
+<tr>
+<td>Maximum PTU per distribution</td>
+<td><strong>100,000</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 <strong>Important</strong>: Deployments within the same resource <strong>share an endpoint</strong>. In other words, there is only one "gateway" as seen in §0. If there is a problem in the region that the resource belongs to, <strong>all deployments within it become unreachable</strong>. This fact has a decisive significance in the HA design of <a href="../04-aoai-high-availability/">Guide 04</a>.</p>
+</blockquote>
+<h3 id="en-14">1.4 Endpoints and Call Methods</h3>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenAI</span>
 
+<span class="n">client</span> <span class="o">=</span> <span class="n">OpenAI</span><span class="p">(</span>
+    <span class="n">api_key</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">"AZURE_OPENAI_API_KEY"</span><span class="p">),</span>
+    <span class="n">base_url</span><span class="o">=</span><span class="s2">"https://&lt;resource-name&gt;.openai.azure.com/openai/v1/"</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">resp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="s2">"prod-gpt5-ptu"</span><span class="p">,</span>     <span class="c1"># ← Not the model name but the 'deployment name'</span>
+    <span class="n">messages</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">]</span>
+<span class="p">)</span>
+</code></pre></div>
+<blockquote>
+<p>🔑 <strong>The <code>model</code> parameter should contain the deployment name, not the model name.</strong> This is the first difference that teams coming from OpenAI usually encounter (<a href="../01-oai-to-aoai-onboarding/">See Guide 01</a>).</p>
+</blockquote>
+<hr/>
+<h2 id="en-2-deployment">2. Deployment — What is being deployed</h2>
+<p>There are <strong>three</strong> things you decide when creating a distribution.</p>
+<div class="codehilite"><pre><span></span><code>① Which model      (gpt-5.1)
+② In which version    (2025-11-13)
+③ In what way    (Global Standard / Global Provisioned / ...)
+</code></pre></div>
+<p><strong>③ This is the "Deployment type," which is completely independent of model selection.</strong> Most confusion arises here.</p>
+<h3 id="en-21">2.1 Overview of Distribution Types</h3>
+<p>The Deployment type is a combination of <strong>"Where it is processed (rows) × How it is charged (columns)"</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Processing Location ＼ Billing</th>
+<th><strong>Token Billing (Standard)</strong></th>
+<th><strong>Capacity Reservation (Provisioned)</strong></th>
+<th>Layout</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Worldwide</strong> (Global)</td>
+<td><code>GlobalStandard</code></td>
+<td><code>GlobalProvisionedManaged</code></td>
+<td><code>GlobalBatch</code></td>
+</tr>
+<tr>
+<td><strong>Within the Data Zone</strong> (US/EU/APAC*)</td>
+<td><code>DataZoneStandard</code></td>
+<td><code>DataZoneProvisionedManaged</code>*</td>
+<td><code>DataZoneBatch</code></td>
+</tr>
+<tr>
+<td><strong>Single Region</strong></td>
+<td><code>Standard</code></td>
+<td><code>ProvisionedManaged</code></td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>* <strong>APAC only supports Standard</strong>. Data Zone Provisioned is only available in the US/EU (<a href="../04-aoai-high-availability/">Guide 04 §3.2</a>).</p>
+<h3 id="en-22">2.2 How to Choose</h3>
+<p><strong>Step 1 — Are there any data processing location requirements?</strong></p>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Select</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>None</td>
+<td><strong>Global</strong> (has the largest quota and the models come in the fastest)</td>
+</tr>
+<tr>
+<td>Within geographic region (EU/US/APAC)</td>
+<td><strong>Data Zone</strong></td>
+</tr>
+<tr>
+<td>Within a specific region</td>
+<td><strong>Standard / Regional Provisioned</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>Storage (at rest) is within any specified geography</strong>. The issue with Global is the <strong>processing</strong> location. First, check whether regulations also restrict the processing location.</p>
+</blockquote>
+<p><strong>Step 2 — Is the traffic predictable?</strong></p>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Select</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Development · Testing · Highly Variable Traffic</td>
+<td><strong>Standard</strong> (Charged based on usage)</td>
+</tr>
+<tr>
+<td>Predictable base load · Delayed SLA required</td>
+<td><strong>Provisioned (PTU)</strong></td>
+</tr>
+<tr>
+<td>Nighttime bulk processing, delay irrelevant</td>
+<td><strong>Batch</strong> (about 50% cheaper, separate quota)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-23-standard-vs-provisioned">2.3 Key Differences Between Standard and Provisioned</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Standard</th>
+<th>Provisioned (PTU)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Billing</td>
+<td><strong>Per Token</strong></td>
+<td><strong>Per Hour</strong> (Number of PTUs × Hours)</td>
+</tr>
+<tr>
+<td>When usage is 0</td>
+<td><strong>0 won</strong></td>
+<td><strong>Charge as is</strong></td>
+</tr>
+<tr>
+<td>Capacity</td>
+<td>Share</td>
+<td><strong>Exclusive</strong></td>
+</tr>
+<tr>
+<td>Delay SLA</td>
+<td>None (best-effort)</td>
+<td><strong>There is a delay target by model</strong></td>
+</tr>
+<tr>
+<td>When the limit is reached</td>
+<td>429</td>
+<td><strong>Usage rate 100% → 429</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💰 <strong>PTU is billed whether you use it or not.</strong> The meter starts the moment you create a deployment and stops only when you delete it.</p>
+</blockquote>
+<hr/>
+<h2 id="en-3-ptu">3. PTU — Unit of Dedicated Processing Capacity</h2>
+<h3 id="en-31-ptu">3.1 Properties of PTU</h3>
+<table>
+<thead>
+<tr>
+<th>Characteristics</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Model-independent</strong></td>
+<td>Any model supported by the same PTU quota can be deployed. No need to purchase a separate 'PTU for GPT-5'</td>
+</tr>
+<tr>
+<td><strong>By Region</strong></td>
+<td>Quota is based on subscriptions × regions × distribution types</td>
+</tr>
+<tr>
+<td><strong>Throughput varies by model</strong></td>
+<td>The TPM output differs depending on the model, even with the same 100 PTU</td>
+</tr>
+<tr>
+<td><strong>Minimum deployment size exists</strong></td>
+<td>Varies by model and type</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-32">3.2 Minimum Deployment Size and Increment</h3>
+<table>
+<thead>
+<tr>
+<th>Deployment type</th>
+<th>Minimum PTU</th>
+<th>Increment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Global / Data Zone Provisioned</strong></td>
+<td><strong>15</strong></td>
+<td><strong>5</strong></td>
+</tr>
+<tr>
+<td><strong>Regional Provisioned</strong></td>
+<td><strong>25~50</strong> (by model)</td>
+<td><strong>25~50</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Example: For the GPT-4.1·GPT-5 series Regional, <strong>minimum 50 PTU · increments of 50 units</strong> → 50, 100, 150...</p>
+<blockquote>
+<p>💰 This difference directly affects HA costs. If you configure multiple regions as regional, the minimum cost will be several times higher.</p>
+</blockquote>
+<h3 id="en-33-ptu">3.3 PTU Scale Estimation</h3>
+<p>These are the three inputs required for the calculation.</p>
+<table>
+<thead>
+<tr>
+<th>Input</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Request Type</strong></td>
+<td>Requests per minute (RPM), average input tokens, average output tokens</td>
+</tr>
+<tr>
+<td><strong>Output:Input Ratio</strong></td>
+<td><strong>Output tokens are much heavier than input tokens.</strong> Conversion rates exist for each model</td>
+</tr>
+<tr>
+<td><strong>Cache Hit Rate</strong></td>
+<td><strong>Cached tokens do not consume PTU.</strong> If the accuracy is high, required PTU is reduced</td>
+</tr>
+</tbody>
+</table>
+<p>After converting this to <strong>normalized TPM</strong>, divide it by the model's <strong>input TPM per PTU</strong> to calculate the required PTU.</p>
+<p>🔗 <strong>Capacity Calculator</strong>: https://ai.azure.com/nextgen/goto/build/models/ptu-calculator</p>
+<blockquote>
+<p>💡 <strong>Controlling output tokens reduces PTU.</strong> The <code>max_tokens</code> limit and prompt caching are means not only to improve performance but also to <strong>lower the required PTU itself</strong>.</p>
+</blockquote>
+<hr/>
+<h2 id="en-4-quota-vs-capacity">4. Quota vs Capacity — The Biggest Confusion</h2>
+<h3 id="en-41">4.1 The two are completely different things</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>Quota</strong></th>
+<th><strong>Capacity</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Identity</td>
+<td>The <strong>policy limit</strong> set by Azure</td>
+<td>Physically existing <strong>physical resources</strong></td>
+</tr>
+<tr>
+<td>Cost</td>
+<td><strong>None</strong></td>
+<td>Occupancy during distribution</td>
+</tr>
+<tr>
+<td>Metaphor</td>
+<td>Bank <strong>limit</strong></td>
+<td><strong>Cash</strong> in the safe</td>
+</tr>
+<tr>
+<td>How to check</td>
+<td>Foundry Portal Quota Page</td>
+<td>Deployment attempt / Model capacities API</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-42">4.2 🔴 Even with quotas, deployment fails</h3>
+<blockquote>
+<p><em>"</em><em>Having PTU quota doesn't guarantee that capacity is available.</em><em> If capacity in the region is insufficient for the requested PTU count, </em><em>the deployment fails.</em><em> Always verify capacity availability before planning a deployment or purchasing a reservation."</em></p>
+</blockquote>
+<p><strong>The plan that 'we can distribute it during an outage since we already secured the quota in advance' fails.</strong></p>
+<h3 id="en-43">4.3 ⚠️ Returned capacity may not come back</h3>
+<blockquote>
+<p><em>"</em><em>Deleting or scaling down a deployment releases its capacity back to the region pool.</em><em> There's </em><em>no guarantee the same capacity is available</em><em> if you re-create or scale the deployment up later."</em></p>
+<p><em>"</em><em>Capacity availability changes throughout the day</em><em> based on customer demand across all regions and models."</em></p>
+</blockquote>
+<p>→ <strong>Operating by reducing the PTU at night to save costs is risky.</strong></p>
+<h3 id="en-44">4.4 Criteria for quota Division</h3>
+<div class="codehilite"><pre><span></span><code>Quota = Subscription × Region × Deployment Type
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>False Assumption</th>
+<th>Actual</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Since I have 100 PTUs, any type is fine</td>
+<td>❌ Global / Data Zone / Regional are <strong>completely separate pools</strong></td>
+</tr>
+<tr>
+<td>"Since there are remaining East US quarters, also in West Europe"</td>
+<td>❌ <em>"quota in East US doesn't apply to West Europe"</em></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ In failover design, <strong>to change the deployment type</strong> (e.g., Regional → Global), you must <strong>secure the quota for that type separately</strong>.</p>
+</blockquote>
+<hr/>
+<h2 id="en-5-1">5. Practical Procedure ① — Quota Application and Capacity Check</h2>
+<h3 id="en-51">5.1 Overall Flow</h3>
+<div class="mermaid" data-idx="2"></div>
+<blockquote>
+<p>🔑 <strong>The order of ④ and ⑤ is crucial.</strong> Do not reverse them (§6.2).</p>
+</blockquote>
+<h3 id="en-52">5.2 Checking and Applying for Quota</h3>
+<p><strong>Portal Path</strong></p>
+<div class="codehilite"><pre><span></span><code>Foundry Portal → Operate → Quota → Provisioned throughput unit
+→ Select subscription·region → Check current usage
+→ If insufficient, [Request Quota]
+</code></pre></div>
+<p><strong>Application Form (Direct Link)</strong>
+🔗 https://aka.ms/oai/stuquotarequest</p>
+<blockquote>
+<p>Both the standard TPM quota and the PTU quota currently use the <strong>same form</strong>.</p>
+<p>⏱️ <em>"Approval might take several days</em><em> based on quota availability, and you receive an email notification when the request is approved."</em></p>
+<p><strong>It takes several days.</strong> Urgent applications in case of an issue are not effective. Be sure to secure it <strong>in advance</strong>.</p>
+</blockquote>
+<h3 id="en-53-capacity">5.3 Checking Capacity — Before Deployment</h3>
+<p><strong>Model capacities API</strong> lets you check the actual capacity that can be deployed.</p>
+<div class="codehilite"><pre><span></span><code>curl<span class="w"> </span>-X<span class="w"> </span>GET<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="s2">"https://management.azure.com/subscriptions/</span><span class="nv">$SUB</span><span class="s2">/providers/Microsoft.CognitiveServices/modelCapacities\</span>
+<span class="s2">?api-version=2024-10-01&amp;modelFormat=OpenAI&amp;modelName=gpt-5.1&amp;modelVersion=2025-11-13"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">"</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Query Parameter</th>
+<th>Required</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>api-version</code></td>
+<td>✅</td>
+<td><code>2024-10-01</code></td>
+</tr>
+<tr>
+<td><code>modelFormat</code></td>
+<td>✅</td>
+<td><code>OpenAI</code></td>
+</tr>
+<tr>
+<td><code>modelName</code></td>
+<td>✅</td>
+<td><code>gpt-5.1</code></td>
+</tr>
+<tr>
+<td><code>modelVersion</code></td>
+<td>✅</td>
+<td><code>2025-11-13</code></td>
+</tr>
+</tbody>
+</table>
+<p>The response is returned <strong>by region × deployment type (SKU)</strong>, and <strong><code>availableCapacity</code></strong> is the maximum deployable amount.</p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"location"</span><span class="p">:</span><span class="w"> </span><span class="s2">"koreacentral"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"model"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"format"</span><span class="p">:</span><span class="w"> </span><span class="s2">"OpenAI"</span><span class="p">,</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"gpt-5.1"</span><span class="p">,</span><span class="w"> </span><span class="nt">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2025-11-13"</span><span class="w"> </span><span class="p">},</span>
+<span class="w">        </span><span class="nt">"skuName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GlobalProvisionedManaged"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"availableCapacity"</span><span class="p">:</span><span class="w"> </span><span class="mi">300</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+<blockquote>
+<p>💡 <strong>If you are running HA, include this API in your regular checkups.</strong> This is a way to check whether the failover target region actually has capacity <strong>before a failure occurs</strong>.</p>
+<p>📌 <code>skuName</code> refers to the deployment type. Even for the same region and model, <strong>the capacities of <code>GlobalProvisionedManaged</code> and <code>ProvisionedManaged</code> are separate</strong>, so you need to check the value for the type you are actually deploying.</p>
+</blockquote>
+<h3 id="en-54">5.4 When there is no capacity</h3>
+<ol>
+<li><strong>Reduce the number of PTUs</strong> and try deployment</li>
+<li><strong>Try another region</strong> — Check the API by region to find one with availability</li>
+<li><strong>Try again after some time</strong> — Capacity changes even during the day</li>
+<li>Request <strong>capacity</strong> via the quota form</li>
+</ol>
+<hr/>
+<h2 id="en-6-2-azure-reservation">6. Practical Procedure ② — Azure Reservation Purchase</h2>
+<h3 id="en-61">6.1 What is a Reservation</h3>
+<p><strong>This is a discount agreement applied to PTU hourly rates</strong>. You commit for 1 month or 1 year and receive a lower unit price.</p>
+<table>
+<thead>
+<tr>
+<th>Characteristics</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Contract Period</td>
+<td><strong>1 month or 1 year</strong> (3-year option <strong>not available</strong>)</td>
+</tr>
+<tr>
+<td>Applicable Target</td>
+<td>Not distribution, but <strong>PTU meter (usage per hour)</strong></td>
+</tr>
+<tr>
+<td>Cohesion</td>
+<td>Distribution and scheduling are <strong>created independently</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-62">6.2 🔑 Must follow the 'Deploy → Schedule' order</h3>
+<blockquote>
+<p><em>"Because capacity availability for model deployments is dynamic and changes frequently across regions and models, </em><em>always create deployments first, then purchase the Azure Reservation</em><em> to cover the PTUs you've deployed."</em></p>
+<p><em>"</em><em>Reservations don't guarantee capacity.</em><em> First create deployments to confirm that capacity is available, then purchase the reservation to lock in the discounted rate."</em></p>
+</blockquote>
+<p><strong>This is what happens when you buy a reservation first:</strong></p>
+<div class="codehilite"><pre><span></span><code>Reserved 500 PTU purchase → Only 300 PTU available for distribution
+                  → The contract for 200 PTU will be billed as is
+                  → Unused reservations will expire (cannot be carried over)
+</code></pre></div>
+<h3 id="en-63">6.3 Purchase Procedure</h3>
+<div class="codehilite"><pre><span></span><code>Azure Portal → All services → Reservations
+→ Select [Microsoft Foundry Provisioned Throughput]
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Selected Item</th>
+<th>Warning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Subscription</strong></td>
+<td>EA / MCA / Pay-as-you-go support</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Scope</strong></td>
+<td>Resource Group / Single Subscription / Shared / Management Group</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Region</strong></td>
+<td>Global can be any region (§6.4)</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Product (Deployment type)</strong></td>
+<td>Global / Data Zone / Regional among <strong>Match with Distribution</strong></td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Quantity</strong></td>
+<td>Adjust to the total distributed PTU</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Review → <strong>Buy now</strong></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-64">6.4 ⚠️ Deployment type·Region Matching Rules</h3>
+<blockquote>
+<p><em>"</em><em>Reservations for Global, Data Zone, and Regional deployments aren't interchangeable.</em><em> You need to purchase a separate reservation for each deployment type."</em></p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Deployment type</th>
+<th>Region match required?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Global Provisioned</strong></td>
+<td>❌ <strong>Unnecessary</strong> — One reservation covers multiple regions</td>
+</tr>
+<tr>
+<td><strong>Data Zone Provisioned</strong></td>
+<td>✅ <strong>Required</strong></td>
+</tr>
+<tr>
+<td><strong>Regional Provisioned</strong></td>
+<td>✅ <strong>Required</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Strengths of Global Reservations (Document Example):</strong></p>
+<blockquote>
+<p><em>"If you have 50 Global PTUs in East US, 100 in West Europe, and 200 in Australia East, you can purchase a </em><em>single Global reservation for 350 units in any region</em><em> to cover all deployments across all three regions."</em></p>
+<p>💰 <strong>If you are planning multi-region HA, Global Provisioned is overwhelmingly advantageous in terms of reservations.</strong> Regional requires separate reservations for each region.</p>
+</blockquote>
+<h3 id="en-65">6.5 Over and Under</h3>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Distribution PTU &gt; Reserved Quantity</strong></td>
+<td>Excess will be charged at the <strong>regular hourly rate</strong></td>
+</tr>
+<tr>
+<td><strong>Reserved Quantity &gt; Distribution PTU</strong></td>
+<td>Unused reservations <strong>expire. They are not carried over</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Document example: If you add 300 PTU to a reservation of 500 PTU + an existing distribution of 300 PTU → 200 is covered, <strong>100 is charged at the regular hourly rate</strong>.</p>
+<hr/>
+<h2 id="en-7">7. Operation Checkpoints</h2>
+<h3 id="en-71">7.1 Things to Check After Deployment</h3>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PTU usage rate</td>
+<td>Azure Monitor → <code>Provisioned-managed utilization V2</code></td>
+</tr>
+<tr>
+<td>Performance Verification</td>
+<td><code>azure-openai-benchmark</code> tool</td>
+</tr>
+<tr>
+<td>429 Occurred</td>
+<td>Normal flow control signal. Respond with retry or spillover</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>For detailed metrics, alerts, and KQL, refer to <a href="../03-aoai-deployment-monitoring/">Guide 03</a>.</p>
+</blockquote>
+<h3 id="en-72">7.2 Cleanup (Deletion) Order</h3>
+<div class="codehilite"><pre><span></span><code>① Delete Distribution
+② Delete resource
+③ Purge (Complete removal of soft delete)
+④ Reservations must be canceled or exchanged separately ← Easy to forget
+</code></pre></div>
+<blockquote>
+<p>🔴 <strong>Deleting a deployment does not automatically cancel reservations.</strong> You must handle it directly in the Reservations section of the Azure portal, and if left as is, the unused commitment will continue to be billed.</p>
+</blockquote>
+<h3 id="en-73">7.3 Regular Inspection Routine</h3>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Item</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Weekly</td>
+<td>PTU Usage Rate · 429 Occurrence Trend</td>
+</tr>
+<tr>
+<td>Monthly</td>
+<td>Reservation Utilization Rate (Unutilized Reservations) · Top Token Consuming Apps</td>
+</tr>
+<tr>
+<td>quota</td>
+<td>Failover region <strong>capacity actual confirmation</strong> · model retirement schedule</td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<h2 id="en-8">8. Frequently Asked Questions</h2>
+<p><strong>Q. Should I create multiple resources, or should I create multiple deployments within one resource?</strong>
+Functionally, one is enough (up to 32 deployments). However, <strong>from an availability perspective, a resource represents the endpoint boundary</strong>, so in production, it is recommended to have <strong>two resources in different regions</strong> (<a href="../04-aoai-high-availability/">Guide 04</a>).</p>
+<p><strong>Q. I bought a PTU. Can I switch to a different model?</strong>
+Yes. PTU quotas are <strong>model-independent</strong>. If it is a supported model, you can redistribute it with the same quota. However, <strong>each model has different minimum PTU and throughput per PTU.</strong></p>
+<p><strong>Q. Does reducing PTU during nights with no traffic save costs?</strong>
+According to calculations, yes, but <strong>it is not recommended.</strong> You may not be able to reclaim the returned capacity, and continuous hourly charges are often higher than the reserved price (§4.3).</p>
+<p><strong>Q. If I make a reservation, is the capacity guaranteed?</strong>
+<strong>No.</strong> A reservation is purely a <strong>price discount</strong>. Be sure to check the capacity through distribution before purchasing (§6.2).</p>
+<p><strong>Q. Can Standard and PTU be used together?</strong>
+This is the recommended configuration. <strong>Handle the base load with PTU and peaks with Standard</strong>. If you set up spillover, it will automatically switch when the PTU is saturated (<a href="../04-aoai-high-availability/">Guide 04 §5</a>).</p>
+<p><strong>Q. How long does it take to apply for a quota?</strong>
+It takes <strong>several days</strong>. Be sure to reflect this in the project schedule.</p>
+<hr/>
+<h2 id="en-_3">Appendix. Reference Documents</h2>
+<h3 id="en-_4">Concept</h3>
+<ul>
+<li>What is Foundry: https://learn.microsoft.com/azure/foundry/what-is-foundry</li>
+<li>Resource Type: https://learn.microsoft.com/azure/foundry-classic/concepts/resource-types</li>
+<li>Create Foundry resource: https://learn.microsoft.com/azure/ai-services/multi-service-resource</li>
+<li>Comparison of deployment types: https://learn.microsoft.com/azure/foundry/foundry-models/concepts/deployment-types</li>
+</ul>
+<h3 id="en-_5">Quota · Capacity</h3>
+<ul>
+<li>Quotas and Limits: https://learn.microsoft.com/azure/foundry/openai/quotas-limits</li>
+<li>PTU Concept: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput</li>
+<li>PTU Sizing: https://learn.microsoft.com/azure/foundry/openai/how-to/provisioned-throughput-sizing</li>
+<li>Model capacities API: https://learn.microsoft.com/rest/api/aiservices/accountmanagement/model-capacities/list</li>
+<li>🔑 Model region availability table: https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure-region-availability?pivots=provisioned</li>
+<li>Quota request form: https://aka.ms/oai/stuquotarequest</li>
+<li>Capacity Calculator: https://ai.azure.com/nextgen/goto/build/models/ptu-calculator</li>
+</ul>
+<h3 id="en-_6">Reservation · Billing</h3>
+<ul>
+<li>PTU Billing and Reservation: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput-billing</li>
+<li>Reserved Purchase (Cost Management): https://learn.microsoft.com/azure/cost-management-billing/reservations/microsoft-foundry</li>
+<li>Reservation exchange and refund: https://learn.microsoft.com/azure/cost-management-billing/reservations/exchange-and-refund-azure-reservations</li>
+</ul>
+<h3 id="en-_7">Operation</h3>
+<ul>
+<li>Start provisioning deployment operations: https://learn.microsoft.com/azure/foundry/openai/how-to/provisioned-get-started</li>
+</ul>
+<hr/>
+<p class="meta">Last modified 2026-08-10 · Microsoft Scout</p>
+</main>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 <script>
 (function () {

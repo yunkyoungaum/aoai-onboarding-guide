@@ -108,6 +108,10 @@ def translate_code_comments(container, cache):
                 if match:
                     prefix, comment, ending = match.groups()
                     line = prefix + translate(comment, cache) + (ending or "")
+                elif HANGUL.search(line):
+                    content = line.rstrip("\r\n")
+                    ending = line[len(content):]
+                    line = translate(content, cache) + ending
                 line = line.replace(" 또는 ", " or ")
                 lines.append(line)
             translated = "".join(lines)
