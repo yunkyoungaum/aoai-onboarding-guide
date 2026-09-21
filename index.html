@@ -83,6 +83,15 @@ header.page p { margin: 0; color: var(--cp-text-muted); font-size: 0.95rem; }
   font-size: 13px; font-family: inherit;
 }
 .toggle:hover { border-color: var(--cp-accent); color: var(--cp-accent); }
+.language-bar {
+  display: inline-flex; padding: 3px; border: 1px solid var(--cp-border);
+  border-radius: 0.625rem; background: var(--cp-surface-soft);
+}
+.language-bar button {
+  min-width: 70px; padding: 4px 10px; border: 0; border-radius: 7px;
+  color: var(--cp-text-muted); background: transparent; cursor: pointer; font: 600 13px inherit;
+}
+.language-bar button[aria-pressed="true"] { color: var(--cp-accent-fg); background: var(--cp-accent); }
 
 .toolbar { margin-bottom: 1.25rem; }
 #search {
@@ -154,7 +163,10 @@ footer.page code {
       <p>현장에서 반복적으로 마주치는 Azure OpenAI 설계·운영 주제를 가이드 단위로 정리합니다.</p>
     </div>
     <div>
-      <button class="toggle" id="languageToggle" type="button">English</button>
+      <span class="language-bar" id="languageBar" role="group" aria-label="Language / 언어">
+        <button type="button" data-lang-btn="ko">한국어</button>
+        <button type="button" data-lang-btn="en">English</button>
+      </span>
       <button class="toggle" id="themeToggle" type="button">테마 전환</button>
     </div>
   </header>
@@ -167,7 +179,7 @@ footer.page code {
   <p class="empty" id="empty" hidden>검색 결과가 없습니다.</p>
 
   <footer class="page">
-    <p>
+    <p id="footerCopy">
       가이드를 추가하려면 <code>guides/&lt;번호&gt;-&lt;슬러그&gt;/index.html</code>을 만들고
       <code>guides.js</code>의 <code>GUIDES</code> 배열에 항목을 추가하세요.
       자세한 절차는 <a href="README.md">README</a>를 참고하세요.
@@ -185,8 +197,14 @@ footer.page code {
   var empty = document.getElementById("empty");
   var search = document.getElementById("search");
   var toggle = document.getElementById("themeToggle");
-  var languageToggle = document.getElementById("languageToggle");
-  var language = localStorage.getItem("aoai-guide-language") || "ko";
+  var languageBar = document.getElementById("languageBar");
+  var params = new URLSearchParams(window.location.search);
+  var requestedLanguage = params.get("lang");
+  var storedLanguage = localStorage.getItem("aoai-guide-language");
+  var browserLanguage = navigator.language.toLowerCase().startsWith("ko") ? "ko" : "en";
+  var language = requestedLanguage === "ko" || requestedLanguage === "en"
+    ? requestedLanguage
+    : (storedLanguage === "ko" || storedLanguage === "en" ? storedLanguage : browserLanguage);
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -195,13 +213,13 @@ footer.page code {
   }
 
   function cardHtml(g) {
-    var href = "guides/" + esc(g.slug) + "/";
+    var href = "guides/" + esc(g.slug) + "/?lang=" + language;
     var tags = (language === "en" ? (g.tagsEn || g.tags) : g.tags || []).map(function (t) {
       return '<span class="tag">' + esc(t) + "</span>";
     }).join("");
     var draft = g.status === "draft" ? '<span class="draft">draft</span>' : "";
     var src = g.source
-      ? '<a class="srclink" href="guides/' + esc(g.slug) + "/" + esc(g.source) + '">원본(.md)</a>'
+      ? '<a class="srclink" href="guides/' + esc(g.slug) + "/" + esc(g.source) + '">' + (language === "en" ? "Source (.md)" : "원본(.md)") + "</a>"
       : "";
     // 앵커 중첩은 잘못된 HTML이므로 카드는 div로 두고 제목만 링크로 둔다.
     return '' +
@@ -242,28 +260,34 @@ footer.page code {
     document.documentElement.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
   });
 
-  languageToggle.addEventListener("click", function () {
-    language = language === "en" ? "ko" : "en";
+  function applyLanguage(nextLanguage, persist) {
+    language = nextLanguage === "en" ? "en" : "ko";
     localStorage.setItem("aoai-guide-language", language);
     document.documentElement.lang = language;
-    languageToggle.textContent = language === "en" ? "한국어" : "English";
+    document.title = language === "en" ? "Azure OpenAI practical guides" : "Azure OpenAI 실무 가이드 모음";
+    languageBar.querySelectorAll("[data-lang-btn]").forEach(function (button) {
+      button.setAttribute("aria-pressed", String(button.dataset.langBtn === language));
+    });
     document.querySelector("header.page h1").textContent = language === "en" ? "Azure OpenAI practical guides" : "Azure OpenAI 실무 가이드 모음";
     document.querySelector("header.page p").textContent = language === "en" ? "Practical guides for recurring Azure OpenAI design and operations topics." : "현장에서 반복적으로 마주치는 Azure OpenAI 설계·운영 주제를 가이드 단위로 정리합니다.";
+    toggle.textContent = language === "en" ? "Toggle theme" : "테마 전환";
     search.placeholder = language === "en" ? "Search title, summary, or tags (for example: PTU, monitoring, onboarding)" : "제목 · 요약 · 태그 검색 (예: PTU, 모니터링, 온보딩)";
     empty.textContent = language === "en" ? "No guides found." : "검색 결과가 없습니다.";
+    document.getElementById("footerCopy").innerHTML = language === "en"
+      ? 'To add a guide, create <code>guides/&lt;number&gt;-&lt;slug&gt;/index.html</code> and add an entry to the <code>GUIDES</code> array in <code>guides.js</code>. See the <a href="README.md">README</a> for details.'
+      : '가이드를 추가하려면 <code>guides/&lt;번호&gt;-&lt;슬러그&gt;/index.html</code>을 만들고 <code>guides.js</code>의 <code>GUIDES</code> 배열에 항목을 추가하세요. 자세한 절차는 <a href="README.md">README</a>를 참고하세요.';
+    params.set("lang", language);
+    history.replaceState(null, "", window.location.pathname + "?" + params.toString() + window.location.hash);
+    if (persist) localStorage.setItem("aoai-guide-language", language);
     render(search.value);
-  });
-
-  if (language === "en") {
-    document.documentElement.lang = "en";
-    languageToggle.textContent = "한국어";
-    document.querySelector("header.page h1").textContent = "Azure OpenAI practical guides";
-    document.querySelector("header.page p").textContent = "Practical guides for recurring Azure OpenAI design and operations topics.";
-    search.placeholder = "Search title, summary, or tags (for example: PTU, monitoring, onboarding)";
-    empty.textContent = "No guides found.";
   }
 
-  render("");
+  languageBar.addEventListener("click", function (event) {
+    var button = event.target.closest("[data-lang-btn]");
+    if (button) applyLanguage(button.dataset.langBtn, true);
+  });
+
+  applyLanguage(language, false);
 })();
 </script>
 </body>

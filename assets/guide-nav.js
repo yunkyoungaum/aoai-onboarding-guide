@@ -50,8 +50,10 @@
       document.documentElement.lang = language;
       document.title = titleFor(language);
       back.textContent = language === "en" ? "← Guide list" : "← 가이드 목록";
+      back.href = "../../index.html?lang=" + language;
       bar.querySelectorAll("[data-lang-btn]").forEach(function (button) {
         button.setAttribute("aria-pressed", String(button.dataset.langBtn === language));
+        button.setAttribute("aria-label", button.dataset.langBtn === "ko" ? "한국어로 전환" : "Switch to English");
       });
       params.set("lang", language);
       history.replaceState(null, "", window.location.pathname + "?" + params.toString() + window.location.hash);

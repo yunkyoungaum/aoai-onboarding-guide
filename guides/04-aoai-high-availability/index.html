@@ -1,8 +1,9 @@
 <!DOCTYPE html>
+
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
 <title>Azure OpenAI 고가용성(HA) 아키텍처 가이드</title>
 <script>
   (() => {
@@ -357,11 +358,11 @@ html[data-theme="dark"] .codehilite .vm { color: #F8F8F2 } /* Name.Variable.Magi
 html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Integer.Long */
 </style>
 </head>
-<body>
-<div class="layout">
-  <nav class="sidebar">
-    <h2>목차</h2>
-    <div class="toc">
+<body data-lang="ko" data-title-en="Azure OpenAI High Availability (HA) Architecture Guide" data-title-ko="Azure OpenAI 고가용성(HA) 아키텍처 가이드">
+<div class="layout lang-ko">
+<nav class="sidebar">
+<h2>목차</h2>
+<div class="toc">
 <ul>
 <li><a href="#0-tldr">0. TL;DR</a><ul>
 <li><a href="#ha">HA 성숙도 레벨</a></li>
@@ -448,36 +449,19 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </li>
 </ul>
 </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  </nav>
-  <main>
-    <div class="topbar">
-      <span class="badge">Azure OpenAI · HA Architecture</span>
-      <button class="toggle" id="themeToggle" type="button">테마 전환</button>
-    </div>
-    <h1 id="azure-openai-ha">Azure OpenAI 고가용성(HA) 아키텍처 가이드</h1>
+</nav>
+<main>
+<div class="topbar">
+<span class="badge">Azure OpenAI · HA Architecture</span>
+<button class="toggle" id="themeToggle" type="button">테마 전환</button>
+</div>
+<h1 id="azure-openai-ha">Azure OpenAI 고가용성(HA) 아키텍처 가이드</h1>
 <blockquote>
-<p><strong>대상</strong> &nbsp;·&nbsp; AOAI를 <strong>미션 크리티컬 워크로드</strong>에 사용하는 아키텍트, SRE, 플랫폼 팀</p>
-<p><strong>범위</strong> &nbsp;·&nbsp; 장애 유형 분류 → 계층별 HA 설계 → Spillover/APIM/멀티 리전 → 용량·모델 수명주기</p>
-<p><strong>관련 가이드</strong> &nbsp;·&nbsp; <a href="../01-oai-to-aoai-onboarding/">01 온보딩</a> · <a href="../02-aoai-foundations/">02 기본 개념</a> · <a href="../03-aoai-deployment-monitoring/">03 배포 &amp; 운영 모니터링</a></p>
+<p><strong>대상</strong>  ·  AOAI를 <strong>미션 크리티컬 워크로드</strong>에 사용하는 아키텍트, SRE, 플랫폼 팀</p>
+<p><strong>범위</strong>  ·  장애 유형 분류 → 계층별 HA 설계 → Spillover/APIM/멀티 리전 → 용량·모델 수명주기</p>
+<p><strong>관련 가이드</strong>  ·  <a href="../01-oai-to-aoai-onboarding/">01 온보딩</a> · <a href="../02-aoai-foundations/">02 기본 개념</a> · <a href="../03-aoai-deployment-monitoring/">03 배포 &amp; 운영 모니터링</a></p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="0-tldr">0. TL;DR</h2>
 <h3 id="ha">HA 성숙도 레벨</h3>
 <table>
@@ -545,7 +529,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li>[ ] 모델 <strong>버전 은퇴(retirement) 일정</strong>을 추적하고 있다 (§9)</li>
 <li>[ ] <strong>성능 저하 모드(graceful degradation)</strong> 가 정의되어 있다 (§10)</li>
 </ul>
-<hr />
+<hr/>
 <h2 id="1-aoai">1. AOAI에서 "장애"란 무엇인가</h2>
 <p>HA 설계의 출발점은 <strong>무엇으로부터 보호할 것인가</strong>를 정확히 나누는 것입니다. AOAI 장애는 성격이 전혀 다른 6가지로 나뉘며, <strong>대응 수단이 각각 다릅니다.</strong></p>
 <table>
@@ -614,7 +598,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <p><strong>가장 흔한 오설계</strong>: F1(용량)을 F3(리전 장애) 대응으로 막으려 하거나, 그 반대입니다.
 예를 들어 Spillover만 구성해 두고 "우리는 HA가 되어 있다"고 보는 경우, <strong>리전 인시던트에는 전혀 대비되어 있지 않습니다</strong>(§5.5).</p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="2-ha-4">2. HA 설계의 4개 축</h2>
 <div class="mermaid" data-idx="0"></div>
 <table>
@@ -649,7 +633,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </tbody>
 </table>
 <p><strong>축 4를 빠뜨리는 경우가 매우 많습니다.</strong> 모든 백엔드가 포화된 상황에서 "느린 실패"보다 "빠른 대체 응답"이 사용자 경험상 훨씬 낫습니다.</p>
-<hr />
+<hr/>
 <h2 id="3">3. 배포 유형별 가용성 특성</h2>
 <h3 id="31">3.1 ⚠️ 가장 중요한 전제 — 처리는 글로벌이어도 <strong>엔드포인트는 리전 고정</strong>입니다</h3>
 <p>Global 계열 배포를 "리전 장애에 자동으로 안전하다"고 이해하면 <strong>틀립니다.</strong></p>
@@ -796,7 +780,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <p><em>"Provisioned types provide </em><em>guaranteed throughput and lower latency variance</em><em>. Standard types offer </em><em>best-effort</em><em> service. Developer deployments </em><em>don't include an SLA</em><em>."</em></p>
 </blockquote>
 <p>즉 <strong>일관된 지연이 필요한 워크로드는 Standard로 Failover하는 순간 지연 목표 적용 대상에서 벗어납니다.</strong> 이 점을 성능 저하 모드(§10)에 명시적으로 반영해야 합니다.</p>
-<hr />
+<hr/>
 <h3 id="35-ptu">3.5 권장 아키텍처 — 엔터프라이즈 PTU 풀</h3>
 <p><strong>개별 앱마다 PTU를 따로 사는 방식보다 우수한 구조</strong>입니다.</p>
 <div class="mermaid" data-idx="1"></div>
@@ -877,7 +861,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <blockquote>
 <p><strong>HA를 위해 컴플라이언스를 깨지 마세요.</strong> 이 경우 Data Zone Provisioned + Data Zone Standard 조합이 현실적인 최적해입니다.</p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="4-layer-1">4. Layer 1 — 클라이언트 복원력</h2>
 <p><strong>가장 저렴하고 가장 효과가 큰 계층입니다.</strong> 인프라를 아무리 이중화해도 클라이언트가 잘못 재시도하면 장애를 스스로 만들어냅니다.</p>
 <h3 id="41">4.1 재시도 설계</h3>
@@ -932,13 +916,11 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
         재시도하지 않고 즉시 다음 백엔드로 전환(Failover)
         + 해당 백엔드를 일정 시간 라우팅 대상에서 제외
 </code></pre></div>
-
 <p>즉 <strong>"긴 <code>Retry-After</code> = 이 백엔드는 지금 포기하라는 신호"</strong> 로 해석하고, 대기가 아니라 <strong>경로 전환</strong>으로 대응합니다. APIM 서킷 브레이커도 동일한 사고방식으로 동작합니다(§6.3).</p>
 <h3 id="43">4.3 타임아웃 정합성</h3>
 <div class="codehilite"><pre><span></span><code>클라이언트 타임아웃  ≥  게이트웨이(APIM) 총 소요 시간  ≥  예상 최대 생성 시간
                           └─ (시도 횟수 × 백엔드 timeout) + 재시도 간격 합
 </code></pre></div>
-
 <ul>
 <li><strong>안쪽 계층이 먼저 실패해야</strong> 바깥 계층이 그 실패를 처리할 수 있습니다. 역전되면 클라이언트가 먼저 끊어 <strong>499</strong>가 발생하고, 백엔드에는 아무도 읽지 않을 <strong>고아 작업</strong>이 남으며, 클라이언트 재시도가 겹쳐 부하가 배가됩니다.</li>
 <li>게이트웨이의 타임아웃은 <strong>시도 1회당</strong> 적용되므로, 재시도 횟수를 곱해 총 예산을 계산해야 합니다. 계산법과 흔한 오류는 <strong>§6.6</strong> 참고.</li>
@@ -950,7 +932,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li><strong>Bulkhead</strong>: 배포별 동시 요청 수 상한 → 한 배포의 지연이 전체 스레드를 잠식하지 않도록</li>
 <li><strong>큐잉/우선순위</strong>: 대화형 요청 우선, 배치성 요청은 지연 허용 큐로 분리</li>
 </ul>
-<hr />
+<hr/>
 <h2 id="5-layer-2-spillover-ptu">5. Layer 2 — Spillover (PTU → 표준 배포)</h2>
 <p>PTU 배포가 비(非)200 응답을 반환할 때, <strong>오버플로 요청을 대응되는 표준 배포로 자동 라우팅</strong>하는 기능입니다.</p>
 <h3 id="50">5.0 누가 재시도하는가 — 서버 측 자동 전환</h3>
@@ -1051,27 +1033,25 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </table>
 <h3 id="53">5.3 배포 단위로 켜기</h3>
 <p>배포 속성 <code>spilloverDeploymentName</code>에 표준 배포 이름을 지정합니다. 신규 생성 시 또는 기존 배포에 추가할 수 있습니다.</p>
-<div class="codehilite"><pre><span></span><code>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="s2">&quot;https://management.azure.com/subscriptions/</span><span class="nv">$SUB</span><span class="s2">/resourceGroups/</span><span class="nv">$RG</span><span class="s2">/providers/Microsoft.CognitiveServices/accounts/</span><span class="nv">$ACCOUNT</span><span class="s2">/deployments/ptu-gpt4o?api-version=2024-10-01&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{</span>
-<span class="s1">        &quot;sku&quot;: { &quot;name&quot;: &quot;GlobalProvisionedManaged&quot;, &quot;capacity&quot;: 100 },</span>
-<span class="s1">        &quot;properties&quot;: {</span>
-<span class="s1">          &quot;spilloverDeploymentName&quot;: &quot;std-gpt4o&quot;,</span>
-<span class="s1">          &quot;model&quot;: { &quot;format&quot;: &quot;OpenAI&quot;, &quot;name&quot;: &quot;gpt-4o&quot;, &quot;version&quot;: &quot;2024-11-20&quot; }</span>
+<div class="codehilite"><pre><span></span><code>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="s2">"https://management.azure.com/subscriptions/</span><span class="nv">$SUB</span><span class="s2">/resourceGroups/</span><span class="nv">$RG</span><span class="s2">/providers/Microsoft.CognitiveServices/accounts/</span><span class="nv">$ACCOUNT</span><span class="s2">/deployments/ptu-gpt4o?api-version=2024-10-01"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-d<span class="w"> </span><span class="s1">'{</span>
+<span class="s1">        "sku": { "name": "GlobalProvisionedManaged", "capacity": 100 },</span>
+<span class="s1">        "properties": {</span>
+<span class="s1">          "spilloverDeploymentName": "std-gpt4o",</span>
+<span class="s1">          "model": { "format": "OpenAI", "name": "gpt-4o", "version": "2024-11-20" }</span>
 <span class="s1">        }</span>
-<span class="s1">      }&#39;</span>
+<span class="s1">      }'</span>
 </code></pre></div>
-
 <h3 id="54">5.4 요청 단위로 켜기</h3>
 <p>요청 헤더 <code>x-ms-spillover-deployment</code>에 표준 배포 이름을 지정하면 <strong>해당 요청만</strong> Spillover 대상이 됩니다.</p>
-<div class="codehilite"><pre><span></span><code>curl<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$AZURE_OPENAI_ENDPOINT</span><span class="s2">/openai/deployments/ptu-gpt4o/chat/completions?api-version=2024-10-21&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;x-ms-spillover-deployment: std-gpt4o&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-d<span class="w"> </span><span class="s1">&#39;{ &quot;messages&quot;: [ { &quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;...&quot; } ] }&#39;</span>
+<div class="codehilite"><pre><span></span><code>curl<span class="w"> </span><span class="s2">"</span><span class="nv">$AZURE_OPENAI_ENDPOINT</span><span class="s2">/openai/deployments/ptu-gpt4o/chat/completions?api-version=2024-10-21"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s2">"x-ms-spillover-deployment: std-gpt4o"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-d<span class="w"> </span><span class="s1">'{ "messages": [ { "role": "user", "content": "..." } ] }'</span>
 </code></pre></div>
-
 <blockquote>
 <p><strong>우선순위 규칙</strong>: 배포 속성(<code>spilloverDeploymentName</code>)과 요청 헤더가 둘 다 설정되면 <strong>배포 속성이 우선</strong>합니다.
 요청 단위로만 제어하고 싶다면 배포 속성을 설정하지 말고 헤더만 사용하세요.</p>
@@ -1256,12 +1236,11 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </tbody>
 </table>
 <p><strong>애플리케이션 계측에 반드시 포함하세요.</strong> 이 헤더들이 없으면 §5.6의 A/B/C를 사후에 구분할 수 없습니다.</p>
-<div class="codehilite"><pre><span></span><code><span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">&quot;StatusCode&quot;</span><span class="p">,</span> <span class="n">resp</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span>
-<span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">&quot;SpilloverFrom&quot;</span><span class="p">,</span>  <span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;x-ms-spillover-from-deployment&quot;</span><span class="p">))</span>
-<span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">&quot;SpilloverError&quot;</span><span class="p">,</span> <span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;x-ms-spillover-error&quot;</span><span class="p">))</span>
-<span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">&quot;ServedBy&quot;</span><span class="p">,</span>       <span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;x-ms-deployment-name&quot;</span><span class="p">))</span>
+<div class="codehilite"><pre><span></span><code><span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"StatusCode"</span><span class="p">,</span> <span class="n">resp</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span>
+<span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"SpilloverFrom"</span><span class="p">,</span>  <span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"x-ms-spillover-from-deployment"</span><span class="p">))</span>
+<span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"SpilloverError"</span><span class="p">,</span> <span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"x-ms-spillover-error"</span><span class="p">))</span>
+<span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"ServedBy"</span><span class="p">,</span>       <span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"x-ms-deployment-name"</span><span class="p">))</span>
 </code></pre></div>
-
 <h4 id="ptu-429">🔴 메트릭 해석의 함정 — PTU에 429가 찍히지 않습니다</h4>
 <blockquote>
 <p>문서 원문: <em>"spilled-over requests are </em><em>not counted as <code>429</code>s on the provisioned deployment</em><em>"</em></p>
@@ -1325,7 +1304,7 @@ PTU 포화 여부는 반드시 <strong><code>IsSpillover</code> 차원</strong> 
 <p>즉 <strong>Spillover 비율 급증 = 비용 급증</strong>이기도 합니다. 용량 알림과 별개로 <strong>비용 알림</strong>도 함께 두세요.</p>
 <p>자세한 메트릭·KQL은 <a href="../03-aoai-deployment-monitoring/">가이드 03</a> 참고.</p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="6-layer-3-apim-ai-gateway">6. Layer 3 — APIM AI Gateway (다중 백엔드)</h2>
 <p>리전 장애까지 흡수하려면 <strong>요청 경로를 바꿀 수 있는 계층</strong>이 필요합니다. APIM 백엔드 풀이 그 역할을 합니다.</p>
 <h3 id="61">6.1 백엔드 엔터티 구성</h3>
@@ -1338,10 +1317,9 @@ PTU 포화 여부는 반드시 <strong><code>IsSpillover</code> 차원</strong> 
 <div class="codehilite"><pre><span></span><code>az<span class="w"> </span>role<span class="w"> </span>assignment<span class="w"> </span>create<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--assignee-object-id<span class="w"> </span><span class="nv">$APIM_PRINCIPAL_ID</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--assignee-principal-type<span class="w"> </span>ServicePrincipal<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--role<span class="w"> </span><span class="s2">&quot;Cognitive Services OpenAI User&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--role<span class="w"> </span><span class="s2">"Cognitive Services OpenAI User"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--scope<span class="w"> </span><span class="nv">$AOAI_RESOURCE_ID</span>
 </code></pre></div>
-
 <h3 id="62">6.2 백엔드 풀 &amp; 로드 밸런싱</h3>
 <table>
 <thead>
@@ -1380,24 +1358,24 @@ PTU 포화 여부는 반드시 <strong><code>IsSpillover</code> 차원</strong> 
 <li>지정한 trip 기간 후 회로가 리셋되어 트래픽 재개</li>
 </ul>
 <p><strong>AOAI 백엔드에 대한 공식 주의사항</strong>: 요청이 과도하면 AOAI는 429와 함께 <strong>매우 큰 <code>Retry-After</code> 값(예: 1일)</strong> 을 반환할 수 있습니다. 따라서 <strong>429를 처리하고 <code>Retry-After</code>를 수용하는 서킷 브레이커 규칙을 반드시 구성</strong>해야 합니다.</p>
-<div class="codehilite"><pre><span></span><code>resource backend &#39;Microsoft.ApiManagement/service/backends@2024-05-01&#39; = {
-  name: &#39;${apimName}/aoai-krc&#39;
+<div class="codehilite"><pre><span></span><code>resource backend 'Microsoft.ApiManagement/service/backends@2024-05-01' = {
+  name: '${apimName}/aoai-krc'
   properties: {
-    url: &#39;https://aoai-prod-krc-01.openai.azure.com/openai&#39;
-    protocol: &#39;http&#39;
+    url: 'https://aoai-prod-krc-01.openai.azure.com/openai'
+    protocol: 'http'
     circuitBreaker: {
       rules: [
         {
-          name: &#39;aoai-throttle-and-errors&#39;
+          name: 'aoai-throttle-and-errors'
           failureCondition: {
             count: 3
-            interval: &#39;PT1M&#39;
+            interval: 'PT1M'
             statusCodeRanges: [
               { min: 429, max: 429 }
               { min: 500, max: 599 }
             ]
           }
-          tripDuration: &#39;PT1M&#39;
+          tripDuration: 'PT1M'
           acceptRetryAfter: true   // Retry-After 헤더 값을 수용
         }
       ]
@@ -1405,7 +1383,6 @@ PTU 포화 여부는 반드시 <strong><code>IsSpillover</code> 차원</strong> 
   }
 }
 </code></pre></div>
-
 <blockquote>
 <ul>
 <li><code>acceptRetryAfter: true</code>는 AOAI가 반환한 <code>Retry-After</code> 값을 <strong>서킷 브레이커의 차단 기간 결정에 반영</strong>하도록 허용합니다. <strong>현재 요청을 그 시간만큼 대기시켰다가 재전송하는 옵션이 아닙니다.</strong> 회로가 열린 동안 해당 백엔드는 라우팅 대상에서 제외되고, 클라이언트에는 <strong>503</strong>이 반환됩니다. (포털에서는 <strong>Check 'Retry-After' header in HTTP response → True (Accept)</strong>)</li>
@@ -1413,11 +1390,11 @@ PTU 포화 여부는 반드시 <strong><code>IsSpillover</code> 차원</strong> 
 </ul>
 </blockquote>
 <h3 id="64-failover">6.4 우선순위 기반 Failover 풀 예시</h3>
-<div class="codehilite"><pre><span></span><code>resource pool &#39;Microsoft.ApiManagement/service/backends@2024-05-01&#39; = {
-  name: &#39;${apimName}/aoai-pool&#39;
+<div class="codehilite"><pre><span></span><code>resource pool 'Microsoft.ApiManagement/service/backends@2024-05-01' = {
+  name: '${apimName}/aoai-pool'
   properties: {
-    description: &#39;AOAI multi-region failover pool&#39;
-    type: &#39;Pool&#39;
+    description: 'AOAI multi-region failover pool'
+    type: 'Pool'
     pool: {
       services: [
         // 우선순위 1: 국내 PTU (기저 부하)
@@ -1431,7 +1408,6 @@ PTU 포화 여부는 반드시 <strong><code>IsSpillover</code> 차원</strong> 
   }
 }
 </code></pre></div>
-
 <blockquote>
 <p>풀 타입 백엔드는 <code>url</code> / <code>protocol</code>을 지정하지 않습니다(<code>type: 'Pool'</code>). 우선순위 그룹이 실제로 작동하려면 <strong>풀에 속한 각 백엔드에 서킷 브레이커가 설정되어 있어야 합니다</strong>(§6.3).</p>
 </blockquote>
@@ -1439,36 +1415,36 @@ PTU 포화 여부는 반드시 <strong><code>IsSpillover</code> 차원</strong> 
 <div class="codehilite"><pre><span></span><code><span class="nt">&lt;policies&gt;</span>
 <span class="w">  </span><span class="nt">&lt;inbound&gt;</span>
 <span class="w">    </span><span class="nt">&lt;base</span><span class="w"> </span><span class="nt">/&gt;</span>
-<span class="w">    </span><span class="nt">&lt;set-backend-service</span><span class="w"> </span><span class="na">backend-id=</span><span class="s">&quot;aoai-pool&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;set-backend-service</span><span class="w"> </span><span class="na">backend-id=</span><span class="s">"aoai-pool"</span><span class="w"> </span><span class="nt">/&gt;</span>
 
 <span class="w">    </span><span class="cm">&lt;!-- 테넌트별 토큰 쿼터: 한 테넌트가 전체 용량을 잠식하지 못하게 --&gt;</span>
 <span class="w">    </span><span class="nt">&lt;llm-token-limit</span>
-<span class="w">        </span><span class="na">counter-key=</span><span class="s">&quot;@(context.Subscription?.Id ?? &quot;</span><span class="err">anonymous&quot;)&quot;</span>
-<span class="w">        </span><span class="na">tokens-per-minute=</span><span class="s">&quot;60000&quot;</span>
-<span class="w">        </span><span class="na">estimate-prompt-tokens=</span><span class="s">&quot;true&quot;</span>
-<span class="w">        </span><span class="na">remaining-tokens-header-name=</span><span class="s">&quot;x-remaining-tokens&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="na">counter-key=</span><span class="s">"@(context.Subscription?.Id ?? "</span><span class="err">anonymous")"</span>
+<span class="w">        </span><span class="na">tokens-per-minute=</span><span class="s">"60000"</span>
+<span class="w">        </span><span class="na">estimate-prompt-tokens=</span><span class="s">"true"</span>
+<span class="w">        </span><span class="na">remaining-tokens-header-name=</span><span class="s">"x-remaining-tokens"</span><span class="w"> </span><span class="nt">/&gt;</span>
 
-<span class="w">    </span><span class="nt">&lt;llm-emit-token-metric</span><span class="w"> </span><span class="na">namespace=</span><span class="s">&quot;aoai-gateway&quot;</span><span class="nt">&gt;</span>
-<span class="w">      </span><span class="nt">&lt;dimension</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Backend&quot;</span><span class="w">  </span><span class="na">value=</span><span class="s">&quot;@(context.Request.Url.Host)&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
-<span class="w">      </span><span class="nt">&lt;dimension</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;TenantId&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;@(context.Subscription?.Id ?? &quot;</span><span class="err">anonymous&quot;)&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;llm-emit-token-metric</span><span class="w"> </span><span class="na">namespace=</span><span class="s">"aoai-gateway"</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;dimension</span><span class="w"> </span><span class="na">name=</span><span class="s">"Backend"</span><span class="w">  </span><span class="na">value=</span><span class="s">"@(context.Request.Url.Host)"</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">      </span><span class="nt">&lt;dimension</span><span class="w"> </span><span class="na">name=</span><span class="s">"TenantId"</span><span class="w"> </span><span class="na">value=</span><span class="s">"@(context.Subscription?.Id ?? "</span><span class="err">anonymous")"</span><span class="w"> </span><span class="nt">/&gt;</span>
 <span class="w">    </span><span class="nt">&lt;/llm-emit-token-metric&gt;</span>
 <span class="w">  </span><span class="nt">&lt;/inbound&gt;</span>
 
 <span class="w">  </span><span class="nt">&lt;backend&gt;</span>
 <span class="w">    </span><span class="cm">&lt;!-- 풀 내 전환은 서킷 브레이커가 담당. 여기서는 짧은 재시도만 --&gt;</span>
-<span class="w">    </span><span class="nt">&lt;retry</span><span class="w"> </span><span class="na">condition=</span><span class="s">&quot;@(context.Response.StatusCode == 429 || context.Response.StatusCode &gt;= 500)&quot;</span>
-<span class="w">           </span><span class="na">count=</span><span class="s">&quot;2&quot;</span><span class="w"> </span><span class="na">interval=</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="na">max-interval=</span><span class="s">&quot;5&quot;</span><span class="w"> </span><span class="na">delta=</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="na">first-fast-retry=</span><span class="s">&quot;true&quot;</span><span class="nt">&gt;</span>
+<span class="w">    </span><span class="nt">&lt;retry</span><span class="w"> </span><span class="na">condition=</span><span class="s">"@(context.Response.StatusCode == 429 || context.Response.StatusCode &gt;= 500)"</span>
+<span class="w">           </span><span class="na">count=</span><span class="s">"2"</span><span class="w"> </span><span class="na">interval=</span><span class="s">"1"</span><span class="w"> </span><span class="na">max-interval=</span><span class="s">"5"</span><span class="w"> </span><span class="na">delta=</span><span class="s">"1"</span><span class="w"> </span><span class="na">first-fast-retry=</span><span class="s">"true"</span><span class="nt">&gt;</span>
 <span class="w">      </span><span class="nt">&lt;forward-request</span>
-<span class="w">          </span><span class="na">timeout=</span><span class="s">&quot;60&quot;</span><span class="w">                  </span><span class="err">&lt;!--</span><span class="w"> </span><span class="err">시도</span><span class="w"> </span><span class="err">1회당</span><span class="w"> </span><span class="err">·</span><span class="w"> </span><span class="err">응답</span><span class="w"> </span><span class="err">헤더까지의</span><span class="w"> </span><span class="err">시간</span><span class="w"> </span><span class="err">--</span><span class="nt">&gt;</span>
-<span class="w">          </span>buffer-request-body=&quot;true&quot;<span class="w">    </span><span class="cm">&lt;!-- 재시도 시 본문 재사용에 필수 --&gt;</span>
-<span class="w">          </span>buffer-response=&quot;false&quot;<span class="w"> </span>/&gt;<span class="w">    </span><span class="cm">&lt;!-- SSE 스트리밍에 필수 --&gt;</span>
+<span class="w">          </span><span class="na">timeout=</span><span class="s">"60"</span><span class="w">                  </span><span class="err">&lt;!--</span><span class="w"> </span><span class="err">시도</span><span class="w"> </span><span class="err">1회당</span><span class="w"> </span><span class="err">·</span><span class="w"> </span><span class="err">응답</span><span class="w"> </span><span class="err">헤더까지의</span><span class="w"> </span><span class="err">시간</span><span class="w"> </span><span class="err">--</span><span class="nt">&gt;</span>
+<span class="w">          </span>buffer-request-body="true"<span class="w">    </span><span class="cm">&lt;!-- 재시도 시 본문 재사용에 필수 --&gt;</span>
+<span class="w">          </span>buffer-response="false"<span class="w"> </span>/&gt;<span class="w">    </span><span class="cm">&lt;!-- SSE 스트리밍에 필수 --&gt;</span>
 <span class="w">    </span><span class="nt">&lt;/retry&gt;</span>
 <span class="w">  </span><span class="nt">&lt;/backend&gt;</span>
 
 <span class="w">  </span><span class="nt">&lt;outbound&gt;</span>
 <span class="w">    </span><span class="nt">&lt;base</span><span class="w"> </span><span class="nt">/&gt;</span>
 <span class="w">    </span><span class="cm">&lt;!-- 어느 백엔드가 응답했는지 노출: 장애 분석에 필수 --&gt;</span>
-<span class="w">    </span><span class="nt">&lt;set-header</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;x-served-by&quot;</span><span class="w"> </span><span class="na">exists-action=</span><span class="s">&quot;override&quot;</span><span class="nt">&gt;</span>
+<span class="w">    </span><span class="nt">&lt;set-header</span><span class="w"> </span><span class="na">name=</span><span class="s">"x-served-by"</span><span class="w"> </span><span class="na">exists-action=</span><span class="s">"override"</span><span class="nt">&gt;</span>
 <span class="w">      </span><span class="nt">&lt;value&gt;</span>@(context.Request.Url.Host)<span class="nt">&lt;/value&gt;</span>
 <span class="w">    </span><span class="nt">&lt;/set-header&gt;</span>
 <span class="w">  </span><span class="nt">&lt;/outbound&gt;</span>
@@ -1478,7 +1454,6 @@ PTU 포화 여부는 반드시 <strong><code>IsSpillover</code> 차원</strong> 
 <span class="w">  </span><span class="nt">&lt;/on-error&gt;</span>
 <span class="nt">&lt;/policies&gt;</span>
 </code></pre></div>
-
 <blockquote>
 <p>⚠️ <strong>재시도와 서킷 브레이커의 역할 분리</strong>: 게이트웨이에서 재시도 횟수를 크게 잡으면 서킷 브레이커가 열리기 전에 부하를 계속 밀어 넣게 됩니다. <strong>짧은 재시도 + 명확한 서킷 브레이커</strong> 조합이 원칙입니다.</p>
 <p>🔴 <strong><code>&lt;retry&gt;</code>는 우선순위 Failover가 아닙니다 — 가장 흔한 오해</strong>
@@ -1494,7 +1469,6 @@ PTU 포화 여부는 반드시 <strong><code>IsSpillover</code> 차원</strong> 
 APIM        │ 계속 대기 ──────│ 그제서야 응답
 AOAI        │ 계속 생성 ──────│ (아무도 읽지 않을 결과)
 </code></pre></div>
-
 <p>동시에 네 가지 문제가 발생합니다.</p>
 <table>
 <thead>
@@ -1553,22 +1527,19 @@ AOAI        │ 계속 생성 ──────│ (아무도 읽지 않을 결
 <p><code>&lt;retry&gt;</code>는 자식 정책을 재실행하므로 타임아웃은 매 시도마다 새로 적용됩니다.</p>
 <div class="codehilite"><pre><span></span><code>총 소요 시간 ≈ (시도 횟수 × timeout) + 재시도 간격 합
 </code></pre></div>
-
 <p>위 예시(<code>count="2"</code> = 총 3회 시도, <code>timeout="60"</code>, <code>first-fast-retry="true"</code>):</p>
 <div class="codehilite"><pre><span></span><code>60s + 0s(즉시) + 60s + 2s + 60s ≈ 182초
 </code></pre></div>
-
 <blockquote>
 <p>⚠️ 만약 <code>timeout="120"</code>으로 두면 최악 <strong>약 362초(6분)</strong> 가 됩니다. 클라이언트 타임아웃이 120초라면 APIM이 2번째 시도 중일 때 이미 클라이언트가 포기해 ①의 문제가 그대로 발생합니다.</p>
 </blockquote>
 <p><strong>따라서 올바른 정합성 공식은 다음과 같습니다.</strong></p>
 <div class="codehilite"><pre><span></span><code>클라이언트 타임아웃  ≥  (시도 횟수 × APIM timeout) + 재시도 간격 합
 </code></pre></div>
-
 <p>위 설정 기준 <strong>클라이언트 타임아웃은 200초 이상</strong>으로 잡아야 합니다.</p>
 <h3 id="67">6.7 시맨틱 캐싱 — 가용성 관점</h3>
 <p><code>llm-semantic-cache-lookup</code> / <code>llm-semantic-cache-store</code>는 비용 절감 기능으로 알려져 있지만, <strong>HA 관점에서는 "백엔드 부하를 줄여 429 자체를 예방"하는 수단</strong>입니다. 반복 질의 비중이 높은 워크로드(FAQ, 사내 지식 검색)에서 효과가 큽니다.</p>
-<hr />
+<hr/>
 <h2 id="7-layer-4">7. Layer 4 — 멀티 리전 설계</h2>
 <h3 id="71">7.1 리전 선택 기준</h3>
 <table>
@@ -1687,7 +1658,7 @@ AOAI        │ 계속 생성 ──────│ (아무도 읽지 않을 결
 <blockquote>
 <p><strong>Generative AI Gateway</strong>(게이트웨이 계층)의 역할: 다중 엔드포인트 <strong>로드 밸런싱</strong>, <strong>서킷 브레이커</strong>, <strong>레이트 리밋</strong>, <strong>중앙 로깅</strong>, 그리고 <strong>우선순위 라우팅</strong>(<em>"mission-critical applications get capacity first during contention"</em>).</p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="8-ha">8. 용량 계획과 쿼터 관리 — HA의 숨은 실패 지점</h2>
 <blockquote>
 <p><strong>Failover 대상 리전에 쿼터가 없으면, 아키텍처 다이어그램이 아무리 훌륭해도 장애 시 아무 일도 일어나지 않습니다.</strong></p>
@@ -1727,9 +1698,8 @@ AOAI        │ 계속 생성 ──────│ (아무도 읽지 않을 결
 <p><strong>Model capacities API</strong>로 특정 모델·리전의 최대 배포 가능 PTU를 조회할 수 있습니다.</p>
 <div class="codehilite"><pre><span></span><code><span class="c1"># 배포 전/정기 점검 스크립트에 편입 권장</span>
 az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> </span>get<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--url<span class="w"> </span><span class="s2">&quot;https://management.azure.com/subscriptions/</span><span class="nv">$SUB</span><span class="s2">/providers/Microsoft.CognitiveServices/modelCapacities?api-version=2024-10-01&amp;modelFormat=OpenAI&amp;modelName=gpt-4.1&amp;modelVersion=2025-04-14&quot;</span>
+<span class="w">  </span>--url<span class="w"> </span><span class="s2">"https://management.azure.com/subscriptions/</span><span class="nv">$SUB</span><span class="s2">/providers/Microsoft.CognitiveServices/modelCapacities?api-version=2024-10-01&amp;modelFormat=OpenAI&amp;modelName=gpt-4.1&amp;modelVersion=2025-04-14"</span>
 </code></pre></div>
-
 <h3 id="82">8.2 쿼터는 <strong>배포 유형별로 분리된 풀</strong>입니다</h3>
 <blockquote>
 <p><em>"Quota is scoped at the </em><em>offering level</em><em> (Global Provisioned, Data Zone Provisioned, and Regional Provisioned are </em><em>separate quota pools</em><em>) and at the </em><em>region level</em><em>."</em></p>
@@ -1853,7 +1823,7 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
 <blockquote>
 <p>⚠️ 세 번째가 핵심입니다. "Secondary는 소규모로 두고 나중에 늘리면 된다"는 계획은 <strong>쿼터 증설에 시간이 걸리므로 장애 시점에는 실행 불가능</strong>한 경우가 많습니다.</p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="9">9. 모델 수명주기 — 조용한 가용성 리스크</h2>
 <p>인프라 이중화로는 막을 수 없는 유형(F5)입니다.</p>
 <table>
@@ -1893,7 +1863,7 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
 <li>신규 버전은 <strong>카나리 배포</strong>(가중치 5~10%)로 먼저 검증</li>
 <li>승격 전 <strong>회귀 테스트</strong>: 출력 포맷, tool calling, <code>response_format</code>, 토큰 사용량 변화</li>
 </ol>
-<hr />
+<hr/>
 <h2 id="10-layer-5-graceful-degradation">10. Layer 5 — 우아한 성능 저하 (Graceful Degradation)</h2>
 <p>모든 백엔드가 실패했을 때 <strong>"에러 화면" 대신 무엇을 보여줄 것인가</strong>를 미리 정의합니다.</p>
 <table>
@@ -1937,7 +1907,7 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
 <li>요청에 <code>criticality</code>(critical/normal/low) 태그를 부여하고, 용량 압박 시 낮은 등급부터 2~4단계로 강등</li>
 <li>스트리밍 중 백엔드가 끊긴 경우, 이미 전송된 부분을 살리고 "일시적 오류" 메시지를 이어 붙이는 UX 처리</li>
 </ul>
-<hr />
+<hr/>
 <h2 id="11">11. 참조 아키텍처</h2>
 <blockquote>
 <p>아래 구성은 §3.5의 <strong>엔터프라이즈 PTU 풀 패턴</strong>과 <strong>리전 반상관 원칙</strong>을 반영한 것입니다.</p>
@@ -1947,7 +1917,6 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
            ├─ [P1] AOAI Region A : Global Standard (전체 쿼터 할당)
            └─ [P2] AOAI Region B : Global Standard (전체 쿼터 할당)
 </code></pre></div>
-
 <ul>
 <li>동일 구독, 2개 리소스(주/보조). 쿼터는 구독+리전 단위라 상호 잠식 없음</li>
 <li>상주 요건이 있으면 Global Standard → <strong>Data Zone Standard</strong>로 대체</li>
@@ -1959,7 +1928,6 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
            │         └─ Spillover ─▶ 동일 리소스 Standard
            └─ [P2] Standard (Global/Data Zone)          (Region B)  ← 다른 리전
 </code></pre></div>
-
 <ul>
 <li><strong>PTU와 Standard 백업을 서로 다른 리전에</strong> 배치(반상관 원칙)</li>
 <li>용량 장애: Spillover(같은 리전 내) · 리전 장애: 우선순위 2 백엔드</li>
@@ -1972,7 +1940,6 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
    │                   └─ [P3] Standard               (Region C)
    └─ APIM (Region B) ─┴─ (동일 풀 구성)
 </code></pre></div>
-
 <p>3단 Failover 체인을 구현한 형태입니다.</p>
 <blockquote>
 <p><em>"Configure the failover chain so the workload-dedicated deployment </em><em>fails over first to the enterprise PTU pool</em><em> and </em><em>then to the Standard deployment</em><em>."</em></p>
@@ -2039,7 +2006,7 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
 </tr>
 </tbody>
 </table>
-<hr />
+<hr/>
 <h2 id="12-ha">12. HA 체크리스트</h2>
 <h3 id="_6">설계</h3>
 <ul>
@@ -2076,7 +2043,7 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
 <li>[ ] Spillover 비율에 <strong>비용 알림</strong>도 함께 걸려 있다 (과금 방식 전환, §5.8)</li>
 <li>[ ] 성능 저하 모드가 구현되어 있고 테스트되었다</li>
 </ul>
-<hr />
+<hr/>
 <h2 id="a">부록 A. 자주 하는 실수</h2>
 <ol>
 <li><strong>Spillover만 구성하고 "HA 완료"로 간주</strong> — 리전 장애에는 무력</li>
@@ -2141,11 +2108,1757 @@ az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> <
 <li>Azure 기본 제공 역할 (AI + Machine Learning): https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/ai-machine-learning</li>
 <li>Supported metrics (Microsoft.CognitiveServices/accounts): https://learn.microsoft.com/azure/azure-monitor/reference/supported-metrics/microsoft-cognitiveservices-accounts-metrics</li>
 </ul>
-    <hr>
-    <p class="meta">최종 수정 2026-08-11 · Microsoft Scout</p>
-  </main>
+<hr/>
+<p class="meta">최종 수정 2026-08-11 · Microsoft Scout</p>
+</main>
+</div><div class="layout lang-en">
+<nav class="sidebar">
+<h2>Table of Contents</h2>
+<div class="toc">
+<ul>
+<li><a href="#en-0-tldr">0. TL;DR</a><ul>
+<li><a href="#en-ha">HA Maturity Levels</a></li>
+<li><a href="#en-_1">Minimum Checklist</a></li>
+</ul>
+</li>
+<li><a href="#en-1-aoai">1. What is a 'Failure' in AOAI</a></li>
+<li><a href="#en-2-ha-4">2. Four Axes of HA Design</a></li>
+<li><a href="#en-3">3. Availability Characteristics by Deployment Type</a><ul>
+<li><a href="#en-31">3.1 ⚠️ Most Important Premise — Processing is Global but Endpoints are Region-locked</a></li>
+<li><a href="#en-32-provisionedptu">3.2 Provisioned (PTU) Comes in Three, Not One</a></li>
+<li><a href="#en-33-standard">3.3 Standard Series</a></li>
+<li><a href="#en-34-sla">3.4 From the SLA Perspective</a></li>
+<li><a href="#en-35-ptu">3.5 Recommended Architecture — Enterprise PTU Pool</a></li>
+</ul>
+</li>
+<li><a href="#en-4-layer-1">4. Layer 1 — Client Resilience</a><ul>
+<li><a href="#en-41">4.1 Retry Design</a></li>
+<li><a href="#en-42-retry-after">4.2 ⚠️ Why You Must Always Check Retry-After</a></li>
+<li><a href="#en-43">4.3 Timeout Consistency</a></li>
+<li><a href="#en-44">4.4 Client-Side Circuit Breaker &amp; Load Blocking</a></li>
+</ul>
+</li>
+<li><a href="#en-5-layer-2-spillover-ptu">5. Layer 2 — Spillover (PTU → Standard Deployment)</a><ul>
+<li><a href="#en-50">5.0 Who Retries — Server-Side Automatic Switching</a></li>
+<li><a href="#en-51-spillover-429">5.1 Response Codes that Cause Spillover — Not Just 429</a></li>
+<li><a href="#en-52">5.2 Prerequisites and Constraints</a></li>
+<li><a href="#en-53">5.3 Enable by Deployment Unit</a></li>
+<li><a href="#en-54">5.4 Enable by Request Unit</a></li>
+<li><a href="#en-55-spillover">5.5 ⚠️ What Spillover Cannot Prevent</a></li>
+<li><a href="#en-56">5.6 What the Client Receives if Standard Distribution Fails</a></li>
+<li><a href="#en-57-spillover">5.7 Spillover Observation</a></li>
+<li><a href="#en-58-spillover">5.8 Latency and Cost — The Price of Spillover</a></li>
+</ul>
+</li>
+<li><a href="#en-6-layer-3-apim-ai-gateway">6. Layer 3 — APIM AI Gateway (Multiple Backends)</a><ul>
+<li><a href="#en-61">6.1 Backend Entity Configuration</a></li>
+<li><a href="#en-62">6.2 Backend Pool &amp; Load Balancing</a></li>
+<li><a href="#en-63">6.3 Circuit Breaker (Required)</a></li>
+<li><a href="#en-64-failover">6.4 Example of Priority-Based Failover Pool</a></li>
+<li><a href="#en-65">6.5 Example of Policy Combination</a></li>
+<li><a href="#en-66">6.6 Timeout Budget Design — The Most Common Mistake</a></li>
+<li><a href="#en-67">6.7 Semantic Caching — From the Availability Perspective</a></li>
+</ul>
+</li>
+<li><a href="#en-7-layer-4">7. Layer 4 — Multi-Region Design</a><ul>
+<li><a href="#en-71">7.1 Region Selection Criteria</a></li>
+<li><a href="#en-72">7.2 Resource Placement Method</a></li>
+<li><a href="#en-73-active-active-vs-active-passive">7.3 Active-Active vs Active-Passive</a></li>
+<li><a href="#en-74">7.4 Managing Consistency Across Regions</a></li>
+<li><a href="#en-75">7.5 Global Entry Layer</a></li>
+</ul>
+</li>
+<li><a href="#en-8-ha">8. Capacity Planning and Quota Management — Hidden Failure Points of HA</a><ul>
+<li><a href="#en-81-quota-capacity">8.1 🔴 Quota ≠ Capacity — The Most Dangerous Misunderstanding</a></li>
+<li><a href="#en-82">8.2 Quotas Are Pools Separated by Deployment Type</a></li>
+<li><a href="#en-83-reservation-failover">8.3 Reservation Constrains Failover Design</a></li>
+<li><a href="#en-84">8.4 Things to Check</a></li>
+<li><a href="#en-85">8.5 Capacity Scenario Calculation</a></li>
+</ul>
+</li>
+<li><a href="#en-9">9. Model Lifecycle — Silent Availability Risk</a></li>
+<li><a href="#en-10-layer-5-graceful-degradation">10. Layer 5 — Graceful Degradation</a></li>
+<li><a href="#en-11">11. Reference Architecture</a><ul>
+<li><a href="#en-111-tier-1-ptu">11.1 Tier 1 — Standard Workload (PTU Not Required)</a></li>
+<li><a href="#en-112-tier-2-production-ptu">11.2 Tier 2 — General Production (PTU Applied)</a></li>
+<li><a href="#en-113-tier-3-3-failover">11.3 Tier 3 — Mission Critical (3-Level Failover Chain)</a></li>
+<li><a href="#en-114">11.4 Component Role Summary</a></li>
+</ul>
+</li>
+<li><a href="#en-12-ha">12. HA Checklist</a><ul>
+<li><a href="#en-_6">Design</a></li>
+<li><a href="#en-_7">Implementation</a></li>
+<li><a href="#en-_8">Operation</a></li>
+</ul>
+</li>
+<li><a href="#en-a">Appendix A. Common Mistakes</a></li>
+<li><a href="#en-b">Appendix B. Reference Documents</a><ul>
+<li><a href="#en-ha_1">Official HA / Architecture</a></li>
+<li><a href="#en-_9">Deployment Type · Capacity</a></li>
+<li><a href="#en-api-management">API Management</a></li>
+<li><a href="#en-_10">Security · Observability</a></li>
+</ul>
+</li>
+</ul>
 </div>
+</nav>
+<main>
+<div class="topbar">
+<span class="badge">Azure OpenAI · HA Architecture</span>
+<button class="toggle" id="en-themeToggle" type="button">Theme switch</button>
+</div>
+<h1 id="en-azure-openai-ha">Azure OpenAI High Availability (HA) Architecture Guide</h1>
+<blockquote>
+<p><strong>Audience</strong>  ·  Architects, SREs, platform teams using AOAI for <strong>mission-critical workloads</strong></p>
+<p><strong>Scope</strong>  ·  Failure type classification → Layered HA design → Spillover/APIM/Multi-region → Capacity·Model lifecycle</p>
+<p><strong>Related Guide</strong>  ·  <a href="../01-oai-to-aoai-onboarding/">01 Onboarding</a> · <a href="../02-aoai-foundations/">02 Core Concepts</a> · <a href="../03-aoai-deployment-monitoring/">03 Deployment &amp; Operational Monitoring</a></p>
+</blockquote>
+<hr/>
+<h2 id="en-0-tldr">0. TL;DR</h2>
+<h3 id="en-ha">HA Maturity Levels</h3>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Configuration</th>
+<th>Fault Tolerance</th>
+<th>Target</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>L0</strong></td>
+<td>Single region · Single deployment · No retries</td>
+<td>None</td>
+<td>PoC</td>
+</tr>
+<tr>
+<td><strong>L1</strong></td>
+<td>+ Exponential backoff retries, <code>Retry-After</code> compliance, timeout consistency</td>
+<td>Transient 429/5xx</td>
+<td>Internal tools</td>
+</tr>
+<tr>
+<td><strong>L2</strong></td>
+<td>+ <strong>Spillover</strong> (PTU → Standard, same resources)</td>
+<td>Request errors handled by PTU saturation and Spillover (<strong>429/400/500/503</strong>)</td>
+<td>Production that allows data boundary, cost, and latency variations</td>
+</tr>
+<tr>
+<td><strong>L3</strong></td>
+<td>+ <strong>APIM backend pool</strong> (multi-region, priority + circuit breaker) + <strong>region anti-correlation deployment</strong></td>
+<td>Capacity + <strong>region failure</strong></td>
+<td>Critical service</td>
+</tr>
+<tr>
+<td><strong>L4</strong></td>
+<td>+ Front Door multi-APIM, <strong>enterprise PTU pool 3-stage chain</strong>, multi-subscription quota distribution, degraded performance mode</td>
+<td>Gateway/subscription unit failure</td>
+<td>Mission-critical</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 <strong>Three Key Principles</strong><br/>1. <strong>Spillover occurs within the same resource</strong>: It bypasses PTU saturation, some long-context limitations, and some server errors with standard deployment. However, <strong>it cannot handle cases where the resource endpoint is unreachable</strong>, so it works in a <strong>complementary relationship</strong> with a multi-resource gateway (§5.5).<br/>2. <strong>Even with global deployment, endpoints are region-locked</strong>. Global routing only increases <strong>capacity availability</strong>, not <strong>endpoint availability</strong> (§3.1).<br/>3. <strong>Do not place PTU and its backup in the same region.</strong> Both will be lost in case of a regional failure (§3.5 anti-correlation principle).</p>
+</blockquote>
+<h3 id="en-_1">Minimum Checklist</h3>
+<ul>
+<li>[ ] All clients <strong>comply</strong> with the <code>Retry-After</code> header (§4.2)</li>
+<li>[ ] Deployment type was <strong>consciously chosen among Global / Data Zone / Regional</strong> (§3.2)</li>
+<li>[ ] <strong>PTU and backup deployments are in different regions</strong> (§3.5)</li>
+<li>[ ] The PTU deployment is connected to the <strong>Spillover standard deployment</strong> (§5)</li>
+<li>[ ] The Spillover target type is <strong>paired with the PTU type</strong> (Data Zone PTU → Data Zone Standard, §5.2)</li>
+<li>[ ] Log the Spillover response headers (<code>x-ms-spillover-*</code>) (§5.7)</li>
+<li>[ ] Determine PTU saturation by <strong><code>IsSpillover</code> / PTU utilization</strong> rather than 429 (§5.7)</li>
+<li>[ ] There are deployments of the same model and version in at least <strong>2 regions</strong> (§7)</li>
+<li>[ ] A <strong>circuit breaker rule</strong> is set in the APIM backend pool (§6.3)</li>
+<li>[ ] The <strong>total timeout budget</strong> (including retries) is within the client timeout (§6.6)</li>
+<li>[ ] Verified that the failover region has not only <strong>quotas but also actual capacity</strong> (§8.1)</li>
+<li>[ ] Reflected that <strong>quota pools are separated by deployment type</strong> (§8.2)</li>
+<li>[ ] Tracking the model <strong>version retirement schedule</strong> (§9)</li>
+<li>[ ] <strong>Graceful degradation mode</strong> is defined (§10)</li>
+</ul>
+<hr/>
+<h2 id="en-1-aoai">1. What constitutes a 'failure' in AOAI</h2>
+<p>The starting point of HA design is to clearly distinguish <strong>what to protect against</strong>. AOAI failures are divided into six completely different types, and <strong>the countermeasures for each are different.</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Failure Type</th>
+<th>Symptoms</th>
+<th>Root Cause</th>
+<th>Valid Response</th>
+<th>Invalid Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>F1</strong></td>
+<td><strong>Capacity Saturation</strong></td>
+<td>429 Surge</td>
+<td>PTU 100% reached, TPM/RPM quota exceeded</td>
+<td>Spillover, capacity expansion, routing to another deployment</td>
+<td>Repeated retries only (worsens instead)</td>
+</tr>
+<tr>
+<td><strong>F2</strong></td>
+<td><strong>Service Error</strong></td>
+<td>500/503</td>
+<td>Temporary backend error</td>
+<td>Retry + different deployment/region</td>
+<td>Capacity expansion</td>
+</tr>
+<tr>
+<td><strong>F3</strong></td>
+<td><strong>Regional Outage</strong></td>
+<td>Failure of an entire specific region</td>
+<td>Regional incident</td>
+<td><strong>Failover to another region</strong></td>
+<td>Spillover (ineffective since it is the same resource)</td>
+</tr>
+<tr>
+<td><strong>F4</strong></td>
+<td><strong>Client Disconnection</strong></td>
+<td>499</td>
+<td>Timeout/User Cancellation</td>
+<td>Streaming, Timeout Consistency</td>
+<td>Region Failover</td>
+</tr>
+<tr>
+<td><strong>F5</strong></td>
+<td><strong>Model Lifecycle</strong></td>
+<td>400/404, Quality Changes</td>
+<td>Model Version Retirement·Upgrade</td>
+<td>Version Pinning + Migration Plan</td>
+<td>Infrastructure Redundancy</td>
+</tr>
+<tr>
+<td><strong>F6</strong></td>
+<td><strong>Request Limit Exceeded</strong></td>
+<td>400</td>
+<td><strong>PTU Context Length Limit Exceeded</strong></td>
+<td>Spillover (standard deployment), Prompt Compression</td>
+<td>PTU Expansion (Meaningless)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Most Common Misdesign</strong>: Trying to use F1 (capacity) to address F3 (regional failure), or vice versa.
+For example, if you only configure Spillover and think "we are HA," <strong>you are not prepared for regional incidents at all</strong> (§5.5).</p>
+</blockquote>
+<hr/>
+<h2 id="en-2-ha-4">2. Four Pillars of HA Design</h2>
+<div class="mermaid" data-idx="0"></div>
+<table>
+<thead>
+<tr>
+<th>Pillar</th>
+<th>Question</th>
+<th>Representative Means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1. Capacity</strong></td>
+<td>Do you have enough room to process tokens?</td>
+<td>PTU + Spillover, multiple deployments, quota reservation</td>
+</tr>
+<tr>
+<td><strong>2. Location</strong></td>
+<td>Can this region go down?</td>
+<td>Multi-region, Global Standard</td>
+</tr>
+<tr>
+<td><strong>3. Routing</strong></td>
+<td>Can the request be sent elsewhere?</td>
+<td>APIM backend pool, Front Door</td>
+</tr>
+<tr>
+<td><strong>4. Degradation</strong></td>
+<td>Is a less optimal response possible instead of a complete failure?</td>
+<td>Lightweight model, cache, feature reduction</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Axis 4 is very often overlooked.</strong> When all backends are saturated, 'fast alternative responses' are much better for user experience than 'slow failures.'</p>
+<hr/>
+<h2 id="en-3">3. Availability Characteristics by Deployment Type</h2>
+<h3 id="en-31">3.1 ⚠️ Most Important Premise — Even if processing is global, <strong>endpoints are region-fixed</strong></h3>
+<p>It is <strong>incorrect</strong> to understand global deployment as being "automatically safe from regional failures."</p>
+<table>
+<thead>
+<tr>
+<th>Hierarchy</th>
+<th>Behavior in Global Deployment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Inference Processing</strong></td>
+<td>Azure global infrastructure <strong>dynamically routes to available data centers</strong> ✅</td>
+</tr>
+<tr>
+<td><strong>Resource Endpoint</strong></td>
+<td><code>https://&lt;resource&gt;.openai.azure.com</code> is <strong>fixed to the region where the resource was created</strong> ❌</td>
+</tr>
+</tbody>
+</table>
+<p>In other words, even if the processing capacity is drawn from global resources, <strong>if the resource endpoint becomes unreachable due to a regional failure, Global or Data Zone deployments do not automatically failover to another resource endpoint.</strong></p>
+<p><strong>Conclusion: Global routing increases "capacity availability," not "endpoint availability."</strong> Regional failure protection still requires <strong>multiple resources + gateways</strong> (§6-7).</p>
+<table>
+<thead>
+<tr>
+<th>What was duplicated</th>
+<th>Global Deployment</th>
+<th>Spillover</th>
+<th>Multiple Resources + Gateway</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Processing Capacity</strong></td>
+<td>✅ Globally Distributed</td>
+<td>✅ PTU → Standard</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>Deployment (Capacity Pool)</strong></td>
+<td>❌ Single Deployment</td>
+<td>✅ 2 Deployments</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>Endpoint</strong></td>
+<td>❌ Single</td>
+<td>❌ <strong>Single</strong> (same resource)</td>
+<td>✅ <strong>Two or more</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>The three <strong>duplify different layers</strong>. One cannot replace the others.</p>
+</blockquote>
+<h3 id="en-32-provisionedptu">3.2 Provisioned (PTU) is not one but <strong>three</strong></h3>
+<table>
+<thead>
+<tr>
+<th>Deployment type</th>
+<th>SKU (<code>sku.name</code>)</th>
+<th>Inference Processing Location</th>
+<th>Minimum PTU</th>
+<th>Increment</th>
+<th>HA Characteristic</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Global Provisioned</strong></td>
+<td><code>GlobalProvisionedManaged</code></td>
+<td><strong>Routing to global regions</strong></td>
+<td><strong>15</strong></td>
+<td><strong>5</strong></td>
+<td><em>"Highest availability"</em> — when there are no routing region constraints</td>
+</tr>
+<tr>
+<td><strong>Data Zone Provisioned</strong></td>
+<td><code>DataZoneProvisionedManaged</code></td>
+<td><strong>Inside data zones</strong> — <strong>US / EU only</strong> (⚠️ <strong>APAC not supported</strong>)</td>
+<td><strong>15</strong></td>
+<td><strong>5</strong></td>
+<td>Meets data boundaries + higher availability than regional</td>
+</tr>
+<tr>
+<td><strong>Regional Provisioned</strong></td>
+<td><code>ProvisionedManaged</code></td>
+<td><strong>Single Region Fixed</strong></td>
+<td><strong>25~50</strong> (per model)</td>
+<td><strong>25~50</strong></td>
+<td>For strict single-region residency requirements. Ensuring HA is the most difficult</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-33-standard">3.3 Standard Series</h3>
+<table>
+<thead>
+<tr>
+<th>Deployment type</th>
+<th>SKU</th>
+<th>Inference Processing Location</th>
+<th>HA Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Global Standard</strong></td>
+<td><code>GlobalStandard</code></td>
+<td>All Azure regions</td>
+<td>Highest quota · <strong>1st priority recommendation</strong> in the official guide (if residency requirement allows)</td>
+</tr>
+<tr>
+<td><strong>Data Zone Standard</strong></td>
+<td><code>DataZoneStandard</code></td>
+<td>Inside data zone</td>
+<td><strong>2nd priority recommendation</strong> — when geographical boundaries are required</td>
+</tr>
+<tr>
+<td><strong>Standard</strong></td>
+<td><code>Standard</code></td>
+<td>Single region</td>
+<td>Only single region possible for regulatory reasons</td>
+</tr>
+<tr>
+<td><strong>Global / Data Zone Batch</strong></td>
+<td><code>GlobalBatch</code> / <code>DataZoneBatch</code></td>
+<td>Each</td>
+<td>Separated from the real-time route to <strong>reduce the load itself</strong> (separate quota, 50% cheaper)</td>
+</tr>
+<tr>
+<td><strong>Priority processing</strong>(preview)</td>
+<td>Global Standard option</td>
+<td>Global</td>
+<td>An alternative to PTU when low latency is needed without a long-term commitment</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Official guide: <em>"If your data-residency requirements allow it, </em><em>prefer Global Standard</em><em> deployments. </em><em>Data Zone deployments (US/EU) are the next best option</em><em>..."</em></p>
+</blockquote>
+<h3 id="en-34-sla">3.4 From an SLA Perspective</h3>
+<blockquote>
+<p><em>"Provisioned types provide </em><em>guaranteed throughput and lower latency variance</em><em>. Standard types offer </em><em>best-effort</em><em> service. Developer deployments </em><em>don't include an SLA</em><em>."</em></p>
+</blockquote>
+<p>In other words, <strong>workloads requiring consistent low latency will no longer meet latency targets the moment they failover to Standard.</strong> This should be explicitly reflected in performance degradation mode (§10).</p>
+<hr/>
+<h3 id="en-35-ptu">3.5 Recommended Architecture — Enterprise PTU Pool</h3>
+<p><strong>A superior structure compared to buying PTU separately for each app</strong>.</p>
+<div class="mermaid" data-idx="1"></div>
+<h4 id="en-ptu">Why the "Enterprise PTU Pool"</h4>
+<p>It is a structure where the organization has <strong>one large PTU pool shared across the entire organization</strong>, and the gateway distributes it for each app. You can think of it as a kind of <strong>"our organization's dedicated Standard deployment"</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Advantages</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Noisy neighbor blocking</strong></td>
+<td>Even if the shared Standard is congested, <strong>organization-dedicated capacity</strong> is guaranteed</td>
+</tr>
+<tr>
+<td><strong>Priority control</strong></td>
+<td>The organization decides <strong>which app slows down first</strong> when capacity competes</td>
+</tr>
+<tr>
+<td><strong>High utilization</strong></td>
+<td>Individual workloads have significant spikes, but <strong>combined they even out</strong>, reducing PTU waste</td>
+</tr>
+<tr>
+<td><strong>Maintain Latency Targets</strong></td>
+<td>Even if the workload PTU exceeds 100%, <strong>the PTU endpoint still handles it</strong> → Maintaining consistent latency is advantageous over dropping to Standard, as long as model-specific latency target conditions are met</td>
+</tr>
+</tbody>
+</table>
+<h4 id="en-_2">🔑 Region Anti-Correlation Principle</h4>
+<p><strong>If the PTU and its backup are in the same region, both will be lost during a region failure.</strong></p>
+<ul>
+<li>Place the workload PTU and the enterprise PTU pool in <strong>different regions</strong></li>
+<li>Also, place the enterprise PTU pool and the main Standard deployment in <strong>different regions</strong></li>
+</ul>
+<p>This follows the same principle as §5.5 "Spillover cannot prevent endpoint failures," and <strong>should be distributed in advance during the region placement stage</strong>.</p>
+<h4 id="en-_3">Recommended Deployment Examples</h4>
+<table>
+<thead>
+<tr>
+<th>Hierarchy</th>
+<th>Deployment type</th>
+<th>Region</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Priority 1</td>
+<td>Workload-dedicated PTU</td>
+<td>Region A</td>
+<td>Base load of the app</td>
+</tr>
+<tr>
+<td>Priority 2</td>
+<td><strong>Enterprise PTU Pool</strong></td>
+<td><strong>Region B</strong></td>
+<td>Organizational shared · Overflow absorption</td>
+</tr>
+<tr>
+<td>Priority 3</td>
+<td>Standard (Global or Data Zone)</td>
+<td><strong>Region C</strong></td>
+<td>Spike absorption · Last resort</td>
+</tr>
+</tbody>
+</table>
+<p><strong>PTU is for base load, Standard is for spikes</strong> — this role allocation is key.</p>
+<blockquote>
+<p>⚠️ <strong>Choosing the Deployment Type for Enterprise PTU Pool</strong>
+The <strong>default pattern cited as an example in the official HA guide is a single deployment of Data Zone PTU</strong>. If data processing boundaries are allowed and a wider global processing scope is required, <strong>Global Provisioned can be considered as a separate design option</strong> (reservations are region-agnostic, §8.3).
+However, <strong>Data Zone Provisioned is not available in APAC</strong> (§3.2). If data residency is required in the APAC region, you must configure it as <strong>Regional Provisioned</strong>, in which case the minimum PTU and reservation costs will increase.</p>
+</blockquote>
+<h4 id="en-_4">Data Residency Notice</h4>
+<p>Global variants can process <strong>processing</strong> over a wide area. Storage (at rest) is within the specified geography, but if regulations limit <strong>processing location</strong> as well, the failover candidates must be restricted to <strong>Data Zone</strong> or within the same geography.</p>
+<blockquote>
+<p><strong>Do not break compliance for HA.</strong> In this case, the realistic optimal solution is a combination of Data Zone Provisioned + Data Zone Standard.</p>
+</blockquote>
+<hr/>
+<h2 id="en-4-layer-1">4. Layer 1 — Client Resilience</h2>
+<p><strong>The most cost-effective and impactful layer.</strong> No matter how much you duplicate the infrastructure, if the client retries incorrectly, it creates failures on its own.</p>
+<h3 id="en-41">4.1 Retry Design</h3>
+<table>
+<thead>
+<tr>
+<th>Status Code</th>
+<th>Retry</th>
+<th>Method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>429</td>
+<td>✅</td>
+<td><strong>Prefer <code>Retry-After</code></strong>, if absent use exponential backoff + jitter</td>
+</tr>
+<tr>
+<td>500 / 502 / 503 / 504</td>
+<td>✅</td>
+<td>Exponential backoff + jitter, 2-3 times</td>
+</tr>
+<tr>
+<td>408</td>
+<td>✅</td>
+<td>1-2 times</td>
+</tr>
+<tr>
+<td>400 / 401 / 403 / 404</td>
+<td>❌</td>
+<td>Retry meaningless (request, authorization, model issue)</td>
+</tr>
+<tr>
+<td>499</td>
+<td>❌</td>
+<td>Client-side disconnection — resolved via timeout/streaming</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-42-retry-after">4.2 ⚠️ Why You Must Check <code>Retry-After</code></h3>
+<p>The <code>Retry-After</code> value returned by AOAI along with a 429 can be <strong>very large (e.g., on the order of days)</strong>. This is a caution explicitly mentioned in the official documentation.</p>
+<ul>
+<li>If you <strong>ignore this value and retry immediately</strong> → throttling will be amplified and the backend will not recover.</li>
+<li>If you <strong>wait the full duration indicated by this value</strong> → the service will effectively come to a halt.</li>
+</ul>
+<p><strong>Therefore, practical handling should be as follows.</strong></p>
+<div class="codehilite"><pre><span></span><code>if 429:
+    ra = Retry-After
+    if ra &lt;= upper limit (e.g., 30 seconds):
+        Wait for the specified time and then retry
+    else:
+        Switch immediately to the next backend (Failover) without retrying
+        + Exclude the corresponding backend from the routing target for a certain period of time
+</code></pre></div>
+<p>In other words, interpret <strong>"long <code>Retry-After</code> = a signal to give up on this backend for now"</strong> and respond with <strong>route switching</strong> rather than waiting. APIM circuit breakers work with the same mindset (§6.3).</p>
+<h3 id="en-43">4.3 Timeout Consistency</h3>
+<div class="codehilite"><pre><span></span><code>Client timeout ≥ Gateway (APIM) total elapsed time ≥ Expected maximum creation time
+                          └─ (Number of attempts × backend timeout) + sum of retry intervals
+</code></pre></div>
+<ul>
+<li><strong>The inner layer must fail first</strong> for the outer layer to handle that failure. If reversed, the client disconnects first causing <strong>499</strong> errors, leaving <strong>orphan tasks</strong> on the backend that no one reads, and overlapping client retries double the load.</li>
+<li>The gateway timeout applies <strong>per attempt</strong>, so the total budget must be calculated by multiplying the number of retries. For the calculation method and common mistakes, see <strong>§6.6</strong>.</li>
+<li>Using streaming (SSE) causes the first token to arrive immediately, removing most idle timeout issues. However, <strong>the gateway <code>timeout</code> in streaming only limits TTFT</strong> and does not restrict the total generation time (§6.6).</li>
+</ul>
+<h3 id="en-44">4.4 Client-Side Circuit Breaker &amp; Load Shedding</h3>
+<ul>
+<li>Endpoints that fail repeatedly are <strong>isolated (open)</strong> for a period of time before returning to half-open</li>
+<li><strong>Bulkhead</strong>: Limit on concurrent requests per deployment → Prevent a delay in one deployment from occupying all threads</li>
+<li><strong>Queuing/Priority</strong>: Prioritize interactive requests; batch requests can be separated into a queue that allows delays</li>
+</ul>
+<hr/>
+<h2 id="en-5-layer-2-spillover-ptu">5. Layer 2 — Spillover (PTU → Standard Deployment)</h2>
+<p>This is a feature that <strong>automatically routes overflow requests to the corresponding standard deployment</strong> when a PTU deployment returns a non-200 response.</p>
+<h3 id="en-50">5.0 Who Retries — Server-Side Automatic Switch</h3>
+<p>This is the most misunderstood part. <strong>The retry is performed by the Azure OpenAI service itself</strong>. It is neither the client nor APIM.</p>
+<div class="mermaid" data-idx="2"></div>
+<ul>
+<li><strong>There is only one HTTP request from start to finish.</strong> The client makes the call once and receives a 200.</li>
+<li>If the spillover succeeds, <strong>the client does not receive a 429.</strong> The original 429 remains only in the <code>x-ms-spillover-error</code> header.</li>
+<li>Therefore, the client retry logic does not trigger, and this transition <strong>is not counted toward the retry limit.</strong></li>
+</ul>
+<blockquote>
+<p>Original text: <em>"When a request results in one of these non-<code>200</code> response codes, </em><em>Azure OpenAI automatically sends the request</em><em> from your provisioned deployment to your standard deployment to be processed."</em></p>
+</blockquote>
+<h3 id="en-51-spillover-429">5.1 Response Codes That Cause Spillover — Not Just 429</h3>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Situation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>429</strong></td>
+<td>PTU fully exhausted</td>
+</tr>
+<tr>
+<td><strong>400</strong></td>
+<td><strong>Long context request</strong> — e.g., gpt-4.1 series PTUs only support contexts under 128K</td>
+</tr>
+<tr>
+<td><strong>500 / 503</strong></td>
+<td>Server error during processing</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 <strong>It is important that 400 is included.</strong> PTU has a maximum context length limit per model, so long prompts fail at 400 regardless of capacity and then fall back to standard deployment. In this case, the fundamental cause is 'context length,' not 'capacity,' so increasing PTU will not resolve the issue.</p>
+</blockquote>
+<h3 id="en-52">5.2 Prerequisites and Constraints</h3>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Location</strong></td>
+<td>Provisioning deployment and standard deployment must be within the <strong>same Foundry/AOAI resources</strong></td>
+</tr>
+<tr>
+<td><strong>Target Type</strong></td>
+<td>Spillover targets must be a <strong>standard (PAYG) deployment</strong> — other PTU deployments are not allowed</td>
+</tr>
+<tr>
+<td><strong>Model Match</strong></td>
+<td>Must be <strong>the same model and same version</strong></td>
+</tr>
+<tr>
+<td><strong>Permissions</strong></td>
+<td><strong>Cognitive Services Contributor</strong> or higher</td>
+</tr>
+<tr>
+<td><strong>Model Support</strong></td>
+<td>All AOAI models are supported. <strong>Models from other providers such as Azure DeepSeek and Meta Llama are not supported</strong></td>
+</tr>
+</tbody>
+</table>
+<h4 id="en-spillover">Select Spillover Target Type — Pairing is Important</h4>
+<p>The spillover target must be a <strong>compatible PAYG deployment within the same resource</strong> and <strong>the model and version must match</strong>. To maintain data processing boundaries, follow the pairing below.</p>
+<table>
+<thead>
+<tr>
+<th>PTU Type</th>
+<th>Recommended Spillover Target</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Global Provisioned</strong></td>
+<td><strong>Global Standard</strong></td>
+<td>Overflow also routes globally → absorbs regional capacity imbalance. Large quota</td>
+</tr>
+<tr>
+<td><strong>Data Zone Provisioned</strong></td>
+<td><strong>Data Zone Standard</strong> (same zone)</td>
+<td>⚠️ <strong>Maintain Data Boundaries</strong> — If passed to another zone, overflow may be handled outside the boundary</td>
+</tr>
+<tr>
+<td><strong>Regional Provisioned</strong></td>
+<td><strong><code>Standard</code> (Same Region)</strong></td>
+<td>Absorb peaks while maintaining residency requirements <!-- Review needed: Reconfirm support scope --></td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-53">5.3 Enable per Deployment Unit</h3>
+<p>Specify the standard deployment name in the deployment property <code>spilloverDeploymentName</code>. This can be done when creating a new deployment or adding to an existing one.</p>
+<div class="codehilite"><pre><span></span><code>curl<span class="w"> </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="s2">"https://management.azure.com/subscriptions/</span><span class="nv">$SUB</span><span class="s2">/resourceGroups/</span><span class="nv">$RG</span><span class="s2">/providers/Microsoft.CognitiveServices/accounts/</span><span class="nv">$ACCOUNT</span><span class="s2">/deployments/ptu-gpt4o?api-version=2024-10-01"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-d<span class="w"> </span><span class="s1">'{</span>
+<span class="s1">        "sku": { "name": "GlobalProvisionedManaged", "capacity": 100 },</span>
+<span class="s1">        "properties": {</span>
+<span class="s1">          "spilloverDeploymentName": "std-gpt4o",</span>
+<span class="s1">          "model": { "format": "OpenAI", "name": "gpt-4o", "version": "2024-11-20" }</span>
+<span class="s1">        }</span>
+<span class="s1">      }'</span>
+</code></pre></div>
+<h3 id="en-54">5.4 Enable per Request Unit</h3>
+<p>Specify the standard deployment name in the request header <code>x-ms-spillover-deployment</code> to make <strong>only that request</strong> subject to Spillover.</p>
+<div class="codehilite"><pre><span></span><code>curl<span class="w"> </span><span class="s2">"</span><span class="nv">$AZURE_OPENAI_ENDPOINT</span><span class="s2">/openai/deployments/ptu-gpt4o/chat/completions?api-version=2024-10-21"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s2">"x-ms-spillover-deployment: std-gpt4o"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-H<span class="w"> </span><span class="s2">"Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-d<span class="w"> </span><span class="s1">'{ "messages": [ { "role": "user", "content": "..." } ] }'</span>
+</code></pre></div>
+<blockquote>
+<p><strong>Priority Rule</strong>: If both the deployment attribute (<code>spilloverDeploymentName</code>) and the request header are set, the <strong>deployment attribute takes priority</strong>. If you want to control only per request, do not set the deployment attribute and use only the header.</p>
+</blockquote>
+<p><strong>Example Use</strong> — Differential policy per workload:</p>
+<table>
+<thead>
+<tr>
+<th>Workload</th>
+<th>Spillover</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Interactive UI</td>
+<td>✅ On</td>
+<td>Better than failure even if latency increases</td>
+</tr>
+<tr>
+<td>Real-time low-latency API</td>
+<td>❌ Off</td>
+<td>Cannot allow latency variation of standard deployment</td>
+</tr>
+<tr>
+<td>Batch/Background</td>
+<td>✅ On</td>
+<td>Latency acceptable</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-55-spillover">5.5 ⚠️ What Spillover <strong>Cannot Prevent</strong></h3>
+<p>Spillover is a feature that transfers to the standard deployment <strong>within the same resource</strong>. Therefore:</p>
+<table>
+<thead>
+<tr>
+<th>Failure</th>
+<th>Can Spillover Handle?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PTU capacity saturation (429)</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>PTU context length exceeded (400)</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Temporary 5xx in PTU deployment</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>Skewed capacity in a specific region</strong></td>
+<td>⭕ <strong>Absorbed significantly if Global↔Global pairing</strong> (both are global routing)</td>
+</tr>
+<tr>
+<td><strong>Resource endpoint regional failure</strong></td>
+<td>❌ <strong>Two deployments share the same endpoint</strong> → Cannot reach simultaneously</td>
+</tr>
+<tr>
+<td><strong>Resource/Subscription Unit Issues</strong></td>
+<td>❌</td>
+</tr>
+<tr>
+<td>Exhausted up to the standard deployment quota</td>
+<td>❌ <strong>Final failure → Client receives an error</strong> (§5.6)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>In other words, <strong>Spillover is the start of HA, not its completion.</strong> For endpoint failure protection, §6~7's <strong>multiple resources + gateway</strong> path is required.</p>
+</blockquote>
+<h3 id="en-56">5.6 What Does the Client Receive If the Standard Deployment Fails</h3>
+<p><strong>Rule: The client receives the response from the 'last attempted backend' as is.</strong></p>
+<blockquote>
+<p>Original Document: <em>"if the standard deployment also fails to serve it, </em><em>the standard deployment's response (including status code and body) is returned to the caller.</em><em> The <code>x-ms-spillover-from-deployment</code> and <code>x-ms-spillover-error</code> headers are still present, so the caller can distinguish a spillover failure from a direct standard-deployment failure."</em></p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>PTU Result</th>
+<th>Standard Deployment Result</th>
+<th><strong>Client Reception</strong></th>
+<th><code>x-ms-spillover-error</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>429</td>
+<td>200</td>
+<td><strong>200</strong> ✅</td>
+<td><code>429</code></td>
+</tr>
+<tr>
+<td>429</td>
+<td><strong>429</strong></td>
+<td><strong>429</strong></td>
+<td><code>429</code></td>
+</tr>
+<tr>
+<td>429</td>
+<td>500</td>
+<td><strong>500</strong></td>
+<td><code>429</code></td>
+</tr>
+<tr>
+<td><strong>400</strong> (Long Context)</td>
+<td>429</td>
+<td><strong>429</strong></td>
+<td><strong><code>400</code></strong></td>
+</tr>
+<tr>
+<td>500</td>
+<td>503</td>
+<td><strong>503</strong></td>
+<td><code>500</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>Pay attention to the 4th row.</strong> The code the client sees (429) and the actual root cause (400, context length) <strong>may differ.</strong> If you diagnose solely based on 429 as "capacity exceeded" and expand the PTU, the problem will not be resolved.</p>
+</blockquote>
+<p><strong>How to distinguish three cases when receiving a 429</strong></p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th><code>x-ms-spillover-from-deployment</code></th>
+<th><code>x-ms-spillover-error</code></th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A</strong></td>
+<td>None</td>
+<td>—</td>
+<td>No Spillover applied → the called deployment directly returns 429</td>
+</tr>
+<tr>
+<td><strong>B</strong></td>
+<td>Exists</td>
+<td><code>429</code></td>
+<td>PTU saturation + <strong>standard deployment also saturated</strong> — most severe</td>
+</tr>
+<tr>
+<td><strong>C</strong></td>
+<td>Exists</td>
+<td><code>400</code></td>
+<td>PTU context exceeded + standard saturation</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Case B is a condition where two layers of capacity are consumed simultaneously.</strong> Retry will not resolve it, so <strong>switching the route to another region (§6~7) or load blocking</strong> is required.</p>
+</blockquote>
+<p><strong>Therefore, even if Spillover exists, the client retry logic must be maintained.</strong> The <code>Retry-After</code> received at this time is the <strong>value provided by the standard deployment</strong>, so the principle in §4.2 "if the value is excessive, switch routes instead of waiting" applies as is.</p>
+<h3 id="en-57-spillover">5.7 Spillover Observation</h3>
+<p>It is determined by the response header.</p>
+<table>
+<thead>
+<tr>
+<th>Header</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>x-ms-spillover-from-deployment</code></td>
+<td>If there is a value, <strong>this request is a Spillover request</strong> (including PTU deployment name)</td>
+</tr>
+<tr>
+<td><code>x-ms-deployment-name</code></td>
+<td>The name of the deployment that actually processed the request</td>
+</tr>
+<tr>
+<td><code>x-ms-spillover-error</code></td>
+<td>The response code (429/400/500/503) of the provisioning deployment that caused the Spillover. <strong>Exists regardless of success</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Be sure to include this in application instrumentation.</strong> Without these headers, A/B/C in §5.6 cannot be distinguished afterward.</p>
+<div class="codehilite"><pre><span></span><code><span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"StatusCode"</span><span class="p">,</span> <span class="n">resp</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span>
+<span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"SpilloverFrom"</span><span class="p">,</span>  <span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"x-ms-spillover-from-deployment"</span><span class="p">))</span>
+<span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"SpilloverError"</span><span class="p">,</span> <span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"x-ms-spillover-error"</span><span class="p">))</span>
+<span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"ServedBy"</span><span class="p">,</span>       <span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"x-ms-deployment-name"</span><span class="p">))</span>
+</code></pre></div>
+<h4 id="en-ptu-429">🔴 Pitfall in metric interpretation — 429 is not recorded on PTU</h4>
+<blockquote>
+<p>Original document: <em>"spilled-over requests are </em><em>not counted as <code>429</code>s on the provisioned deployment</em><em>"</em></p>
+</blockquote>
+<p>Spillover requests are recorded on the <strong>standard deployment side with <code>IsSpillover=True</code> + final status code (usually 200)</strong>. PTU deployments only retain the requests they directly handled.</p>
+<p>Actual examples from the document:</p>
+<table>
+<thead>
+<tr>
+<th>Deployment</th>
+<th>Record</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gpt-4.1-ptum</code> (PTU)</td>
+<td>200 = <strong>46</strong></td>
+</tr>
+<tr>
+<td><code>gpt-4.1</code> (standard, <code>IsSpillover=True</code>)</td>
+<td>200 = <strong>954</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>If you only monitor the 429 count, it can misinterpret as 'no saturation' even when it exceeded 954 cases.</strong>
+Be sure to determine PTU saturation based on <strong><code>IsSpillover</code> level</strong> or <strong><code>Provisioned Utilization V2</code></strong>.</p>
+</blockquote>
+<p><strong>Notification Design</strong>: The failures actually delivered to users are <strong>429 in the standard deployment</strong>. → The combination of <code>AzureOpenAIRequests</code> + <code>StatusCode=429</code> + <code>ModelDeploymentName=&lt;standard deployment&gt;</code> is the <strong>real user impact metric</strong>.</p>
+<ul>
+<li>The spillover rate remains consistently high → <strong>signal to scale PTU</strong></li>
+<li>Spike in spillover rate + increased latency → peak load or surge in a specific tenant</li>
+</ul>
+<h3 id="en-58-spillover">5.8 Latency and Cost — The Price of Spillover</h3>
+<p><strong>① Increased Latency</strong></p>
+<blockquote>
+<p>Original text: <em>"the service prioritizes sending requests to the provisioned deployment before sending any overage requests to the standard deployment. </em><em>This prioritization might incur additional latency.</em><em>"</em></p>
+</blockquote>
+<p>Failed PTU attempts + standard deployment processing <strong>accumulate in a single request</strong>. Client timeouts should be based on this accumulated delay.</p>
+<p><strong>② Billing Method Transition</strong></p>
+<table>
+<thead>
+<tr>
+<th>Processing Deployment</th>
+<th>Billing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PTU Deployment</td>
+<td><strong>Only hourly provisioning cost</strong> (no additional cost per request)</td>
+</tr>
+<tr>
+<td>Standard Deployment (Spillover)</td>
+<td>Charged by <strong>input, cache, and output token unit price</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>In other words, <strong>spike in Spillover rate = spike in cost</strong>. In addition to capacity alerts, keep <strong>cost alerts</strong> as well.</p>
+<p>For detailed metrics and KQL, refer to <a href="../03-aoai-deployment-monitoring/">Guide 03</a>.</p>
+</blockquote>
+<hr/>
+<h2 id="en-6-layer-3-apim-ai-gateway">6. Layer 3 — APIM AI Gateway (Multiple Backends)</h2>
+<p>To absorb regional failures, a <strong>layer that can change the request path</strong> is needed. The APIM backend pool serves that role.</p>
+<h3 id="en-61">6.1 Backend Entity Configuration</h3>
+<ul>
+<li>Specify each AOAI endpoint in the Runtime URL</li>
+<li><strong>Authentication with Managed Identity</strong> is recommended (removes the burden of key management and rotation, prevents availability incidents due to key leaks)</li>
+<li><strong>Resource ID</strong>: <code>https://cognitiveservices.azure.com</code> (no trailing slash, <code>/.default</code> not needed)</li>
+<li>Assign the <strong><code>Cognitive Services OpenAI User</code></strong> role to the APIM managed identity</li>
+</ul>
+<div class="codehilite"><pre><span></span><code>az<span class="w"> </span>role<span class="w"> </span>assignment<span class="w"> </span>create<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--assignee-object-id<span class="w"> </span><span class="nv">$APIM_PRINCIPAL_ID</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--assignee-principal-type<span class="w"> </span>ServicePrincipal<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--role<span class="w"> </span><span class="s2">"Cognitive Services OpenAI User"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--scope<span class="w"> </span><span class="nv">$AOAI_RESOURCE_ID</span>
+</code></pre></div>
+<h3 id="en-62">6.2 Backend Pool &amp; Load Balancing</h3>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Action</th>
+<th>HA Utilization</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Round-robin</strong></td>
+<td>Even Distribution (Default)</td>
+<td>Distribution Across Equal Regions</td>
+</tr>
+<tr>
+<td><strong>Weighted</strong></td>
+<td>Distribution Based on Relative Weight</td>
+<td>Reflect Region-Specific Capacity Ratios, Blue-Green</td>
+</tr>
+<tr>
+<td><strong>Priority-based</strong></td>
+<td>Send in Priority Group Order</td>
+<td><strong>Optimal for Primary → Failover Structure</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Core Behavior</strong>: Low-priority groups are <strong>used only when all backends of the higher-priority group are blocked by the circuit breaker</strong>.
+In other words, <strong>priority-based routing must be configured together with the circuit breaker to be meaningful.</strong></p>
+</blockquote>
+<h3 id="en-63">6.3 Circuit Breaker (Required)</h3>
+<ul>
+<li>If the failure conditions (count/rate, status code range) are exceeded during the defined period, the circuit <strong>trips</strong></li>
+<li>When tripped, APIM stops sending to the backend and returns <strong>503</strong> to the client</li>
+<li>After the specified trip duration, the circuit resets and traffic resumes</li>
+</ul>
+<p><strong>Official notice for AOAI backends</strong>: If requests are excessive, AOAI can return a <strong>very large <code>Retry-After</code> value (e.g., 1 day)</strong> along with 429. Therefore, you must <strong>configure circuit breaker rules that handle 429 and respect <code>Retry-After</code></strong>.</p>
+<div class="codehilite"><pre><span></span><code>resource backend 'Microsoft.ApiManagement/service/backends@2024-05-01' = {
+  name: '${apimName}/aoai-krc'
+  properties: {
+    url: 'https://aoai-prod-krc-01.openai.azure.com/openai'
+    protocol: 'http'
+    circuitBreaker: {
+      rules: [
+        {
+          name: 'aoai-throttle-and-errors'
+          failureCondition: {
+            count: 3
+            interval: 'PT1M'
+            statusCodeRanges: [
+              { min: 429, max: 429 }
+              { min: 500, max: 599 }
+            ]
+          }
+          tripDuration: 'PT1M'
+          acceptRetryAfter: true   // Accept the value of the Retry-After header
+        }
+      ]
+    }
+  }
+}
+</code></pre></div>
+<blockquote>
+<ul>
+<li><code>acceptRetryAfter: true</code> allows AOAI to <strong>reflect the returned <code>Retry-After</code> value in determining the circuit breaker's blocking period</strong>. <strong>It is not an option to wait for that period and then resend the current request.</strong> While the circuit is open, the corresponding backend is excluded from the routing targets, and the client receives a <strong>503</strong>. (In the portal: <strong>Check 'Retry-After' header in HTTP response → True (Accept)</strong>)</li>
+<li>The above <code>count</code> / <code>interval</code> / <code>tripDuration</code> values are <strong>examples</strong>. The default values in the documentation are 1 hour for both the failure interval and the blocking period, while backends like AOAI that recover quickly often benefit more from values in minutes. <strong>Be sure to tune them through load testing</strong>.</li>
+</ul>
+</blockquote>
+<h3 id="en-64-failover">6.4 Example of Priority-based Failover Pool</h3>
+<div class="codehilite"><pre><span></span><code>resource pool 'Microsoft.ApiManagement/service/backends@2024-05-01' = {
+  name: '${apimName}/aoai-pool'
+  properties: {
+    description: 'AOAI multi-region failover pool'
+    type: 'Pool'
+    pool: {
+      services: [
+        // Priority 1: Domestic PTU (Base Load)
+        { id: backendKrcId, priority: 1, weight: 1 }
+        // Priority 2: Adjacent Region Standard (In Case of Region Failure)
+        { id: backendJpeId, priority: 2, weight: 1 }
+        // Priority 3: Global Standard (last resort)
+        { id: backendGlobalId, priority: 3, weight: 1 }
+      ]
+    }
+  }
+}
+</code></pre></div>
+<blockquote>
+<p>Pool-type backends do not specify <code>url</code> / <code>protocol</code> (<code>type: 'Pool'</code>). For a priority group to actually work, <strong>each backend in the pool must have a circuit breaker configured</strong> (§6.3).</p>
+</blockquote>
+<h3 id="en-65">6.5 Example of Policy Combination</h3>
+<div class="codehilite"><pre><span></span><code><span class="nt">&lt;policies&gt;</span>
+<span class="w">  </span><span class="nt">&lt;inbound&gt;</span>
+<span class="w">    </span><span class="nt">&lt;base</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;set-backend-service</span><span class="w"> </span><span class="na">backend-id=</span><span class="s">"aoai-pool"</span><span class="w"> </span><span class="nt">/&gt;</span>
 
+<span class="w">    </span><span class="cm">&lt;!-- Token quotas per tenant: Prevent a single tenant from consuming the entire capacity --&gt;</span>
+<span class="w">    </span><span class="nt">&lt;llm-token-limit</span>
+<span class="w">        </span><span class="na">counter-key=</span><span class="s">"@(context.Subscription?.Id ?? "</span><span class="err">anonymous")"</span>
+<span class="w">        </span><span class="na">tokens-per-minute=</span><span class="s">"60000"</span>
+<span class="w">        </span><span class="na">estimate-prompt-tokens=</span><span class="s">"true"</span>
+<span class="w">        </span><span class="na">remaining-tokens-header-name=</span><span class="s">"x-remaining-tokens"</span><span class="w"> </span><span class="nt">/&gt;</span>
+
+<span class="w">    </span><span class="nt">&lt;llm-emit-token-metric</span><span class="w"> </span><span class="na">namespace=</span><span class="s">"aoai-gateway"</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;dimension</span><span class="w"> </span><span class="na">name=</span><span class="s">"Backend"</span><span class="w">  </span><span class="na">value=</span><span class="s">"@(context.Request.Url.Host)"</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">      </span><span class="nt">&lt;dimension</span><span class="w"> </span><span class="na">name=</span><span class="s">"TenantId"</span><span class="w"> </span><span class="na">value=</span><span class="s">"@(context.Subscription?.Id ?? "</span><span class="err">anonymous")"</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/llm-emit-token-metric&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/inbound&gt;</span>
+
+<span class="w">  </span><span class="nt">&lt;backend&gt;</span>
+<span class="w">    </span><span class="cm">&lt;!-- The full transition is handled by the circuit breaker. Here, only short retries --&gt;</span>
+<span class="w">    </span><span class="nt">&lt;retry</span><span class="w"> </span><span class="na">condition=</span><span class="s">"@(context.Response.StatusCode == 429 || context.Response.StatusCode &gt;= 500)"</span>
+<span class="w">           </span><span class="na">count=</span><span class="s">"2"</span><span class="w"> </span><span class="na">interval=</span><span class="s">"1"</span><span class="w"> </span><span class="na">max-interval=</span><span class="s">"5"</span><span class="w"> </span><span class="na">delta=</span><span class="s">"1"</span><span class="w"> </span><span class="na">first-fast-retry=</span><span class="s">"true"</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;forward-request</span>
+<span class="w">          </span><span class="na">timeout=</span><span class="s">"60"</span><span class="w">                  </span><span class="err">&lt;!--</span><span class="w"> </span><span class="err">Attempt</span><span class="w"> </span><span class="err">Per session</span><span class="w"> </span><span class="err">·</span><span class="w"> </span><span class="err">Response</span><span class="w"> </span><span class="err">up to the header</span><span class="w"> </span><span class="err">Time</span><span class="w"> </span><span class="err">--</span><span class="nt">&gt;</span>
+<span class="w">          </span>buffer-request-body="true"<span class="w">    </span><span class="cm">&lt;!-- Essential for reusing the content when retrying --&gt;</span>
+<span class="w">          </span>buffer-response="false"<span class="w"> </span>/&gt;<span class="w">    </span><span class="cm">&lt;!-- Essential for SSE streaming --&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/retry&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/backend&gt;</span>
+
+<span class="w">  </span><span class="nt">&lt;outbound&gt;</span>
+<span class="w">    </span><span class="nt">&lt;base</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="cm">&lt;!-- Expose which backend responded: essential for failure analysis --&gt;</span>
+<span class="w">    </span><span class="nt">&lt;set-header</span><span class="w"> </span><span class="na">name=</span><span class="s">"x-served-by"</span><span class="w"> </span><span class="na">exists-action=</span><span class="s">"override"</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;value&gt;</span>@(context.Request.Url.Host)<span class="nt">&lt;/value&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/set-header&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/outbound&gt;</span>
+
+<span class="w">  </span><span class="nt">&lt;on-error&gt;</span>
+<span class="w">    </span><span class="nt">&lt;base</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/on-error&gt;</span>
+<span class="nt">&lt;/policies&gt;</span>
+</code></pre></div>
+<blockquote>
+<p>⚠️ <strong>Separation of retry and circuit breaker roles</strong>: If the retry count is set too high on the gateway, it will continue pushing load before the circuit breaker opens. The principle is a <strong>short retry + clear circuit breaker</strong> combination.</p>
+<p>🔴 <strong><code>&lt;retry&gt;</code> is not a priority failover — the most common misunderstanding</strong>
+<code>&lt;retry&gt;</code> only <strong>re-executes the policy block</strong>. The condition for using a lower-priority group is only when <strong>all circuits of the higher-priority group backends are open</strong>.
+Moreover, the circuit breaker state is <strong>an approximation per gateway instance and is not synchronized across instances.</strong></p>
+<p>Therefore, <strong>there is no guarantee that "once you receive a 429, you will immediately move to the next region."</strong> The actual point of blocking or switching must be measured through <strong>load testing</strong> to adjust the threshold.</p>
+</blockquote>
+<h3 id="en-66">6.6 Timeout Budget Design — The Most Common Mistakes</h3>
+<h4 id="en-1-apim">① Why should the inside (APIM) fail before the outside (client)?</h4>
+<p><strong>The outside should not give up first.</strong> Consider a case where the client timeout is 60 seconds and APIM is 120 seconds:</p>
+<div class="codehilite"><pre><span></span><code>0s ──────── 60s ──────────── 120s
+Client │ Give up (disconnect)
+APIM        │ Keep waiting ──────│ Only then responds
+AOAI        │ Keep generating ──────│ (Results that no one will read)
+</code></pre></div>
+<p>There are four problems happening simultaneously.</p>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Orphaned Tasks</strong></td>
+<td>Consuming <strong>an additional 60 seconds of PTU/TPM</strong> for a response that no one will read</td>
+</tr>
+<tr>
+<td><strong>Load Amplification</strong></td>
+<td>Client retries at 60 seconds → 1 request is still alive, <strong>second request added</strong></td>
+</tr>
+<tr>
+<td><strong>Cannot diagnose</strong></td>
+<td>Client only receives socket timeout without HTTP response → no correlation ID</td>
+</tr>
+<tr>
+<td><strong>Circuit breaker disabled</strong></td>
+<td>Client disappears before APIM recognizes failure → <strong>clean failure signal not captured</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Conversely, if the inner timeout is shorter, APIM detects the failure first and returns a <strong>normal HTTP error (504)</strong>, the circuit breaker operates, and the client receives a traceable error.</p>
+<blockquote>
+<p><strong>Principle: The inner one must fail first for the outer to handle that failure.</strong></p>
+</blockquote>
+<h4 id="en-2-timeout">② <code>timeout</code> is the time <strong>until the response headers</strong>, not the "total time"</h4>
+<blockquote>
+<p>Original document: <em>"The amount of time in seconds to wait for </em><em>the HTTP response headers</em><em> to be returned by the backend service before a timeout error is raised."</em></p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>What <code>timeout</code> actually limits</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Non-streaming</strong></td>
+<td>Until response completion = virtually the entire time ✅</td>
+</tr>
+<tr>
+<td><strong>Streaming (SSE)</strong></td>
+<td><strong>Only until the first byte (TTFT)</strong> — it does not matter if subsequent generation takes 10 minutes ⚠️</td>
+</tr>
+</tbody>
+</table>
+<p>If you believe that using streaming "controls the total time with timeout," <strong>that is incorrect.</strong> The total generation time must be controlled with <code>max_tokens</code> and the client-side overall time limit.</p>
+<h4 id="en-3-timeout-1">③ <code>timeout</code> applies <strong>per attempt</strong> — total budget calculation</h4>
+<p><code>&lt;retry&gt;</code> re-executes the child policy, so the timeout is freshly applied for each attempt.</p>
+<div class="codehilite"><pre><span></span><code>Total elapsed time ≈ (number of attempts × timeout) + sum of retry intervals
+</code></pre></div>
+<p>Example above (<code>count="2"</code> = total 3 attempts, <code>timeout="60"</code>, <code>first-fast-retry="true"</code>):</p>
+<div class="codehilite"><pre><span></span><code>60s + 0s (instant) + 60s + 2s + 60s ≈ 182 seconds
+</code></pre></div>
+<blockquote>
+<p>⚠️ If set <code>timeout="120"</code>, in the worst case it becomes <strong>about 362 seconds (6 minutes)</strong>. If the client timeout is 120 seconds, the client would already give up during the APIM's second attempt, causing the issue in ① to occur as is.</p>
+</blockquote>
+<p><strong>Therefore, the correct consistency formula is as follows.</strong></p>
+<div class="codehilite"><pre><span></span><code>Client timeout ≥ (number of attempts × APIM timeout) + sum of retry intervals
+</code></pre></div>
+<p>Based on the above settings, the <strong>client timeout should be set to at least 200 seconds</strong>.</p>
+<h3 id="en-67">6.7 Semantic Caching — Availability Perspective</h3>
+<p><code>llm-semantic-cache-lookup</code> / <code>llm-semantic-cache-store</code> are known as cost-saving features, but <strong>from an HA perspective, they are means to 'reduce backend load and prevent 429 errors themselves'</strong>. They are particularly effective in workloads with a high proportion of repeated queries (FAQ, internal knowledge search).</p>
+<hr/>
+<h2 id="en-7-layer-4">7. Layer 4 — Multi-Region Design</h2>
+<h3 id="en-71">7.1 Criteria for Region Selection</h3>
+<table>
+<thead>
+<tr>
+<th>Criteria</th>
+<th>Checkpoints</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Model Availability</strong></td>
+<td>Whether the target model and <strong>version</strong> exist in the region</td>
+</tr>
+<tr>
+<td><strong>Quota</strong></td>
+<td>Whether the actual TPM usable at failover time is secured (§8)</td>
+</tr>
+<tr>
+<td><strong>Latency</strong></td>
+<td>Is the user↔region RTT within the acceptable range?</td>
+</tr>
+<tr>
+<td><strong>Data Boundary</strong></td>
+<td>Is it a geography allowed by regulations?</td>
+</tr>
+<tr>
+<td><strong>Functional Equivalence</strong></td>
+<td>Are the necessary functions such as content filter configuration, batch, and fine-tuning the same?</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-72">7.2 Resource Deployment Method</h3>
+<blockquote>
+<p><em>"Deploy </em><em>two Azure OpenAI resources in the same Azure subscription.</em><em> Place one resource in your preferred region and the other in your secondary (failover) region. Azure OpenAI allocates quota at the </em><em>subscription-plus-region level</em><em>, so both resources can share a subscription without affecting quota."</em></p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Guideline</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Two resources in the same subscription</strong> (primary region + secondary region)</td>
+<td>Quotas are on a <strong>subscription+region</strong> basis, so even if the same subscription is used, they do not consume each other.</td>
+</tr>
+<tr>
+<td><strong>Replicate the same model deployment</strong> in each region</td>
+<td>Simplifies routing logic in case of failover</td>
+</tr>
+<tr>
+<td><strong>Assign all available quota to one deployment</strong></td>
+<td><em>"Full allocation provides </em><em>higher throughput</em><em> compared to splitting quota across multiple deployments."</em></td>
+</tr>
+<tr>
+<td>When the subscription quota is exhausted, <strong>add a new subscription</strong> to deploy behind the gateway</td>
+<td>Bypass subscription unit limits</td>
+</tr>
+</tbody>
+</table>
+<h4 id="en-private-endpoint">📌 Caution for Private Endpoint</h4>
+<p>Private Endpoint is a security feature that provides a <strong>private network access path to AOAI resources</strong>.</p>
+<p><strong>Even if the Private Endpoint is in a different region, the resource region, model capacity, quota, and data processing location do not change.</strong> It is also not an automatic failover method for regional outages.</p>
+<p>In multi-region HA, <strong>each resource must independently configure and test Private Endpoint, Private DNS, routing, and gateway paths</strong>.</p>
+<h3 id="en-73-active-active-vs-active-passive">7.3 Active-Active vs Active-Passive</h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Switching Characteristics</th>
+<th>Advantages</th>
+<th>Disadvantages</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Hot/Hot</strong></td>
+<td>Both paths are always active → <strong>Can be designed to target the lowest switching delay</strong></td>
+<td>Paths are constantly verified</td>
+<td>Increased cost, capacity distribution</td>
+</tr>
+<tr>
+<td><strong>Hot/Warm</strong></td>
+<td>Only backup path and partial capacity prepared → <strong>Requires expansion or operational procedures</strong></td>
+<td>Cost balance</td>
+<td>Manual intervention required for switching</td>
+</tr>
+<tr>
+<td><strong>Hot/Cold</strong></td>
+<td>Deployment or capacity allocation starts after failure</td>
+<td>Lowest cost</td>
+<td><strong>Unsuitable for mission-critical reasoning paths</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Consider Azure paired regions</strong> as well. Paired regions have coordinated platform updates and prioritized recovery. However, not all regions are paired.</p>
+<h3 id="en-74">7.4 Managing Consistency Across Regions</h3>
+<p>To prevent a situation where failover "works but produces different results," synchronize the following via IaC.</p>
+<ul>
+<li>[ ] Model <strong>name + version</strong> identical</li>
+<li>[ ] <strong>Deployment name identical</strong> (simplifies routing logic)</li>
+<li>[ ] Content filter configuration identical (if only one side has a custom filter, results will differ)</li>
+<li>[ ] RBAC / network (Private Endpoint, DNS) configuration identical</li>
+<li>[ ] Diagnostic settings identical (to avoid regions without logs during failures)</li>
+</ul>
+<h3 id="en-75">7.5 Global Entry Layer</h3>
+<p>Considering even the availability of APIM itself:</p>
+<div class="mermaid" data-idx="3"></div>
+<ul>
+<li><strong>Front Door</strong>: global anycast entry, auto-routing based on health probes, WAF</li>
+<li><strong>APIM Premium Multi-Region Deployment</strong>: Scale a single APIM instance to multiple regional gateways</li>
+<li><strong>Traffic Manager</strong>: DNS-based — since switching depends on TTL, <strong>use Front Door first for fast failover</strong></li>
+</ul>
+<blockquote>
+<p>The role of <strong>Generative AI Gateway</strong> (gateway tier): multi-endpoint <strong>load balancing</strong>, <strong>circuit breaker</strong>, <strong>rate limiting</strong>, <strong>centralized logging</strong>, and <strong>priority routing</strong> (<em>"mission-critical applications get capacity first during contention"</em>).</p>
+</blockquote>
+<hr/>
+<h2 id="en-8-ha">8. Capacity Planning and Quota Management — Hidden Failure Points in HA</h2>
+<blockquote>
+<p><strong>If the failover target region has no quota, even the best architecture diagram cannot prevent nothing from happening during a failure.</strong></p>
+</blockquote>
+<p>This is the blind spot that most often appears during an actual failure.</p>
+<h3 id="en-81-quota-capacity">8.1 🔴 Quota ≠ Capacity — The Most Dangerous Misunderstanding</h3>
+<blockquote>
+<p><em>"</em><em>Having PTU quota doesn't guarantee that capacity is available.</em><em> If capacity in the region is insufficient for the requested PTU count, </em><em>the deployment fails.</em><em> Always verify capacity availability before planning a deployment or purchasing a reservation."</em></p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Concept</th>
+<th>Definition</th>
+<th>Personality</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Quota</strong></td>
+<td>The <strong>maximum</strong> PTUs that can be deployed</td>
+<td><strong>Policy limit</strong> enforced by Azure · <strong>No cost</strong></td>
+</tr>
+<tr>
+<td><strong>Capacity</strong></td>
+<td>The <strong>actual</strong> PTUs deployable</td>
+<td>Finite resource · allocated at the time of deployment and maintained during the deployment’s lifetime</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The plan of 'Since we have the quota, we can deploy during failover' will fail.</strong> Even if you have a quota, deployment itself will fail if there is no capacity in the region at that moment.</p>
+<h4 id="en-_5">An Even More Dangerous Fact — Returned Capacity May Not Come Back</h4>
+<blockquote>
+<p><em>"</em><em>Deleting or scaling down a deployment releases its capacity back to the region pool.</em><em> There's </em><em>no guarantee the same capacity is available</em><em> if you re-create or scale the deployment up later."</em></p>
+<p><em>"</em><em>Capacity availability changes throughout the day</em><em> based on customer demand across all regions and models."</em></p>
+</blockquote>
+<p>You can check the maximum deployable PTUs for a specific model and region using the <strong>Model capacities API</strong>.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Recommended to be included in pre-deployment/regular maintenance scripts</span>
+az<span class="w"> </span>rest<span class="w"> </span>--method<span class="w"> </span>get<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--url<span class="w"> </span><span class="s2">"https://management.azure.com/subscriptions/</span><span class="nv">$SUB</span><span class="s2">/providers/Microsoft.CognitiveServices/modelCapacities?api-version=2024-10-01&amp;modelFormat=OpenAI&amp;modelName=gpt-4.1&amp;modelVersion=2025-04-14"</span>
+</code></pre></div>
+<h3 id="en-82">8.2 Quotas are <strong>Pools separated by deployment type</strong></h3>
+<blockquote>
+<p><em>"Quota is scoped at the </em><em>offering level</em><em> (Global Provisioned, Data Zone Provisioned, and Regional Provisioned are </em><em>separate quota pools</em><em>) and at the </em><em>region level</em><em>."</em></p>
+</blockquote>
+<p>In other words, a quota is on the <strong>(Subscription × Region × Deployment Type)</strong> basis.</p>
+<table>
+<thead>
+<tr>
+<th>False Assumption</th>
+<th>Actual</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>"We have 100 PTU quotas, so any type can be deployed"</td>
+<td>❌ Global / Data Zone / Regional quotas are <strong>separate from each other</strong></td>
+</tr>
+<tr>
+<td>"Since there is leftover quota in East US, it can be used in West Europe"</td>
+<td>❌ <em>"Quota in East US doesn't carry over to West Europe."</em></td>
+</tr>
+</tbody>
+</table>
+<p><strong>HA design implication</strong>: To change <strong>deployment type</strong> in a failover path (e.g., Regional PTU → Global PTU), you must <strong>secure a quota for that type separately</strong>.</p>
+<h3 id="en-83-reservation-failover">8.3 Reservation constrains Failover design</h3>
+<table>
+<thead>
+<tr>
+<th>Characteristics</th>
+<th>Content</th>
+<th>HA impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Purchase by type</strong></td>
+<td>Global / Data Zone / Regional reservations are <strong>purchased separately</strong>. Global reservations do <strong>not cover</strong> Regional deployments.</td>
+<td>If the type changes due to failover, <strong>discounts do not apply → costs surge</strong></td>
+</tr>
+<tr>
+<td><strong>Global reservations are region-independent</strong></td>
+<td>With a single Global reservation, you can <strong>cover Global PTU deployments in multiple regions at once</strong></td>
+<td>✅ <strong>Most advantageous for multi-region HA</strong></td>
+</tr>
+<tr>
+<td><strong>Data Zone / Regional requires matching regions</strong></td>
+<td>The deployment region and reservation region must <strong>match</strong></td>
+<td>Separate reservations for each region → increases cost and management burden</td>
+</tr>
+<tr>
+<td><strong>Reservations do not guarantee capacity</strong></td>
+<td><em>"Purchasing a reservation doesn't reserve capacity."</em> <strong>Check capacity through deployment first, then purchase a reservation</strong></td>
+<td>If you do it in reverse order, you might buy only the reservation and fail the deployment</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💰 <strong>If you are planning multi-region HA, Global Provisioned is overwhelmingly advantageous in terms of reservations.</strong>
+Example: East US 50 + West Europe 100 + Australia East 200 PTU → <strong>one Global reservation of 350 units can cover all regions</strong>.
+In contrast, Regional Provisioned requires separate reservations for each region and has a minimum PTU (Section 3.2), significantly increasing the cost of multi-region configuration.</p>
+</blockquote>
+<h3 id="en-84">8.4 Must Check</h3>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Check Method</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Actual TPM/PTU quota of the failover region</td>
+<td>Foundry Portal → Quotas / Azure Portal → Usage + quotas</td>
+</tr>
+<tr>
+<td><strong>Whether it is</strong> a quota of the deployment type</td>
+<td>Check separately for Global/Data Zone/Regional</td>
+</tr>
+<tr>
+<td><strong>Existence of capacity</strong></td>
+<td>Model capacities API (§8.1)</td>
+</tr>
+<tr>
+<td>Whether the quota has <strong>already been used by another deployment</strong></td>
+<td>Regional quotas are shared among deployments</td>
+</tr>
+<tr>
+<td>PTU <strong>minimum deployment size and increment</strong></td>
+<td>Global/DZ is 15/5, Regional is 25–50 units (§3.2)</td>
+</tr>
+<tr>
+<td>Subscription limit</td>
+<td>When exhausted, <strong>add a new subscription</strong> and deploy behind the gateway</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-85">8.5 Capacity Scenario Calculation</h3>
+<p>When designing failover, calculate at least the following three items.</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Required Capacity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Normal</td>
+<td>Primary handles 100%</td>
+</tr>
+<tr>
+<td>Primary saturation</td>
+<td>Can standard Spillover distribution absorb the <strong>peak excess</strong>?</td>
+</tr>
+<tr>
+<td><strong>Loss of Primary region</strong></td>
+<td>Can Secondary handle <strong>100% of normal traffic</strong>?</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ The third point is critical. The plan of "keeping Secondary small and scaling it later" often cannot be executed during an outage <strong>because increasing quotas takes time</strong>.</p>
+</blockquote>
+<hr/>
+<h2 id="en-9">9. Model Lifecycle — Silent Availability Risk</h2>
+<p>This is a type (F5) that cannot be prevented by infrastructure redundancy.</p>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Impact</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Model <strong>Version Retirement</strong></td>
+<td>Call failure after a certain point in time</td>
+<td>Track retirement schedule, set migration deadline</td>
+</tr>
+<tr>
+<td><strong>Auto-upgrade</strong> settings</td>
+<td>Model behavior changes without notice</td>
+<td>Version locking in production recommended</td>
+</tr>
+<tr>
+<td>Regional <strong>version discrepancies</strong></td>
+<td>Different version responds during failover</td>
+<td>Version synchronization between regions (§7.3)</td>
+</tr>
+<tr>
+<td>API version change</td>
+<td>Parameter compatibility issues</td>
+<td><code>api-version</code> fixed + regression test</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Recommended Operational Routine</strong></p>
+<ol>
+<li>Check the retirement schedule of deployed models and versions quarterly</li>
+<li>New versions are first validated through <strong>canary deployment</strong> (weight 5~10%)</li>
+<li>Before promotion, <strong>regression test</strong>: output format, tool calling, <code>response_format</code>, changes in token usage</li>
+</ol>
+<hr/>
+<h2 id="en-10-layer-5-graceful-degradation">10. Layer 5 — Graceful Degradation</h2>
+<p>Define in advance what to show <strong>instead of an 'error screen'</strong> when all backends fail.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Strategy</th>
+<th>User Experience</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Other deployment/region of the same-grade model</td>
+<td>No change</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Downgrade to a lightweight model</strong> (e.g., mini series)</td>
+<td>Slight decrease in quality, response maintained</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Reuse semantic cache responses</strong></td>
+<td>Reduction in timeliness</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Provide only rule-based/template responses</strong> or search results</td>
+<td>Reduction of AI capabilities</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Explicit guidance + prompt for retry</td>
+<td>Fails but predictable</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Implementation hints</strong></p>
+<ul>
+<li>Assign <code>criticality</code> (critical/normal/low) tags to requests, and downgrade in 2–4 steps from low grade under capacity pressure</li>
+<li>In case the backend disconnects during streaming, preserve the part already transmitted and append a 'temporary error' message as a UX measure</li>
+</ul>
+<hr/>
+<h2 id="en-11">11. Reference Architecture</h2>
+<blockquote>
+<p>The configuration below reflects §3.5's <strong>Enterprise PTU Pool Pattern</strong> and <strong>Region Anti-affinity Principle</strong>.</p>
+</blockquote>
+<h3 id="en-111-tier-1-ptu">11.1 Tier 1 — Standard Workload (No PTU Required)</h3>
+<div class="codehilite"><pre><span></span><code>Client → APIM
+           ├─ [P1] AOAI Region A: Global Standard (Total Quota Allocation)
+           └─ [P2] AOAI Region B : Global Standard (Total Quota Allocation)
+</code></pre></div>
+<ul>
+<li>Same subscription, 2 resources (main/secondary). Quotas are per subscription + region, so no mutual interference</li>
+<li>If there is a residency requirement, replace Global Standard → <strong>Data Zone Standard</strong></li>
+<li>Cost: low · capable of handling regional failures</li>
+</ul>
+<h3 id="en-112-tier-2-production-ptu">11.2 Tier 2 — General Production (PTU Adopted)</h3>
+<div class="codehilite"><pre><span></span><code>Client → APIM
+           ├─ [P1] Enterprise PTU Pool            (Region A)
+           │         └─ Spillover ─▶ Same Resource Standard
+           └─ [P2] Standard (Global/Data Zone)          (Region B)  ← Another region
+</code></pre></div>
+<ul>
+<li><strong>Place PTU and Standard backup in different regions</strong> (anti-affinity principle)</li>
+<li>Capacity failure: Spillover (within the same region) · Regional failure: Priority 2 backend</li>
+<li>Cost: Medium</li>
+</ul>
+<h3 id="en-113-tier-3-3-failover">11.3 Tier 3 — Mission Critical (3-level Failover Chain)</h3>
+<div class="codehilite"><pre><span></span><code>Client → Front Door
+   ├─ APIM (Region A) ─┬─ [P1] Workload Dedicated PTU      (Region A)
+   │                   ├─ [P2] Enterprise PTU Pool     (Region B)
+   │                   └─ [P3] Standard               (Region C)
+   └─ APIM (Region B) ─┴─ (Same pool configuration)
+</code></pre></div>
+<p>This is a form that implements a 3-level failover chain.</p>
+<blockquote>
+<p><em>"Configure the failover chain so the workload-dedicated deployment </em><em>fails over first to the enterprise PTU pool</em><em> and </em><em>then to the Standard deployment</em><em>."</em></p>
+</blockquote>
+<ul>
+<li><strong>PTU endpoints also handle P1→P2 stage</strong> → Advantageous for maintaining consistent latency as long as model-specific latency targets are met</li>
+<li>When reaching P3 (Standard), best-effort without latency target → Trigger point for performance degradation mode (§10)</li>
+<li>Cost: High</li>
+</ul>
+<h3 id="en-114">11.4 Summary of Roles by Component</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Responsible Failure</th>
+<th>What Happens If Missing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Client Retry/Backoff</td>
+<td>Momentary 429·5xx</td>
+<td>Small failure amplified into major failure</td>
+</tr>
+<tr>
+<td>Spillover</td>
+<td>PTU Saturation (Same Region)</td>
+<td>User failures at each peak</td>
+</tr>
+<tr>
+<td><strong>Enterprise PTU Pool</strong></td>
+<td>Workload PTU Saturation</td>
+<td>Lose latency targets and fall straight to Standard</td>
+</tr>
+<tr>
+<td><strong>Region Anti-Correlation Deployment</strong></td>
+<td>Region Failure</td>
+<td>PTU and backup lost <strong>simultaneously</strong></td>
+</tr>
+<tr>
+<td>APIM Circuit Breaker</td>
+<td>Persistently failing backend</td>
+<td>Continue sending to dead backend</td>
+</tr>
+<tr>
+<td>APIM Priority Pool</td>
+<td>Region Failure</td>
+<td>Region Incident = Service Outage</td>
+</tr>
+<tr>
+<td>Front Door</td>
+<td>Gateway Failure</td>
+<td>APIM is SPOF</td>
+</tr>
+<tr>
+<td><strong>Quota + Capacity Pre-secured</strong></td>
+<td>Cannot Deploy During Failover</td>
+<td><strong>Failover Fails</strong></td>
+</tr>
+<tr>
+<td>Performance Degradation Mode</td>
+<td>Full Saturation</td>
+<td>Total Failure</td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<h2 id="en-12-ha">12. HA Checklist</h2>
+<h3 id="en-_6">Design</h3>
+<ul>
+<li>[ ] Response measures are mapped for each type of failure (F1~F6)</li>
+<li>[ ] The failover candidate region meets the data residency requirements</li>
+<li>[ ] <strong>Consciously decided whether it is Global / Data Zone / Regional</strong> and the rationale is documented</li>
+<li>[ ] Verified that the selected deployment type is <strong>actually available in the target region using the model region availability table</strong> (e.g., Data Zone Provisioned is not available in APAC)</li>
+<li>[ ] <strong>PTU, Enterprise Pool, and Standard are deployed in different regions</strong> (anti-correlation)</li>
+<li>[ ] Did not assume "it's Global, so it's safe from regional failures" (endpoints are region-specific)</li>
+</ul>
+<h3 id="en-_7">Implementation</h3>
+<ul>
+<li>[ ] The client interprets <code>Retry-After</code> and switches paths if the value is excessive</li>
+<li>[ ] <strong>Even with spillover, maintains client retry logic</strong> (if the standard deployment also fails, the error is passed through as-is, §5.6)</li>
+<li>[ ] Total timeout budget = <strong>(number of attempts × backend timeout) + sum of retry intervals</strong> is within the client timeout (§6.6)</li>
+<li>[ ] Standard spillover deployment is connected to the PTU deployment</li>
+<li>[ ] APIM backend authenticates with Managed Identity, and the role is <strong><code>Cognitive Services OpenAI User</code></strong> (minimum permission for inference only)</li>
+<li>[ ] Backend pool is priority-based, and <strong>all backends have circuit breakers</strong></li>
+<li>[ ] Circuit breaker is configured to <strong>respect 429 and <code>Retry-After</code></strong></li>
+<li>[ ] Response includes headers identifying the processing backend</li>
+<li>[ ] Application logs <code>x-ms-spillover-from-deployment</code> / <code>x-ms-spillover-error</code> / <code>x-ms-deployment-name</code></li>
+</ul>
+<h3 id="en-_8">Operations</h3>
+<ul>
+<li>[ ] Failover region quota can handle <strong>100% of normal traffic</strong></li>
+<li>[ ] Regularly check <strong>actual capacity, not quota</strong> (Model capacities API)</li>
+<li>[ ] Secured <strong>separate quotas for each deployment type</strong> (separate pools for Global/DZ/Regional)</li>
+<li>[ ] Confirmed that reservations <strong>cover failover target deployment types and regions</strong></li>
+<li>[ ] Do not operate <strong>PTU reduction and re-expansion for cost saving purposes</strong> (no guarantee of capacity recovery)</li>
+<li>[ ] Model versions, filters, and network configurations are synchronized across regions</li>
+<li>[ ] Review model retirement schedule quarterly</li>
+<li>[ ] <code>IsSpillover</code>, <code>AzureOpenAIAvailabilityRate</code>, 429/5xx alerts are set</li>
+<li>[ ] Alerts are set for <strong>429 in standard deployment</strong> (real user impact metrics, §5.7)</li>
+<li>[ ] <strong>Cost alerts</strong> are also set for the spillover rate (billing method change, §5.8)</li>
+<li>[ ] Performance degradation mode is implemented and tested</li>
+</ul>
+<hr/>
+<h2 id="en-a">Appendix A. Common Mistakes</h2>
+<ol>
+<li><strong>Only configure Spillover and consider it "HA complete"</strong> — powerless against regional failures</li>
+<li><strong>Wait for a long <code>Retry-After</code> as is</strong> — service effectively stops</li>
+<li><strong>Ignore <code>Retry-After</code> and retry immediately</strong> — throttle amplification</li>
+<li><strong>Only configured a priority pool without a circuit breaker</strong> — lower priorities are never used</li>
+<li><strong>Failover region quota not secured</strong> — failover occurs but immediately returns 429</li>
+<li><strong>Model version mismatch between regions</strong> — results differ after failover</li>
+<li><strong>Excessive gateway retries</strong> — load accumulates before the circuit breaker opens</li>
+<li><strong>Single-region APIM</strong> — the gateway is a SPOF</li>
+<li><strong>No performance degradation mode</strong> — complete failure under full load</li>
+<li><strong>Granted broad <code>Cognitive Services User</code> permissions to APIM managed identity</strong> — unnecessary privileges, including account key lookup, are added. If only AOAI inference is needed, <strong>consider <code>Cognitive Services OpenAI User</code> first</strong> (§6.1)</li>
+<li><strong>Judged PTU saturation by 429 count</strong> — Spillover requests are not recorded as 429 in PTU, so <strong>saturation was missed</strong> (§5.7)</li>
+<li><strong>Judged client retry unnecessary because there is spillover</strong> — Even if the standard distribution fails, the error is passed as is (§5.6)</li>
+<li><strong>Mistook gateway <code>timeout</code> as the total budget</strong> — It is per attempt, so it should be multiplied by the number of retries (§6.6)</li>
+<li><strong>Streaming but <code>buffer-response="false"</code> not set</strong> — The response is buffered, nullifying the streaming advantage</li>
+<li><strong>"It's Global deployment, so it's safe from regional failures"</strong> — Even though processing is global, <strong>endpoints are region-fixed</strong> (§3.1)</li>
+<li><strong>Treated PTU as a single type</strong> — Global/Data Zone/Regional differ in minimum PTU, quota pool, reservations, and regional availability (§3.2)</li>
+<li><strong>Place PTU and backup Standard in the same region</strong> — Simultaneous loss in case of regional failure (§3.5 Partial Correlation Principle)</li>
+<li><strong>Only secure the quota and do not check the capacity</strong> — Even with a quota, if there is no capacity, <strong>the deployment itself will fail</strong> (§8.1)</li>
+<li><strong>Reduce PTU at night for cost savings</strong> — May not be able to secure the capacity returned (§8.1)</li>
+<li><strong>Deployment type changes during failover, but quotas/reservations for that type are not secured</strong> — Switch occurs, but discounts are not applied or deployment fails (§8.2~8.3)</li>
+<li><strong>Attempting multi-region HA with Regional Provisioned</strong> — Minimum PTU is large and separate reservations are needed for each region → costs surge (§3.2, §8.3)</li>
+<li>🚨 <strong>Data Zone PTU spills over to Global Standard</strong> — Overflow during peak is processed <strong>outside the data zone</strong>, violating residency requirements. Not detected as an error, discovered during audit (§5.2)</li>
+<li><strong>Spillover Global PTU to Region <code>Standard</code></strong> — Overflow is tied to a single region's shared quota, losing the benefits of Global (§5.2)</li>
+<li><strong>Plan Data Zone Provisioned in APAC</strong> — Not provided. Must be checked with the <strong>model region availability table</strong>, not the concept documentation</li>
+<li><strong>Mistaking Spillover as "Regional Redundancy"</strong> — Since both deployments share the <strong>same endpoint</strong>, it is ineffective against endpoint failures (§5.2, §5.5)</li>
+</ol>
+<h2 id="en-b">Appendix B. Reference Documents</h2>
+<h3 id="en-ha_1">Official HA / Architecture</h3>
+<ul>
+<li><strong>High availability and resiliency (BCDR guide)</strong>: https://learn.microsoft.com/azure/foundry/how-to/high-availability-resiliency</li>
+<li>Azure OpenAI gateway architecture guide: https://learn.microsoft.com/azure/architecture/ai-ml/guide/azure-openai-gateway-guide</li>
+<li>Circuit breaker pattern: https://learn.microsoft.com/azure/architecture/patterns/circuit-breaker</li>
+<li>Azure pairing regions: https://learn.microsoft.com/azure/reliability/cross-region-replication-azure</li>
+</ul>
+<h3 id="en-_9">Deployment types · Capacity</h3>
+<ul>
+<li><strong>Concept of Provisioned throughput (3 types)</strong>: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput</li>
+<li><strong>Deployment types (comparison of all SKUs)</strong>: https://learn.microsoft.com/azure/foundry/foundry-models/concepts/deployment-types</li>
+<li>🔑 <strong>Model region availability table (Deployment type × Region updated)</strong>: https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure-region-availability?pivots=provisioned</li>
+<li>Context limits by model (by deployment type): https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure</li>
+<li>PTU sizing (minimum and increments by model): https://learn.microsoft.com/azure/foundry/openai/how-to/provisioned-throughput-sizing</li>
+<li><strong>PTU billing and Azure reservations</strong>: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput-billing</li>
+<li>Spillover traffic management: https://learn.microsoft.com/azure/foundry/openai/how-to/spillover-traffic-management</li>
+<li>Model capacities API: https://learn.microsoft.com/rest/api/aiservices/accountmanagement/model-capacities/list</li>
+<li>Model retirement and version management: https://learn.microsoft.com/azure/ai-services/openai/concepts/model-retirements</li>
+</ul>
+<h3 id="en-api-management">API Management</h3>
+<ul>
+<li>API Management backends (pool · circuit breaker · load balancing): https://learn.microsoft.com/azure/api-management/backends</li>
+<li>Backend - Create Or Update (REST, <code>2024-05-01</code>): https://learn.microsoft.com/rest/api/apimanagement/backend/create-or-update</li>
+<li>APIM <code>forward-request</code> policy (meaning of timeout · buffer-response): https://learn.microsoft.com/azure/api-management/forward-request-policy</li>
+<li>APIM <code>retry</code> policy: https://learn.microsoft.com/azure/api-management/retry-policy</li>
+<li>APIM Server-sent events (SSE) handling: https://learn.microsoft.com/azure/api-management/how-to-server-sent-events</li>
+<li>APIM <code>authentication-managed-identity</code> policy: https://learn.microsoft.com/azure/api-management/authentication-managed-identity-policy</li>
+<li>APIM GenAI gateway capabilities: https://learn.microsoft.com/azure/api-management/genai-gateway-capabilities</li>
+</ul>
+<h3 id="en-_10">Security · Observability</h3>
+<ul>
+<li>Azure OpenAI RBAC: https://learn.microsoft.com/azure/ai-services/openai/how-to/role-based-access-control</li>
+<li>Azure built-in roles (AI + Machine Learning): https://learn.microsoft.com/azure/role-based-access-control/built-in-roles/ai-machine-learning</li>
+<li>Supported metrics (Microsoft.CognitiveServices/accounts): https://learn.microsoft.com/azure/azure-monitor/reference/supported-metrics/microsoft-cognitiveservices-accounts-metrics</li>
+</ul>
+<hr/>
+<p class="meta">Last modified 2026-08-11 · Microsoft Scout</p>
+</main>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 <script>
 (function () {

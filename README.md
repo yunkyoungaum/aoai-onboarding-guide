@@ -156,7 +156,17 @@ python -m http.server 8000
 
 ## 언어 전환
 
-허브와 각 가이드의 `English` 버튼으로 한국어와 영어 메타데이터·공통 UI를 전환할 수 있습니다. 선택한 언어는 브라우저의 `localStorage`에 저장되어 페이지를 이동해도 유지됩니다. 새 가이드에서 전환 가능한 문구를 추가할 때는 `data-ko`와 `data-en` 속성을 함께 사용하세요.
+허브와 각 가이드의 `한국어` / `English` 버튼으로 본문 전체를 전환할 수 있습니다. 언어는 `?lang=ko|en`, 브라우저에 저장된 선택, 브라우저 기본 언어 순서로 결정되며 페이지를 이동해도 유지됩니다.
+
+한국어 원문을 수정한 뒤 영어 컨테이너를 다시 생성하고 검증합니다.
+
+```bash
+python3 -m pip install -r scripts/requirements.txt
+python3 scripts/build_bilingual.py --guide 03
+python3 scripts/validate_bilingual.py 03
+```
+
+전체 가이드는 `--guide all`로 생성하고 인자 없이 검증할 수 있습니다. 번역 결과는 `scripts/translation-cache.json`에 저장되므로 자동 번역 후 Azure 용어와 문장 품질을 검토하세요.
 
 ---
 

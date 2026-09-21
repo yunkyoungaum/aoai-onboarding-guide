@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Azure OpenAI 배포 & 운영 모니터링 가이드</title>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Azure OpenAI 배포 &amp; 운영 모니터링 가이드</title>
 <script>
   (() => {
     const param = new URLSearchParams(window.location.search).get("scoutTheme");
@@ -357,11 +358,11 @@ html[data-theme="dark"] .codehilite .vm { color: #F8F8F2 } /* Name.Variable.Magi
 html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Integer.Long */
 </style>
 </head>
-<body>
-<div class="layout">
-  <nav class="sidebar">
-    <h2>목차</h2>
-    <div class="toc">
+<body data-lang="ko" data-title-en="Azure OpenAI (AOAI) Deployment &amp; Operations Monitoring Guide" data-title-ko="Azure OpenAI 배포 &amp; 운영 모니터링 가이드">
+<div class="layout lang-ko">
+<nav class="sidebar">
+<h2>목차</h2>
+<div class="toc">
 <ul>
 <li><a href="#0-tldr">0. TL;DR — 최소 구성 체크리스트</a></li>
 <li><a href="#1">1. 배포 아키텍처 설계</a><ul>
@@ -440,32 +441,19 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li><a href="#b">부록 B. 참고 문서</a></li>
 </ul>
 </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-  </nav>
-  <main>
-    <div class="topbar">
-      <span class="badge">Azure OpenAI · Operations Guide</span>
-      <button class="toggle" id="themeToggle" type="button">테마 전환</button>
-    </div>
-    <h1 id="azure-openaiaoai">Azure OpenAI(AOAI) 배포 &amp; 운영 모니터링 가이드</h1>
+</nav>
+<main>
+<div class="topbar">
+<span class="badge">Azure OpenAI · Operations Guide</span>
+<button class="toggle" id="themeToggle" type="button">테마 전환</button>
+</div>
+<h1 id="azure-openaiaoai">Azure OpenAI(AOAI) 배포 &amp; 운영 모니터링 가이드</h1>
 <blockquote>
-<p><strong>대상</strong> &nbsp;·&nbsp; AOAI를 <strong>Production</strong>에서 운영하는 아키텍트, SRE, 플랫폼 팀</p>
-<p><strong>범위</strong> &nbsp;·&nbsp; 배포 설계 → 관측(Observability) 구성 → Metric/Log → Alert → 대시보드 → 장애 대응 Runbook</p>
-<p><strong>관련 가이드</strong> &nbsp;·&nbsp; <a href="../01-oai-to-aoai-onboarding/">01 온보딩</a> · <a href="../02-aoai-foundations/">02 기본 개념</a> · <a href="../04-aoai-high-availability/">04 고가용성</a></p>
+<p><strong>대상</strong>  ·  AOAI를 <strong>Production</strong>에서 운영하는 아키텍트, SRE, 플랫폼 팀</p>
+<p><strong>범위</strong>  ·  배포 설계 → 관측(Observability) 구성 → Metric/Log → Alert → 대시보드 → 장애 대응 Runbook</p>
+<p><strong>관련 가이드</strong>  ·  <a href="../01-oai-to-aoai-onboarding/">01 온보딩</a> · <a href="../02-aoai-foundations/">02 기본 개념</a> · <a href="../04-aoai-high-availability/">04 고가용성</a></p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="0-tldr">0. TL;DR — 최소 구성 체크리스트</h2>
 <table>
 <thead>
@@ -527,7 +515,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </tr>
 </tbody>
 </table>
-<hr />
+<hr/>
 <h2 id="1">1. 배포 아키텍처 설계</h2>
 <h3 id="11">1.1 권장 표준 아키텍처</h3>
 <div class="mermaid" data-idx="0"></div>
@@ -600,9 +588,8 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <div class="codehilite"><pre><span></span><code>리소스:  aoai-&lt;env&gt;-&lt;region&gt;-&lt;seq&gt;              예) aoai-prod-krc-01
 배포명:  &lt;model&gt;-&lt;version&gt;-&lt;tier&gt;               예) gpt-4o-2024-11-20-ptu
 </code></pre></div>
-
 <p>권장 태그: <code>env</code>, <code>owner</code>, <code>costcenter</code>, <code>workload</code>, <code>tier(ptu|paygo)</code>, <code>dataclass</code></p>
-<hr />
+<hr/>
 <h2 id="2-diagnostic-settings">2. 진단 설정 (Diagnostic Settings)</h2>
 <p><strong>경로</strong>: <code>Azure OpenAI Resource → Monitoring → Diagnostic settings → + Add diagnostic setting</code></p>
 <h3 id="21">2.1 로그 카테고리</h3>
@@ -691,39 +678,37 @@ AOAI 로그 비용은 <strong>두 겹</strong>으로 발생합니다.</p>
 특히 <code>RequestResponse</code>는 호출량에 비례해 수집량이 커지므로, 과금 표시가 "없음"이더라도 <strong>비용에 가장 큰 영향을 주는 카테고리</strong>인 경우가 많습니다. 트래픽이 많다면 수집 볼륨을 먼저 측정하세요(§2.4).</p>
 </blockquote>
 <h3 id="22-bicep">2.2 Bicep 예시</h3>
-<div class="codehilite"><pre><span></span><code>resource aoai &#39;Microsoft.CognitiveServices/accounts@2024-10-01&#39; existing = {
+<div class="codehilite"><pre><span></span><code>resource aoai 'Microsoft.CognitiveServices/accounts@2024-10-01' existing = {
   name: aoaiName
 }
 
-resource diag &#39;Microsoft.Insights/diagnosticSettings@2021-05-01-preview&#39; = {
-  name: &#39;aoai-to-law&#39;
+resource diag 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  name: 'aoai-to-law'
   scope: aoai
   properties: {
     workspaceId: lawId
     logs: [
-      { category: &#39;Audit&#39;,                   enabled: true }
-      { category: &#39;RequestResponse&#39;,         enabled: true }
-      { category: &#39;Trace&#39;,                   enabled: true }
-      { category: &#39;AzureOpenAIRequestUsage&#39;, enabled: true }
+      { category: 'Audit',                   enabled: true }
+      { category: 'RequestResponse',         enabled: true }
+      { category: 'Trace',                   enabled: true }
+      { category: 'AzureOpenAIRequestUsage', enabled: true }
     ]
     metrics: [
-      { category: &#39;AllMetrics&#39;, enabled: true }
+      { category: 'AllMetrics', enabled: true }
     ]
   }
 }
 </code></pre></div>
-
 <div class="codehilite"><pre><span></span><code>az<span class="w"> </span>monitor<span class="w"> </span>diagnostic-settings<span class="w"> </span>create<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--name<span class="w"> </span>aoai-to-law<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--resource<span class="w"> </span><span class="nv">$AOAI_RESOURCE_ID</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--workspace<span class="w"> </span><span class="nv">$LAW_RESOURCE_ID</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--logs<span class="w"> </span><span class="s1">&#39;[{&quot;category&quot;:&quot;Audit&quot;,&quot;enabled&quot;:true},</span>
-<span class="s1">           {&quot;category&quot;:&quot;RequestResponse&quot;,&quot;enabled&quot;:true},</span>
-<span class="s1">           {&quot;category&quot;:&quot;Trace&quot;,&quot;enabled&quot;:true},</span>
-<span class="s1">           {&quot;category&quot;:&quot;AzureOpenAIRequestUsage&quot;,&quot;enabled&quot;:true}]&#39;</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--metrics<span class="w"> </span><span class="s1">&#39;[{&quot;category&quot;:&quot;AllMetrics&quot;,&quot;enabled&quot;:true}]&#39;</span>
+<span class="w">  </span>--logs<span class="w"> </span><span class="s1">'[{"category":"Audit","enabled":true},</span>
+<span class="s1">           {"category":"RequestResponse","enabled":true},</span>
+<span class="s1">           {"category":"Trace","enabled":true},</span>
+<span class="s1">           {"category":"AzureOpenAIRequestUsage","enabled":true}]'</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--metrics<span class="w"> </span><span class="s1">'[{"category":"AllMetrics","enabled":true}]'</span>
 </code></pre></div>
-
 <h3 id="23">2.3 ⚠️ 반드시 알아야 할 두 가지 한계</h3>
 <p>이 두 가지를 모르면 <strong>"KQL을 썼는데 데이터가 안 나온다"</strong> 는 상황에 빠집니다.</p>
 <p><strong>① <code>AllMetrics</code>를 켜도 Log Analytics로 넘어가지 않는 메트릭이 있습니다.</strong>
@@ -794,14 +779,13 @@ resource diag &#39;Microsoft.Insights/diagnosticSettings@2021-05-01-preview&#39;
 <p><strong>수집 볼륨을 먼저 측정하세요.</strong> 어떤 카테고리가 실제 비용을 만드는지는 트래픽 패턴에 따라 다릅니다.</p>
 <div class="codehilite"><pre><span></span><code><span class="c">// 카테고리별 실제 청구 볼륨 (최근 7일)</span>
 <span class="n">AzureDiagnostics</span>
-<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">ResourceProvider</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">&quot;MICROSOFT.COGNITIVESERVICES&quot;</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">ResourceProvider</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">"MICROSOFT.COGNITIVESERVICES"</span>
 <span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">TimeGenerated</span><span class="w"> </span><span class="p">&gt;</span><span class="w"> </span><span class="n">ago</span><span class="p">(</span><span class="mi">7</span><span class="n">d</span><span class="p">)</span>
 <span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">BillableGB</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">_BilledSize</span><span class="p">)</span><span class="w"> </span><span class="p">/</span><span class="w"> </span><span class="mf">1024.0</span><span class="w"> </span><span class="p">/</span><span class="w"> </span><span class="mf">1024.0</span><span class="w"> </span><span class="p">/</span><span class="w"> </span><span class="mf">1024.0</span><span class="p">,</span>
 <span class="w">            </span><span class="n">Records</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">count</span><span class="p">()</span>
 <span class="w">        </span><span class="k">by</span><span class="w"> </span><span class="n">Category</span>
 <span class="p">|</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">BillableGB</span><span class="w"> </span><span class="n">desc</span>
 </code></pre></div>
-
 <div class="codehilite"><pre><span></span><code><span class="c">// 워크스페이스 전체에서 AOAI가 차지하는 비중</span>
 <span class="n">Usage</span>
 <span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">TimeGenerated</span><span class="w"> </span><span class="p">&gt;</span><span class="w"> </span><span class="n">ago</span><span class="p">(</span><span class="mi">30</span><span class="n">d</span><span class="p">)</span>
@@ -809,7 +793,6 @@ resource diag &#39;Microsoft.Insights/diagnosticSettings@2021-05-01-preview&#39;
 <span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">GB</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">Quantity</span><span class="p">)</span><span class="w"> </span><span class="p">/</span><span class="w"> </span><span class="mf">1024.0</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">DataType</span>
 <span class="p">|</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">GB</span><span class="w"> </span><span class="n">desc</span>
 </code></pre></div>
-
 <p><strong>비용 절감 수단</strong></p>
 <table>
 <thead>
@@ -837,7 +820,7 @@ resource diag &#39;Microsoft.Insights/diagnosticSettings@2021-05-01-preview&#39;
 </tr>
 </tbody>
 </table>
-<hr />
+<hr/>
 <h2 id="3-azure-monitor-metric">3. Azure Monitor에서 꼭 봐야 할 Metric</h2>
 <blockquote>
 <p>아래 <em>REST API 이름</em>이 알림 규칙·Grafana·CLI에서 실제로 쓰는 값입니다. 포털 표시명과 다르므로 반드시 확인하세요.</p>
@@ -1004,7 +987,6 @@ AzureOpenAIRequests (StatusCode = 429)      증가
         +
 AzureOpenAITimeToResponse                   증가
 </code></pre></div>
-
 <p>세 지표가 <strong>동시에</strong> 움직이면 진단은 하나입니다.</p>
 <blockquote>
 <p>실제 고객 사례의 상당수는 <strong>"AOAI 장애"가 아니라 "PTU 포화"</strong> 입니다.
@@ -1016,7 +998,7 @@ AzureOpenAITimeToResponse                   증가
 <li>Spillover 비율이 지속적으로 높다 → <strong>PTU 증설 검토 신호</strong></li>
 <li>Spillover 비율이 급증 + 지연 증가 → 피크 부하 또는 특정 테넌트 폭주</li>
 </ul>
-<hr />
+<hr/>
 <h2 id="4-http">4. HTTP 상태 코드 해석 가이드</h2>
 <table>
 <thead>
@@ -1066,7 +1048,7 @@ AzureOpenAITimeToResponse                   증가
 </tr>
 </tbody>
 </table>
-<hr />
+<hr/>
 <h2 id="5-application-insights-aoai">5. Application Insights — AOAI 단독으로는 부족한 이유</h2>
 <p>AOAI 플랫폼 메트릭은 다음을 <strong>알지 못합니다</strong>.</p>
 <ul>
@@ -1086,21 +1068,20 @@ AzureOpenAITimeToResponse                   증가
 </ul>
 <h3 id="52-custom-property">5.2 권장 Custom Property (표준화 필수)</h3>
 <div class="codehilite"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;UserId&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;u-8391&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;SessionId&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;s-2f10&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;ConversationId&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;c-77a1&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;Model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;gpt-4o&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;Deployment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;prod-krc&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;Region&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;KoreaCentral&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;Tier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ptu&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;PromptTokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1820</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;CompletionTokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">430</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;StatusCode&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">429</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;RetryCount&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;AppName&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;assistant-web&quot;</span>
+<span class="w">  </span><span class="nt">"UserId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"u-8391"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"SessionId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"s-2f10"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"ConversationId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"c-77a1"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"Model"</span><span class="p">:</span><span class="w"> </span><span class="s2">"gpt-4o"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"Deployment"</span><span class="p">:</span><span class="w"> </span><span class="s2">"prod-krc"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"Region"</span><span class="p">:</span><span class="w"> </span><span class="s2">"KoreaCentral"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"Tier"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ptu"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"PromptTokens"</span><span class="p">:</span><span class="w"> </span><span class="mi">1820</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"CompletionTokens"</span><span class="p">:</span><span class="w"> </span><span class="mi">430</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"StatusCode"</span><span class="p">:</span><span class="w"> </span><span class="mi">429</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"RetryCount"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"AppName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"assistant-web"</span>
 <span class="p">}</span>
 </code></pre></div>
-
 <blockquote>
 <p>🔒 개인정보 주의: <code>UserId</code>는 <strong>가명화(pseudonymized) 식별자</strong>를 사용하고, Prompt 원문 로깅은 데이터 거버넌스 승인 후에만 수행하세요.</p>
 </blockquote>
@@ -1112,7 +1093,6 @@ AzureOpenAITimeToResponse                   증가
    ↓ 어느 세션 (SessionId / ConversationId)
    ↓ 어느 프롬프트 패턴 (토큰 길이 / 템플릿 버전)
 </code></pre></div>
-
 <p>여기까지 연결되어야 <strong>"장애 대응"이 아니라 "원인 제거"</strong> 가 가능합니다.</p>
 <h3 id="54">5.4 구현 스니펫</h3>
 <p><strong>Python (OpenTelemetry + Azure Monitor)</strong></p>
@@ -1123,58 +1103,55 @@ AzureOpenAITimeToResponse                   증가
 <span class="n">configure_azure_monitor</span><span class="p">(</span><span class="n">connection_string</span><span class="o">=</span><span class="n">APPINSIGHTS_CONNECTION_STRING</span><span class="p">)</span>
 <span class="n">tracer</span> <span class="o">=</span> <span class="n">trace</span><span class="o">.</span><span class="n">get_tracer</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
-<span class="n">client</span> <span class="o">=</span> <span class="n">AzureOpenAI</span><span class="p">(</span><span class="n">azure_endpoint</span><span class="o">=</span><span class="n">ENDPOINT</span><span class="p">,</span> <span class="n">api_version</span><span class="o">=</span><span class="s2">&quot;2024-10-21&quot;</span><span class="p">,</span>
+<span class="n">client</span> <span class="o">=</span> <span class="n">AzureOpenAI</span><span class="p">(</span><span class="n">azure_endpoint</span><span class="o">=</span><span class="n">ENDPOINT</span><span class="p">,</span> <span class="n">api_version</span><span class="o">=</span><span class="s2">"2024-10-21"</span><span class="p">,</span>
                      <span class="n">azure_ad_token_provider</span><span class="o">=</span><span class="n">token_provider</span><span class="p">)</span>
 
-<span class="k">with</span> <span class="n">tracer</span><span class="o">.</span><span class="n">start_as_current_span</span><span class="p">(</span><span class="s2">&quot;aoai.chat.completions&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">span</span><span class="p">:</span>
-    <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">&quot;UserId&quot;</span><span class="p">,</span> <span class="n">user_id</span><span class="p">)</span>
-    <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">&quot;SessionId&quot;</span><span class="p">,</span> <span class="n">session_id</span><span class="p">)</span>
-    <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">&quot;Deployment&quot;</span><span class="p">,</span> <span class="s2">&quot;prod-krc&quot;</span><span class="p">)</span>
-    <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">&quot;Model&quot;</span><span class="p">,</span> <span class="s2">&quot;gpt-4o&quot;</span><span class="p">)</span>
-    <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">&quot;Region&quot;</span><span class="p">,</span> <span class="s2">&quot;KoreaCentral&quot;</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">tracer</span><span class="o">.</span><span class="n">start_as_current_span</span><span class="p">(</span><span class="s2">"aoai.chat.completions"</span><span class="p">)</span> <span class="k">as</span> <span class="n">span</span><span class="p">:</span>
+    <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"UserId"</span><span class="p">,</span> <span class="n">user_id</span><span class="p">)</span>
+    <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"SessionId"</span><span class="p">,</span> <span class="n">session_id</span><span class="p">)</span>
+    <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"Deployment"</span><span class="p">,</span> <span class="s2">"prod-krc"</span><span class="p">)</span>
+    <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"Model"</span><span class="p">,</span> <span class="s2">"gpt-4o"</span><span class="p">)</span>
+    <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"Region"</span><span class="p">,</span> <span class="s2">"KoreaCentral"</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">resp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
-            <span class="n">model</span><span class="o">=</span><span class="s2">&quot;prod-krc&quot;</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">800</span><span class="p">)</span>
-        <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">&quot;PromptTokens&quot;</span><span class="p">,</span> <span class="n">resp</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">prompt_tokens</span><span class="p">)</span>
-        <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">&quot;CompletionTokens&quot;</span><span class="p">,</span> <span class="n">resp</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">completion_tokens</span><span class="p">)</span>
-        <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">&quot;StatusCode&quot;</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+            <span class="n">model</span><span class="o">=</span><span class="s2">"prod-krc"</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">800</span><span class="p">)</span>
+        <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"PromptTokens"</span><span class="p">,</span> <span class="n">resp</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">prompt_tokens</span><span class="p">)</span>
+        <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"CompletionTokens"</span><span class="p">,</span> <span class="n">resp</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">completion_tokens</span><span class="p">)</span>
+        <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"StatusCode"</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">&quot;StatusCode&quot;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="s2">&quot;status_code&quot;</span><span class="p">,</span> <span class="mi">500</span><span class="p">))</span>
+        <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"StatusCode"</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="s2">"status_code"</span><span class="p">,</span> <span class="mi">500</span><span class="p">))</span>
         <span class="n">span</span><span class="o">.</span><span class="n">record_exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
         <span class="k">raise</span>
 </code></pre></div>
-
 <p><strong>C# (.NET)</strong></p>
-<div class="codehilite"><pre><span></span><code><span class="k">using</span><span class="w"> </span><span class="nn">var</span><span class="w"> </span><span class="n">activity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ActivitySource</span><span class="p">.</span><span class="n">StartActivity</span><span class="p">(</span><span class="s">&quot;aoai.chat.completions&quot;</span><span class="p">);</span>
-<span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">&quot;UserId&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">userId</span><span class="p">);</span>
-<span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">&quot;SessionId&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">sessionId</span><span class="p">);</span>
-<span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">&quot;Deployment&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;prod-krc&quot;</span><span class="p">);</span>
-<span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">&quot;Model&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;gpt-4o&quot;</span><span class="p">);</span>
+<div class="codehilite"><pre><span></span><code><span class="k">using</span><span class="w"> </span><span class="nn">var</span><span class="w"> </span><span class="n">activity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ActivitySource</span><span class="p">.</span><span class="n">StartActivity</span><span class="p">(</span><span class="s">"aoai.chat.completions"</span><span class="p">);</span>
+<span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">"UserId"</span><span class="p">,</span><span class="w"> </span><span class="n">userId</span><span class="p">);</span>
+<span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">"SessionId"</span><span class="p">,</span><span class="w"> </span><span class="n">sessionId</span><span class="p">);</span>
+<span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">"Deployment"</span><span class="p">,</span><span class="w"> </span><span class="s">"prod-krc"</span><span class="p">);</span>
+<span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">"Model"</span><span class="p">,</span><span class="w"> </span><span class="s">"gpt-4o"</span><span class="p">);</span>
 
 <span class="k">try</span>
 <span class="p">{</span>
 <span class="w">    </span><span class="kt">var</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="n">chatClient</span><span class="p">.</span><span class="n">CompleteChatAsync</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="p">);</span>
-<span class="w">    </span><span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">&quot;PromptTokens&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">Value</span><span class="p">.</span><span class="n">Usage</span><span class="p">.</span><span class="n">InputTokenCount</span><span class="p">);</span>
-<span class="w">    </span><span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">&quot;CompletionTokens&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">Value</span><span class="p">.</span><span class="n">Usage</span><span class="p">.</span><span class="n">OutputTokenCount</span><span class="p">);</span>
-<span class="w">    </span><span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">&quot;StatusCode&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">200</span><span class="p">);</span>
+<span class="w">    </span><span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">"PromptTokens"</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">Value</span><span class="p">.</span><span class="n">Usage</span><span class="p">.</span><span class="n">InputTokenCount</span><span class="p">);</span>
+<span class="w">    </span><span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">"CompletionTokens"</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">Value</span><span class="p">.</span><span class="n">Usage</span><span class="p">.</span><span class="n">OutputTokenCount</span><span class="p">);</span>
+<span class="w">    </span><span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">"StatusCode"</span><span class="p">,</span><span class="w"> </span><span class="mi">200</span><span class="p">);</span>
 <span class="p">}</span>
 <span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="n">ClientResultException</span><span class="w"> </span><span class="n">ex</span><span class="p">)</span>
 <span class="p">{</span>
-<span class="w">    </span><span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">&quot;StatusCode&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">ex</span><span class="p">.</span><span class="n">Status</span><span class="p">);</span>
+<span class="w">    </span><span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">"StatusCode"</span><span class="p">,</span><span class="w"> </span><span class="n">ex</span><span class="p">.</span><span class="n">Status</span><span class="p">);</span>
 <span class="w">    </span><span class="n">activity</span><span class="o">?.</span><span class="n">SetStatus</span><span class="p">(</span><span class="n">ActivityStatusCode</span><span class="p">.</span><span class="n">Error</span><span class="p">,</span><span class="w"> </span><span class="n">ex</span><span class="p">.</span><span class="n">Message</span><span class="p">);</span>
 <span class="w">    </span><span class="k">throw</span><span class="p">;</span>
 <span class="p">}</span>
 </code></pre></div>
-
 <blockquote>
 <p>AOAI 플랫폼 메트릭만으로는 Prompt/Response 수준의 상세 사용 추적이 불가능하므로, <strong>Application Insights 또는 Gateway 계층(APIM)</strong> 활용이 사실상 필수입니다.</p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="6-apim-ai-gateway">6. APIM AI Gateway 활용</h2>
 <p>고객 환경에서는 거의 항상 다음 구조를 권장합니다.</p>
 <div class="codehilite"><pre><span></span><code>User → APIM AI Gateway → AOAI (다중 배포 / 다중 리전)
 </code></pre></div>
-
 <h3 id="61-apim">6.1 APIM으로 얻는 것</h3>
 <table>
 <thead>
@@ -1216,27 +1193,27 @@ AzureOpenAITimeToResponse                   증가
 <div class="codehilite"><pre><span></span><code><span class="nt">&lt;policies&gt;</span>
 <span class="w">  </span><span class="nt">&lt;inbound&gt;</span>
 <span class="w">    </span><span class="nt">&lt;base</span><span class="w"> </span><span class="nt">/&gt;</span>
-<span class="w">    </span><span class="nt">&lt;set-variable</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;tenantId&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;@(context.Subscription?.Id ?? &quot;</span><span class="err">anonymous&quot;)&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;set-variable</span><span class="w"> </span><span class="na">name=</span><span class="s">"tenantId"</span><span class="w"> </span><span class="na">value=</span><span class="s">"@(context.Subscription?.Id ?? "</span><span class="err">anonymous")"</span><span class="w"> </span><span class="nt">/&gt;</span>
 
 <span class="w">    </span><span class="nt">&lt;llm-token-limit</span>
-<span class="w">        </span><span class="na">counter-key=</span><span class="s">&quot;@((string)context.Variables[&quot;</span><span class="err">tenantId&quot;])&quot;</span>
-<span class="w">        </span><span class="na">tokens-per-minute=</span><span class="s">&quot;60000&quot;</span>
-<span class="w">        </span><span class="na">estimate-prompt-tokens=</span><span class="s">&quot;true&quot;</span>
-<span class="w">        </span><span class="na">remaining-tokens-header-name=</span><span class="s">&quot;x-remaining-tokens&quot;</span>
-<span class="w">        </span><span class="na">tokens-consumed-header-name=</span><span class="s">&quot;x-consumed-tokens&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="na">counter-key=</span><span class="s">"@((string)context.Variables["</span><span class="err">tenantId"])"</span>
+<span class="w">        </span><span class="na">tokens-per-minute=</span><span class="s">"60000"</span>
+<span class="w">        </span><span class="na">estimate-prompt-tokens=</span><span class="s">"true"</span>
+<span class="w">        </span><span class="na">remaining-tokens-header-name=</span><span class="s">"x-remaining-tokens"</span>
+<span class="w">        </span><span class="na">tokens-consumed-header-name=</span><span class="s">"x-consumed-tokens"</span><span class="w"> </span><span class="nt">/&gt;</span>
 
-<span class="w">    </span><span class="nt">&lt;llm-emit-token-metric</span><span class="w"> </span><span class="na">namespace=</span><span class="s">&quot;aoai-gateway&quot;</span><span class="nt">&gt;</span>
-<span class="w">      </span><span class="nt">&lt;dimension</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;TenantId&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;@((string)context.Variables[&quot;</span><span class="err">tenantId&quot;])&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
-<span class="w">      </span><span class="nt">&lt;dimension</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Deployment&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;@(context.Request.MatchedParameters.GetValueOrDefault(&quot;</span><span class="err">deployment-id&quot;,&quot;&quot;))&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
-<span class="w">      </span><span class="nt">&lt;dimension</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;ApiId&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;@(context.Api.Id)&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
-<span class="w">      </span><span class="nt">&lt;dimension</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Region&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;@(context.Deployment.Region)&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;llm-emit-token-metric</span><span class="w"> </span><span class="na">namespace=</span><span class="s">"aoai-gateway"</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;dimension</span><span class="w"> </span><span class="na">name=</span><span class="s">"TenantId"</span><span class="w"> </span><span class="na">value=</span><span class="s">"@((string)context.Variables["</span><span class="err">tenantId"])"</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">      </span><span class="nt">&lt;dimension</span><span class="w"> </span><span class="na">name=</span><span class="s">"Deployment"</span><span class="w"> </span><span class="na">value=</span><span class="s">"@(context.Request.MatchedParameters.GetValueOrDefault("</span><span class="err">deployment-id",""))"</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">      </span><span class="nt">&lt;dimension</span><span class="w"> </span><span class="na">name=</span><span class="s">"ApiId"</span><span class="w"> </span><span class="na">value=</span><span class="s">"@(context.Api.Id)"</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">      </span><span class="nt">&lt;dimension</span><span class="w"> </span><span class="na">name=</span><span class="s">"Region"</span><span class="w"> </span><span class="na">value=</span><span class="s">"@(context.Deployment.Region)"</span><span class="w"> </span><span class="nt">/&gt;</span>
 <span class="w">    </span><span class="nt">&lt;/llm-emit-token-metric&gt;</span>
 <span class="w">  </span><span class="nt">&lt;/inbound&gt;</span>
 
 <span class="w">  </span><span class="nt">&lt;backend&gt;</span>
-<span class="w">    </span><span class="nt">&lt;retry</span><span class="w"> </span><span class="na">condition=</span><span class="s">&quot;@(context.Response.StatusCode == 429 || context.Response.StatusCode &gt;= 500)&quot;</span>
-<span class="w">           </span><span class="na">count=</span><span class="s">&quot;2&quot;</span><span class="w"> </span><span class="na">interval=</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="na">max-interval=</span><span class="s">&quot;5&quot;</span><span class="w"> </span><span class="na">delta=</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="na">first-fast-retry=</span><span class="s">&quot;true&quot;</span><span class="nt">&gt;</span>
-<span class="w">      </span><span class="nt">&lt;forward-request</span><span class="w"> </span><span class="na">buffer-request-body=</span><span class="s">&quot;true&quot;</span><span class="w"> </span><span class="na">timeout=</span><span class="s">&quot;120&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;retry</span><span class="w"> </span><span class="na">condition=</span><span class="s">"@(context.Response.StatusCode == 429 || context.Response.StatusCode &gt;= 500)"</span>
+<span class="w">           </span><span class="na">count=</span><span class="s">"2"</span><span class="w"> </span><span class="na">interval=</span><span class="s">"1"</span><span class="w"> </span><span class="na">max-interval=</span><span class="s">"5"</span><span class="w"> </span><span class="na">delta=</span><span class="s">"1"</span><span class="w"> </span><span class="na">first-fast-retry=</span><span class="s">"true"</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;forward-request</span><span class="w"> </span><span class="na">buffer-request-body=</span><span class="s">"true"</span><span class="w"> </span><span class="na">timeout=</span><span class="s">"120"</span><span class="w"> </span><span class="nt">/&gt;</span>
 <span class="w">    </span><span class="nt">&lt;/retry&gt;</span>
 <span class="w">  </span><span class="nt">&lt;/backend&gt;</span>
 
@@ -1245,7 +1222,6 @@ AzureOpenAITimeToResponse                   증가
 <span class="w">  </span><span class="nt">&lt;/on-error&gt;</span>
 <span class="nt">&lt;/policies&gt;</span>
 </code></pre></div>
-
 <blockquote>
 <p><code>timeout="120"</code> 값은 타임아웃 정합성 원칙(클라이언트 타임아웃 ≥ APIM 백엔드 타임아웃 ≥ 예상 최대 생성 시간)에 따라 클라이언트 타임아웃보다 <strong>작거나 같게</strong> 설정해야 합니다.</p>
 </blockquote>
@@ -1255,7 +1231,7 @@ AzureOpenAITimeToResponse                   증가
 <blockquote>
 <p>⚠️ 메시지 본문 로깅은 개인정보·기밀정보를 포함할 수 있습니다. 샘플링 비율 제한, 보존기간 단축, 접근 RBAC 제한을 반드시 병행하세요.</p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="7-kql">7. KQL 쿼리 모음</h2>
 <blockquote>
 <p><strong>전제</strong>: §2.3의 두 가지 한계를 먼저 확인하세요. PTU 사용률·캐시 적중률·가용률은 KQL이 아니라 <strong>메트릭 알림/Metrics Explorer</strong>로 다룹니다.
@@ -1263,120 +1239,109 @@ AzureOpenAITimeToResponse                   증가
 </blockquote>
 <h3 id="71">7.1 먼저 실행 — 스키마 탐색</h3>
 <div class="codehilite"><pre><span></span><code><span class="n">AzureDiagnostics</span>
-<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">ResourceProvider</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">&quot;MICROSOFT.COGNITIVESERVICES&quot;</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">ResourceProvider</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">"MICROSOFT.COGNITIVESERVICES"</span>
 <span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">TimeGenerated</span><span class="w"> </span><span class="p">&gt;</span><span class="w"> </span><span class="n">ago</span><span class="p">(</span><span class="mi">1</span><span class="n">h</span><span class="p">)</span>
 <span class="p">|</span><span class="w"> </span><span class="k">take</span><span class="w"> </span><span class="mi">5</span>
 <span class="p">|</span><span class="w"> </span><span class="k">evaluate</span><span class="w"> </span><span class="n">narrow</span><span class="p">()</span>
 </code></pre></div>
-
 <div class="codehilite"><pre><span></span><code><span class="c">// 어떤 카테고리가 실제로 들어오고 있는지 확인</span>
 <span class="n">AzureDiagnostics</span>
-<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">ResourceProvider</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">&quot;MICROSOFT.COGNITIVESERVICES&quot;</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">ResourceProvider</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">"MICROSOFT.COGNITIVESERVICES"</span>
 <span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">Rows</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">count</span><span class="p">()</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">Category</span><span class="p">,</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">TimeGenerated</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="n">h</span><span class="p">)</span>
 </code></pre></div>
-
 <h3 id="72-429-499-5xx">7.2 상태 코드 분포 (429 / 499 / 5xx)</h3>
 <div class="codehilite"><pre><span></span><code><span class="n">AzureDiagnostics</span>
-<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">ResourceProvider</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">&quot;MICROSOFT.COGNITIVESERVICES&quot;</span>
-<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">Category</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">&quot;RequestResponse&quot;</span>
-<span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">Code</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">toint</span><span class="p">(</span><span class="n">coalesce</span><span class="p">(</span><span class="n">column_ifexists</span><span class="p">(</span><span class="s">&quot;resultSignature_d&quot;</span><span class="p">,</span><span class="w"> </span><span class="k">real</span><span class="p">(</span><span class="n">null</span><span class="p">)),</span>
-<span class="w">                               </span><span class="n">todouble</span><span class="p">(</span><span class="n">column_ifexists</span><span class="p">(</span><span class="s">&quot;ResultSignature&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="p">))))</span>
-<span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">Bucket</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">case</span><span class="p">(</span><span class="n">Code</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="mi">429</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;429 Throttle&quot;</span><span class="p">,</span>
-<span class="w">                       </span><span class="n">Code</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="mi">499</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;499 Client Abort&quot;</span><span class="p">,</span>
-<span class="w">                       </span><span class="n">Code</span><span class="w"> </span><span class="p">&gt;=</span><span class="w"> </span><span class="mi">500</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;5xx Server&quot;</span><span class="p">,</span>
-<span class="w">                       </span><span class="n">Code</span><span class="w"> </span><span class="p">&gt;=</span><span class="w"> </span><span class="mi">400</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;4xx Client&quot;</span><span class="p">,</span>
-<span class="w">                       </span><span class="s">&quot;2xx Success&quot;</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">ResourceProvider</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">"MICROSOFT.COGNITIVESERVICES"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">Category</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">"RequestResponse"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">Code</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">toint</span><span class="p">(</span><span class="n">coalesce</span><span class="p">(</span><span class="n">column_ifexists</span><span class="p">(</span><span class="s">"resultSignature_d"</span><span class="p">,</span><span class="w"> </span><span class="k">real</span><span class="p">(</span><span class="n">null</span><span class="p">)),</span>
+<span class="w">                               </span><span class="n">todouble</span><span class="p">(</span><span class="n">column_ifexists</span><span class="p">(</span><span class="s">"ResultSignature"</span><span class="p">,</span><span class="w"> </span><span class="s">""</span><span class="p">))))</span>
+<span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">Bucket</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">case</span><span class="p">(</span><span class="n">Code</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="mi">429</span><span class="p">,</span><span class="w"> </span><span class="s">"429 Throttle"</span><span class="p">,</span>
+<span class="w">                       </span><span class="n">Code</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="mi">499</span><span class="p">,</span><span class="w"> </span><span class="s">"499 Client Abort"</span><span class="p">,</span>
+<span class="w">                       </span><span class="n">Code</span><span class="w"> </span><span class="p">&gt;=</span><span class="w"> </span><span class="mi">500</span><span class="p">,</span><span class="w"> </span><span class="s">"5xx Server"</span><span class="p">,</span>
+<span class="w">                       </span><span class="n">Code</span><span class="w"> </span><span class="p">&gt;=</span><span class="w"> </span><span class="mi">400</span><span class="p">,</span><span class="w"> </span><span class="s">"4xx Client"</span><span class="p">,</span>
+<span class="w">                       </span><span class="s">"2xx Success"</span><span class="p">)</span>
 <span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">Cnt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">count</span><span class="p">()</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">Bucket</span><span class="p">,</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">TimeGenerated</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="n">m</span><span class="p">)</span>
 <span class="p">|</span><span class="w"> </span><span class="k">render</span><span class="w"> </span><span class="n">columnchart</span>
 </code></pre></div>
-
 <h3 id="73-429-app-insights-apim">7.3 429 상위 배포 (App Insights 또는 APIM 권장)</h3>
 <p><code>AzureMetrics</code>에는 배포명 차원이 없으므로, 배포별 429는 <strong>Metrics Explorer에서 <code>AzureOpenAIRequests</code>를 <code>StatusCode</code> + <code>ModelDeploymentName</code>으로 분리</strong>하거나 아래처럼 App Insights를 사용합니다.</p>
 <div class="codehilite"><pre><span></span><code><span class="n">dependencies</span>
-<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">has</span><span class="w"> </span><span class="s">&quot;chat.completions&quot;</span>
-<span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">Code</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">toint</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">&quot;StatusCode&quot;</span><span class="p">]),</span>
-<span class="w">         </span><span class="n">Deployment</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tostring</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">&quot;Deployment&quot;</span><span class="p">])</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">has</span><span class="w"> </span><span class="s">"chat.completions"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">Code</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">toint</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">"StatusCode"</span><span class="p">]),</span>
+<span class="w">         </span><span class="n">Deployment</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tostring</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">"Deployment"</span><span class="p">])</span>
 <span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">Code</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="mi">429</span>
 <span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">Throttled</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">count</span><span class="p">()</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">Deployment</span><span class="p">,</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="n">m</span><span class="p">)</span>
 <span class="p">|</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">Throttled</span><span class="w"> </span><span class="n">desc</span>
 </code></pre></div>
-
 <h3 id="74-aoai">7.4 AOAI 지연 추이 (리소스 단위)</h3>
 <div class="codehilite"><pre><span></span><code><span class="n">AzureMetrics</span>
-<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">ResourceProvider</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">&quot;MICROSOFT.COGNITIVESERVICES&quot;</span>
-<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">MetricName</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">&quot;AzureOpenAITimeToResponse&quot;</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">ResourceProvider</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">"MICROSOFT.COGNITIVESERVICES"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">MetricName</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">"AzureOpenAITimeToResponse"</span>
 <span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">Avg</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">avg</span><span class="p">(</span><span class="n">Average</span><span class="p">),</span><span class="w"> </span><span class="n">Max</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="n">Maximum</span><span class="p">)</span>
 <span class="w">        </span><span class="k">by</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">TimeGenerated</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="n">m</span><span class="p">),</span><span class="w"> </span><span class="n">Resource</span>
 <span class="p">|</span><span class="w"> </span><span class="k">render</span><span class="w"> </span><span class="n">timechart</span>
 </code></pre></div>
-
 <div class="codehilite"><pre><span></span><code><span class="c">// 전체 생성 완료 시간 — 클라이언트 타임아웃/499 진단에 사용</span>
 <span class="n">AzureMetrics</span>
-<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">MetricName</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">&quot;AzureOpenAITTLTInMS&quot;</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">MetricName</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">"AzureOpenAITTLTInMS"</span>
 <span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">P95Approx</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="n">Maximum</span><span class="p">),</span><span class="w"> </span><span class="n">Avg</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">avg</span><span class="p">(</span><span class="n">Average</span><span class="p">)</span>
 <span class="w">        </span><span class="k">by</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">TimeGenerated</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="n">m</span><span class="p">),</span><span class="w"> </span><span class="n">Resource</span>
 <span class="p">|</span><span class="w"> </span><span class="k">render</span><span class="w"> </span><span class="n">timechart</span>
 </code></pre></div>
-
 <h3 id="75">7.5 토큰 사용량 및 비용 추정</h3>
 <div class="codehilite"><pre><span></span><code><span class="n">let</span><span class="w"> </span><span class="n">promptRate</span><span class="w">   </span><span class="p">=</span><span class="w"> </span><span class="mf">0.0000025</span><span class="p">;</span><span class="w">   </span><span class="c">// USD / token — 실제 단가로 교체</span>
 <span class="n">let</span><span class="w"> </span><span class="n">completeRate</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.00001</span><span class="p">;</span>
 <span class="n">AzureMetrics</span>
-<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">ResourceProvider</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">&quot;MICROSOFT.COGNITIVESERVICES&quot;</span>
-<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">MetricName</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="p">(</span><span class="s">&quot;ProcessedPromptTokens&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;GeneratedTokens&quot;</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">ResourceProvider</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">"MICROSOFT.COGNITIVESERVICES"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">MetricName</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="p">(</span><span class="s">"ProcessedPromptTokens"</span><span class="p">,</span><span class="w"> </span><span class="s">"GeneratedTokens"</span><span class="p">)</span>
 <span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">Tokens</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">Total</span><span class="p">)</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">MetricName</span><span class="p">,</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">TimeGenerated</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="n">h</span><span class="p">),</span><span class="w"> </span><span class="n">Resource</span>
 <span class="p">|</span><span class="w"> </span><span class="k">evaluate</span><span class="w"> </span><span class="n">pivot</span><span class="p">(</span><span class="n">MetricName</span><span class="p">,</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">Tokens</span><span class="p">))</span>
 <span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">EstCostUSD</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">round</span><span class="p">(</span><span class="n">coalesce</span><span class="p">(</span><span class="n">ProcessedPromptTokens</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">)</span><span class="w"> </span><span class="p">*</span><span class="w"> </span><span class="n">promptRate</span>
 <span class="w">                          </span><span class="p">+</span><span class="w"> </span><span class="n">coalesce</span><span class="p">(</span><span class="n">GeneratedTokens</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">)</span><span class="w"> </span><span class="p">*</span><span class="w"> </span><span class="n">completeRate</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span>
 <span class="p">|</span><span class="w"> </span><span class="k">render</span><span class="w"> </span><span class="n">timechart</span>
 </code></pre></div>
-
 <div class="codehilite"><pre><span></span><code><span class="c">// 총 추론 토큰</span>
 <span class="n">AzureMetrics</span>
-<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">MetricName</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">&quot;TokenTransaction&quot;</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">MetricName</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">"TokenTransaction"</span>
 <span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">InferenceTokens</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">Total</span><span class="p">)</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">TimeGenerated</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="n">h</span><span class="p">),</span><span class="w"> </span><span class="n">Resource</span>
 <span class="p">|</span><span class="w"> </span><span class="k">render</span><span class="w"> </span><span class="n">timechart</span>
 </code></pre></div>
-
 <h3 id="76">7.6 콘텐츠 필터 차단 추이</h3>
 <div class="codehilite"><pre><span></span><code><span class="n">AzureMetrics</span>
-<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">MetricName</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="p">(</span><span class="s">&quot;RAIRejectedRequests&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;RAITotalRequests&quot;</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">MetricName</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="p">(</span><span class="s">"RAIRejectedRequests"</span><span class="p">,</span><span class="w"> </span><span class="s">"RAITotalRequests"</span><span class="p">)</span>
 <span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">Cnt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">Total</span><span class="p">)</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">MetricName</span><span class="p">,</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">TimeGenerated</span><span class="p">,</span><span class="w"> </span><span class="mi">15</span><span class="n">m</span><span class="p">)</span>
 <span class="p">|</span><span class="w"> </span><span class="k">evaluate</span><span class="w"> </span><span class="n">pivot</span><span class="p">(</span><span class="n">MetricName</span><span class="p">,</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">Cnt</span><span class="p">))</span>
 <span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">BlockRate</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">round</span><span class="p">(</span><span class="n">coalesce</span><span class="p">(</span><span class="n">RAIRejectedRequests</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">)</span><span class="w"> </span><span class="p">*</span><span class="w"> </span><span class="mf">100.0</span>
 <span class="w">                         </span><span class="p">/</span><span class="w"> </span><span class="n">iff</span><span class="p">(</span><span class="n">coalesce</span><span class="p">(</span><span class="n">RAITotalRequests</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">)</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="n">RAITotalRequests</span><span class="p">),</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span>
 <span class="p">|</span><span class="w"> </span><span class="k">render</span><span class="w"> </span><span class="n">timechart</span>
 </code></pre></div>
-
 <h3 id="77-app-insights-429-top-n">7.7 App Insights — 429를 겪은 사용자 Top N</h3>
 <div class="codehilite"><pre><span></span><code><span class="n">dependencies</span>
-<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">has</span><span class="w"> </span><span class="s">&quot;chat.completions&quot;</span>
-<span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">Code</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">toint</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">&quot;StatusCode&quot;</span><span class="p">]),</span>
-<span class="w">         </span><span class="n">UserId</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tostring</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">&quot;UserId&quot;</span><span class="p">]),</span>
-<span class="w">         </span><span class="n">Deployment</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tostring</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">&quot;Deployment&quot;</span><span class="p">])</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">has</span><span class="w"> </span><span class="s">"chat.completions"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">Code</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">toint</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">"StatusCode"</span><span class="p">]),</span>
+<span class="w">         </span><span class="n">UserId</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tostring</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">"UserId"</span><span class="p">]),</span>
+<span class="w">         </span><span class="n">Deployment</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tostring</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">"Deployment"</span><span class="p">])</span>
 <span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">Code</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="mi">429</span>
 <span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">Failures</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">count</span><span class="p">(),</span>
-<span class="w">            </span><span class="n">Sessions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">dcount</span><span class="p">(</span><span class="n">tostring</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">&quot;SessionId&quot;</span><span class="p">]))</span>
+<span class="w">            </span><span class="n">Sessions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">dcount</span><span class="p">(</span><span class="n">tostring</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">"SessionId"</span><span class="p">]))</span>
 <span class="w">        </span><span class="k">by</span><span class="w"> </span><span class="n">UserId</span><span class="p">,</span><span class="w"> </span><span class="n">Deployment</span>
 <span class="p">|</span><span class="w"> </span><span class="k">top</span><span class="w"> </span><span class="mi">20</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">Failures</span><span class="w"> </span><span class="n">desc</span>
 </code></pre></div>
-
 <h3 id="78-app-insights">7.8 App Insights — 재시도 후 실효 성공률</h3>
 <p>429가 발생해도 재시도로 성공했다면 사용자 영향은 없습니다. <strong>알림은 "429 발생 여부"가 아니라 이 지표로 거는 것이 노이즈가 적습니다.</strong></p>
 <div class="codehilite"><pre><span></span><code><span class="n">dependencies</span>
-<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">has</span><span class="w"> </span><span class="s">&quot;chat.completions&quot;</span>
-<span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">Conv</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tostring</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">&quot;ConversationId&quot;</span><span class="p">]),</span>
-<span class="w">         </span><span class="n">Code</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">toint</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">&quot;StatusCode&quot;</span><span class="p">])</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">has</span><span class="w"> </span><span class="s">"chat.completions"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">Conv</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tostring</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">"ConversationId"</span><span class="p">]),</span>
+<span class="w">         </span><span class="n">Code</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">toint</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">"StatusCode"</span><span class="p">])</span>
 <span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">AnySuccess</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">Code</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="mi">200</span><span class="p">)</span><span class="w"> </span><span class="p">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">Conv</span><span class="p">,</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="n">m</span><span class="p">)</span>
 <span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">EffectiveSuccessRate</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">round</span><span class="p">(</span><span class="n">countif</span><span class="p">(</span><span class="n">AnySuccess</span><span class="p">)</span><span class="w"> </span><span class="p">*</span><span class="w"> </span><span class="mf">100.0</span><span class="w"> </span><span class="p">/</span><span class="w"> </span><span class="k">count</span><span class="p">(),</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span>
 <span class="w">        </span><span class="k">by</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="n">m</span><span class="p">)</span>
 <span class="p">|</span><span class="w"> </span><span class="k">render</span><span class="w"> </span><span class="n">timechart</span>
 </code></pre></div>
-
 <h3 id="79-app-insights-max_tokens">7.9 App Insights — 출력 토큰 분포 (<code>max_tokens</code> 튜닝 근거)</h3>
 <div class="codehilite"><pre><span></span><code><span class="n">dependencies</span>
-<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">has</span><span class="w"> </span><span class="s">&quot;chat.completions&quot;</span>
-<span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">CompletionTokens</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">toint</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">&quot;CompletionTokens&quot;</span><span class="p">])</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">has</span><span class="w"> </span><span class="s">"chat.completions"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">CompletionTokens</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">toint</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">"CompletionTokens"</span><span class="p">])</span>
 <span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">isnotnull</span><span class="p">(</span><span class="n">CompletionTokens</span><span class="p">)</span>
 <span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">P50</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">percentile</span><span class="p">(</span><span class="n">CompletionTokens</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">),</span>
 <span class="w">            </span><span class="n">P95</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">percentile</span><span class="p">(</span><span class="n">CompletionTokens</span><span class="p">,</span><span class="w"> </span><span class="mi">95</span><span class="p">),</span>
@@ -1385,7 +1350,6 @@ AzureOpenAITimeToResponse                   증가
 <span class="w">        </span><span class="k">by</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="n">h</span><span class="p">)</span>
 <span class="p">|</span><span class="w"> </span><span class="k">render</span><span class="w"> </span><span class="n">timechart</span>
 </code></pre></div>
-
 <blockquote>
 <p>P99보다 약간 여유 있는 값을 <code>max_tokens</code>로 설정하면, 응답 잘림 없이 tail latency만 제어할 수 있습니다.</p>
 </blockquote>
@@ -1398,7 +1362,6 @@ AzureOpenAITimeToResponse                   증가
 <span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">TotalTokens</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">PromptTokens</span><span class="w"> </span><span class="p">+</span><span class="w"> </span><span class="n">CompletionTokens</span>
 <span class="p">|</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">TotalTokens</span><span class="w"> </span><span class="n">desc</span>
 </code></pre></div>
-
 <h3 id="711-apim-failover">7.11 APIM — 백엔드별 오류 / Failover 발생</h3>
 <div class="codehilite"><pre><span></span><code><span class="n">ApiManagementGatewayLogs</span>
 <span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">BackendResponseCode</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="p">(</span><span class="mi">429</span><span class="p">,</span><span class="w"> </span><span class="mi">500</span><span class="p">,</span><span class="w"> </span><span class="mi">502</span><span class="p">,</span><span class="w"> </span><span class="mi">503</span><span class="p">,</span><span class="w"> </span><span class="mi">504</span><span class="p">)</span>
@@ -1406,8 +1369,7 @@ AzureOpenAITimeToResponse                   증가
 <span class="w">        </span><span class="k">by</span><span class="w"> </span><span class="n">BackendUrl</span><span class="p">,</span><span class="w"> </span><span class="n">BackendResponseCode</span><span class="p">,</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">TimeGenerated</span><span class="p">,</span><span class="w"> </span><span class="mi">15</span><span class="n">m</span><span class="p">)</span>
 <span class="p">|</span><span class="w"> </span><span class="k">render</span><span class="w"> </span><span class="n">columnchart</span>
 </code></pre></div>
-
-<hr />
+<hr/>
 <h2 id="8">8. 대시보드 구성</h2>
 <p>Production이라면 <strong>최소 아래 8개를 한 화면</strong>에 둡니다.</p>
 <table>
@@ -1483,7 +1445,6 @@ AzureOpenAITimeToResponse                   증가
 │ Deployment별 호출량 / Spillover / Failover(테이블) │
 └───────────────────────────────────────────────────┘
 </code></pre></div>
-
 <blockquote>
 <p><strong>Workbook 구성 팁</strong>: PTU 사용률은 로그로 내보낼 수 없으므로 Workbook에서 <em>Query</em> 파트가 아니라 <strong><em>Metric</em> 파트</strong>로 추가해야 합니다. 이것을 모르고 KQL 파트로 만들려다 실패하는 경우가 매우 흔합니다.</p>
 </blockquote>
@@ -1493,7 +1454,7 @@ AzureOpenAITimeToResponse                   증가
 <li><strong>Azure Monitor Dashboard(Portal)</strong>: 경영진 요약용 간단 뷰</li>
 <li><strong>Power BI / Cost Management</strong>: 월간 비용·사용량 리포팅</li>
 </ul>
-<hr />
+<hr/>
 <h2 id="9-alert-rule">9. Alert Rule 설계</h2>
 <blockquote>
 <p><strong>중요</strong>: 아래 알림 중 <strong>PTU 사용률·가용률은 반드시 "메트릭 알림(Metric alert)"</strong> 으로 만들어야 합니다(로그 알림 불가, §2.3).
@@ -1598,29 +1559,27 @@ AzureOpenAITimeToResponse                   증가
 </table>
 <h3 id="93-cli-ptu-80">9.3 CLI 예시 — PTU 80% 경고</h3>
 <div class="codehilite"><pre><span></span><code>az<span class="w"> </span>monitor<span class="w"> </span>metrics<span class="w"> </span>alert<span class="w"> </span>create<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--name<span class="w"> </span><span class="s2">&quot;AOAI-PTU-Warning&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--name<span class="w"> </span><span class="s2">"AOAI-PTU-Warning"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--resource-group<span class="w"> </span><span class="nv">$RG</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--scopes<span class="w"> </span><span class="nv">$AOAI_RESOURCE_ID</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--condition<span class="w"> </span><span class="s2">&quot;avg AzureOpenAIProvisionedManagedUtilizationV2 &gt; 80&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--condition<span class="w"> </span><span class="s2">"avg AzureOpenAIProvisionedManagedUtilizationV2 &gt; 80"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--window-size<span class="w"> </span>5m<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--evaluation-frequency<span class="w"> </span>5m<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--severity<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--action<span class="w"> </span><span class="nv">$ACTION_GROUP_ID</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--description<span class="w"> </span><span class="s2">&quot;PTU utilization exceeded 80% - capacity pressure&quot;</span>
+<span class="w">  </span>--description<span class="w"> </span><span class="s2">"PTU utilization exceeded 80% - capacity pressure"</span>
 </code></pre></div>
-
 <h3 id="94-cli-429-statuscode">9.4 CLI 예시 — 429 급증 (StatusCode 차원 필터)</h3>
 <div class="codehilite"><pre><span></span><code>az<span class="w"> </span>monitor<span class="w"> </span>metrics<span class="w"> </span>alert<span class="w"> </span>create<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--name<span class="w"> </span><span class="s2">&quot;AOAI-429-Spike&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--name<span class="w"> </span><span class="s2">"AOAI-429-Spike"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--resource-group<span class="w"> </span><span class="nv">$RG</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--scopes<span class="w"> </span><span class="nv">$AOAI_RESOURCE_ID</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--condition<span class="w"> </span><span class="s2">&quot;total AzureOpenAIRequests &gt; 50 where StatusCode includes 429&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--condition<span class="w"> </span><span class="s2">"total AzureOpenAIRequests &gt; 50 where StatusCode includes 429"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--window-size<span class="w"> </span>5m<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--evaluation-frequency<span class="w"> </span>1m<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--severity<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--action<span class="w"> </span><span class="nv">$ACTION_GROUP_ID</span>
 </code></pre></div>
-
 <blockquote>
 <p><code>StatusCode</code> 차원 값은 환경에 따라 숫자(<code>429</code>) 또는 범주(<code>clienterrors</code>)로 나타날 수 있습니다.
 <strong>Metrics Explorer에서 차원 값을 먼저 확인</strong>한 뒤 알림 조건에 반영하세요.</p>
@@ -1632,7 +1591,7 @@ AzureOpenAITimeToResponse                   증가
 <li><strong>Alert Suppression</strong>: 배포 창(deployment window) 동안 억제 규칙 적용</li>
 <li><strong>노이즈 방지</strong>: 429 원시 카운트보다 <strong>재시도 후 실효 성공률(§7.8)</strong> 로 페이징하고, 429 카운트는 경고 수준으로 유지</li>
 </ul>
-<hr />
+<hr/>
 <h2 id="10-runbook">10. 장애 대응 Runbook</h2>
 <h3 id="101-429">10.1 429 급증</h3>
 <div class="codehilite"><pre><span></span><code>1. AzureOpenAIProvisionedManagedUtilizationV2 확인 (Metrics Explorer)
@@ -1645,7 +1604,6 @@ AzureOpenAITimeToResponse                   증가
    → 헤더를 무시한 즉시 재시도는 429를 증폭시킴
 3. max_tokens 축소 / 스트리밍 전환으로 순간 부하 완화
 </code></pre></div>
-
 <h3 id="102-499">10.2 499 급증</h3>
 <div class="codehilite"><pre><span></span><code>1. AzureOpenAITTLTInMS(전체 생성 시간) p95 확인
    ├─ 클라이언트 타임아웃에 근접 → A유형(타임아웃)
@@ -1654,14 +1612,12 @@ AzureOpenAITimeToResponse                   증가
 2. 클라이언트 ↔ APIM ↔ AOAI 타임아웃 정합성 확인
 3. 출력 토큰 분포(§7.9)로 max_tokens 근거 확보
 </code></pre></div>
-
 <h3 id="103-5xx">10.3 5xx 급증</h3>
 <div class="codehilite"><pre><span></span><code>1. Azure Service Health / Resource Health 확인
 2. 단일 리전 문제인지 → Region 차원으로 분리 비교
 3. APIM Backend Pool 자동 Failover 동작 확인 (§7.11)
 4. 지속 시 지원 티켓 (apim-request-id / x-ms-request-id 첨부)
 </code></pre></div>
-
 <h3 id="104-latency">10.4 지연(Latency) 저하</h3>
 <div class="codehilite"><pre><span></span><code>1. TimeToResponse vs TTLB 분리 분석
    ├─ TimeToResponse ↑ → 큐잉/용량 압박 (PTU 사용률 확인)
@@ -1670,8 +1626,7 @@ AzureOpenAITimeToResponse                   증가
 3. 입력 토큰 길이 분포 확인 (RAG 컨텍스트 팽창이 가장 흔한 원인)
 4. AzureOpenAITokenPerSecond 하락 여부 확인
 </code></pre></div>
-
-<hr />
+<hr/>
 <h2 id="11_1">11. 비용 최적화 관점의 모니터링</h2>
 <table>
 <thead>
@@ -1720,7 +1675,7 @@ AzureOpenAITimeToResponse                   증가
 </tbody>
 </table>
 <p><strong>월간 리뷰 루틴</strong>: 토큰 사용량 Top 5 앱 → 프롬프트 길이 분포 → 캐시 적중률 → 모델 다운그레이드 후보 식별</p>
-<hr />
+<hr/>
 <h2 id="12">12. 보안 &amp; 거버넌스 체크리스트</h2>
 <ul>
 <li>[ ] API Key 대신 <strong>Managed Identity + Entra ID RBAC</strong> 사용 (<code>Cognitive Services OpenAI User</code>)</li>
@@ -1733,7 +1688,7 @@ AzureOpenAITimeToResponse                   증가
 <li>[ ] <code>AzureOpenAIRequestUsage</code> / <code>ManagedNetworkEvents</code>는 <strong>플랫폼 로그 내보내기 과금이 추가</strong>되므로 비용 검토 후 활성화</li>
 <li>[ ] 로그 <strong>수집·보존 비용은 모든 카테고리에 발생</strong>하므로, <code>_BilledSize</code> 기준으로 실제 볼륨을 주기적으로 점검 (§2.4)</li>
 </ul>
-<hr />
+<hr/>
 <h2 id="a-top-10">부록 A. 자주 하는 실수 Top 10</h2>
 <ol>
 <li><code>AllMetrics</code> 미활성화 → 이후 모든 관측이 무력화</li>
@@ -1761,11 +1716,1367 @@ AzureOpenAITimeToResponse                   증가
 <li>Azure OpenAI gateway 아키텍처 가이드: https://learn.microsoft.com/azure/architecture/ai-ml/guide/azure-openai-gateway-guide</li>
 <li>Azure Monitor Workbooks: https://learn.microsoft.com/azure/azure-monitor/visualize/workbooks-overview</li>
 </ul>
-    <hr>
-    <p class="meta">최종 수정 2026-08-10 · Microsoft Scout</p>
-  </main>
+<hr/>
+<p class="meta">최종 수정 2026-08-10 · Microsoft Scout</p>
+</main>
+</div><div class="layout lang-en">
+<nav class="sidebar">
+<h2>Table of Contents</h2>
+<div class="toc">
+<ul>
+<li><a href="#en-0-tldr">0. TL;DR — Minimum Setup Checklist</a></li>
+<li><a href="#en-1">1. Deployment Architecture Design</a><ul>
+<li><a href="#en-11">1.1 Recommended Standard Architecture</a></li>
+<li><a href="#en-12-deployment">1.2 Deployment Type Selection</a></li>
+<li><a href="#en-13-ptu">1.3 PTU Sizing Standards</a></li>
+<li><a href="#en-14">1.4 Naming &amp; Tagging Rules (Prerequisite for Monitoring)</a></li>
+</ul>
+</li>
+<li><a href="#en-2-diagnostic-settings">2. Diagnostic Settings</a><ul>
+<li><a href="#en-21">2.1 Log Category</a></li>
+<li><a href="#en-22-bicep">2.2 Bicep Example</a></li>
+<li><a href="#en-23">2.3 ⚠️ Two Limits You Must Know</a></li>
+<li><a href="#en-24">2.4 Retention Policy and Cost Management</a></li>
+</ul>
+</li>
+<li><a href="#en-3-azure-monitor-metric">3. Metrics You Must See in Azure Monitor</a><ul>
+<li><a href="#en-31">3.1 Malfunction / Performance</a></li>
+<li><a href="#en-32">3.2 Costs / Usage</a></li>
+<li><a href="#en-33-responsible-ai">3.3 Responsible AI / Content Filter</a></li>
+<li><a href="#en-34-ptu-3">3.4 PTU 3-piece set (must see together)</a></li>
+<li><a href="#en-35-spillover">3.5 Spillover Monitoring</a></li>
+</ul>
+</li>
+<li><a href="#en-4-http">4. HTTP Status Code Interpretation Guide</a></li>
+<li><a href="#en-5-application-insights-aoai">5. Application Insights — Why AOAI alone is insufficient</a><ul>
+<li><a href="#en-51">5.1 Collection Targets</a></li>
+<li><a href="#en-52-custom-property">5.2 Recommended Custom Property (Standardization Required)</a></li>
+<li><a href="#en-53">5.3 Trace Chain</a></li>
+<li><a href="#en-54">5.4 Implementation Snippet</a></li>
+</ul>
+</li>
+<li><a href="#en-6-apim-ai-gateway">6. Utilizing APIM AI Gateway</a><ul>
+<li><a href="#en-61-apim">6.1 What You Get with APIM</a></li>
+<li><a href="#en-62">6.2 Policy Examples</a></li>
+<li><a href="#en-63-llm">6.3 Enabling LLM Message Logging</a></li>
+</ul>
+</li>
+<li><a href="#en-7-kql">7. KQL Query Collection</a><ul>
+<li><a href="#en-71">7.1 Run First — Explore the Schema</a></li>
+<li><a href="#en-72-429-499-5xx">7.2 Status Code Distribution (429 / 499 / 5xx)</a></li>
+<li><a href="#en-73-429-app-insights-apim">7.3 429 Upper Deployment (App Insights or APIM Recommended)</a></li>
+<li><a href="#en-74-aoai">7.4 AOAI Delay Trend (Resource Unit)</a></li>
+<li><a href="#en-75">7.5 Token Usage and Cost Estimation</a></li>
+<li><a href="#en-76">7.6 Trends in Content Filter Blocking</a></li>
+<li><a href="#en-77-app-insights-429-top-n">7.7 App Insights — Top N Users Experiencing 429</a></li>
+<li><a href="#en-78-app-insights">7.8 App Insights — Effective Success Rate After Retry</a></li>
+<li><a href="#en-79-app-insights-max_tokens">7.9 App Insights — Output Token Distribution (Basis for max_tokens Tuning)</a></li>
+<li><a href="#en-710-apim">7.10 APIM — Token Consumption by Deployment</a></li>
+<li><a href="#en-711-apim-failover">7.11 APIM — Errors / Failover by Backend</a></li>
+</ul>
+</li>
+<li><a href="#en-8">8. Dashboard Configuration</a><ul>
+<li><a href="#en-81">8.1 Screen Layout Recommendations</a></li>
+<li><a href="#en-82">8.2 Alternative Tools</a></li>
+</ul>
+</li>
+<li><a href="#en-9-alert-rule">9. Alert Rule Design</a><ul>
+<li><a href="#en-91-critical">9.1 Critical</a></li>
+<li><a href="#en-92-warning">9.2 Warning</a></li>
+<li><a href="#en-93-cli-ptu-80">9.3 CLI Example — PTU 80% Warning</a></li>
+<li><a href="#en-94-cli-429-statuscode">9.4 CLI Example — 429 Surge (StatusCode Level Filter)</a></li>
+<li><a href="#en-95-alert">9.5 Alert Design Principles</a></li>
+</ul>
+</li>
+<li><a href="#en-10-runbook">10. Incident Response Runbook</a><ul>
+<li><a href="#en-101-429">10.1 429 Surge</a></li>
+<li><a href="#en-102-499">10.2 Rapid Increase of 499</a></li>
+<li><a href="#en-103-5xx">10.3 Surge in 5xx</a></li>
+<li><a href="#en-104-latency">10.4 Latency Reduction</a></li>
+</ul>
+</li>
+<li><a href="#en-11_1">11. Monitoring from a Cost Optimization Perspective</a></li>
+<li><a href="#en-12">12. Security &amp; Governance Checklist</a></li>
+<li><a href="#en-a-top-10">Appendix A. Top 10 Common Mistakes</a></li>
+<li><a href="#en-b">Appendix B. References</a></li>
+</ul>
 </div>
+</nav>
+<main>
+<div class="topbar">
+<span class="badge">Azure OpenAI · Operations Guide</span>
+<button class="toggle" id="en-themeToggle" type="button">Theme switch</button>
+</div>
+<h1 id="en-azure-openaiaoai">Azure OpenAI (AOAI) Deployment &amp; Operations Monitoring Guide</h1>
+<blockquote>
+<p><strong>Target</strong> · Architects, SRE, and platform teams operating AOAI in <strong>Production</strong></p>
+<p><strong>Scope</strong> · Distribution design → Observability configuration → Metric/Log → Alert → Dashboard → Incident response Runbook</p>
+<p><strong>Related Guides</strong> · <a href="../01-oai-to-aoai-onboarding/">01 Onboarding</a> · <a href="../02-aoai-foundations/">02 Basic Concepts</a> · <a href="../04-aoai-high-availability/">04 High Availability</a></p>
+</blockquote>
+<hr/>
+<h2 id="en-0-tldr">0. TL;DR — Minimum Setup Checklist</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Item</th>
+<th>Required</th>
+<th>Remarks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Diagnostic Settings → Log Analytics (Audit / RequestResponse / Trace / AzureOpenAIRequestUsage / <strong>AllMetrics</strong>)</td>
+<td>✅ Required</td>
+<td>Logs are loaded into the <code>AzureDiagnostics</code> table</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Configure <strong>Metrics Explorer / Metric Alerts</strong> separately</td>
+<td>✅ Required</td>
+<td>Some metrics, such as PTU usage rate, cannot be exported to logs (§2.3)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Connect Application Insights to the <strong>application side</strong></td>
+<td>✅ Required</td>
+<td>Tracking correlation between User/Session/Prompt</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Record AOAI call as <strong>Dependency</strong></td>
+<td>✅ Required</td>
+<td>429 → User → The core of session tracking</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Insert APIM AI Gateway</td>
+<td>⭕ Strongly Recommended</td>
+<td>Token Metrics·LLM Logging·Failover·Rate Limit</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Alert Rule (429 / 5xx / PTU 80·90%)</td>
+<td>✅ Required</td>
+<td>Below §8</td>
+</tr>
+<tr>
+<td>7</td>
+<td>8 Core Dashboards</td>
+<td>✅ Required</td>
+<td>Below §7</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Multi-region / Spillover Failover Design</td>
+<td>⭕ Recommended</td>
+<td>429·503 Final Means of Relief</td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<h2 id="en-1">1. Deployment Architecture Design</h2>
+<h3 id="en-11">1.1 Recommended Standard Architecture</h3>
+<div class="mermaid" data-idx="0"></div>
+<ul>
+<li><strong>Primary</strong>: PTU distribution (handles predictable latency and base load)</li>
+<li><strong>Spillover</strong>: Automatically switches to standard distribution when the PTU is saturated</li>
+<li><strong>Failover</strong>: Bypass to another region's Global Standard in case of a regional failure</li>
+</ul>
+<h3 id="en-12-deployment">1.2 Deployment Type Selection</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Features</th>
+<th>Suitable Scenario</th>
+<th>429 Characteristics</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Standard (PAYG)</strong></td>
+<td>Region unit shared capacity, TPM/RPM quota</td>
+<td>POC, variable traffic</td>
+<td>429 if quota exceeded</td>
+</tr>
+<tr>
+<td><strong>Global Standard</strong></td>
+<td>Global routing, high availability capacity</td>
+<td>Workloads with low data residency requirements</td>
+<td>429 Relatively low</td>
+</tr>
+<tr>
+<td><strong>Data Zone Standard</strong></td>
+<td>Routing within regional (EU/US) boundaries</td>
+<td>Data boundary requirements exist</td>
+<td>Middle</td>
+</tr>
+<tr>
+<td><strong>Provisioned (PTU)</strong></td>
+<td>Dedicated throughput, predictable latency</td>
+<td>Production requiring SLA</td>
+<td><strong>429 when usage rate reaches 100%</strong></td>
+</tr>
+<tr>
+<td><strong>PTU + Spillover</strong></td>
+<td>Forwarded to standard distribution when PTU is saturated</td>
+<td>Peak Absorption</td>
+<td>429 Minimize</td>
+</tr>
+<tr>
+<td><strong>Batch</strong></td>
+<td>Asynchronous bulk processing, low cost</td>
+<td>Nighttime batch, large-scale embedding</td>
+<td>Not applicable</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 <strong>Practical Tip</strong>: Configuring PTU alone means "capacity = limit." In the documentation, <strong>once usage reaches 100%, calls are throttled and 429 is returned</strong>. Be sure to have Spillover or a standard deployment backup together.</p>
+</blockquote>
+<h3 id="en-13-ptu">1.3 PTU Sizing Standards</h3>
+<ul>
+<li>Calculated based on (Peak RPM × average input tokens × average output tokens) using the <strong>Azure OpenAI Capacity Calculator</strong></li>
+<li><strong>The weight of output tokens is much greater than the input</strong> → be sure to limit <code>max_tokens</code></li>
+<li>Target utilization: <strong>Normally 60-70%</strong>, peak under 85% (rapid spike in 429 when approaching 100%)</li>
+<li>When using streaming, the delay until the first token (TTFT) determines the perceived performance</li>
+</ul>
+<h3 id="en-14">1.4 Naming &amp; Tagging Rules (Prerequisites for Monitoring)</h3>
+<p>For observation to be possible, <strong>the name itself must be a dimension</strong>. The main dimensions of the AOAI metric are <code>ModelDeploymentName</code>, <code>ModelName</code>, <code>ModelVersion</code>, and <code>Region</code>, so <strong>the deployment name should encode the environment, region, and tier</strong> in order to be meaningfully separated on the dashboard.</p>
+<div class="codehilite"><pre><span></span><code>Resource: aoai-&lt;env&gt;-&lt;region&gt;-&lt;seq&gt;              Example) aoai-prod-krc-01
+Deployment Name: &lt;model&gt;-&lt;version&gt;-&lt;tier&gt;               Example) gpt-4o-2024-11-20-ptu
+</code></pre></div>
+<p>Recommended tags: <code>env</code>, <code>owner</code>, <code>costcenter</code>, <code>workload</code>, <code>tier(ptu|paygo)</code>, <code>dataclass</code></p>
+<hr/>
+<h2 id="en-2-diagnostic-settings">2. Diagnostic Settings (Diagnostic Settings)</h2>
+<p><strong>Path</strong>: <code>Azure OpenAI Resource → Monitoring → Diagnostic settings → + Add diagnostic setting</code></p>
+<h3 id="en-21">2.1 Log Category</h3>
+<p>The log categories and storage tables supported by <code>Microsoft.CognitiveServices/accounts</code> are as follows. <strong>All categories go into the <code>AzureDiagnostics</code> table</strong> (no dedicated table).</p>
+<table>
+<thead>
+<tr>
+<th>Category (Display Name)</th>
+<th>Category Name</th>
+<th>Loading Table</th>
+<th>Additional Export Charges</th>
+<th>Recommended</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Audit Logs</td>
+<td><code>Audit</code></td>
+<td><code>AzureDiagnostics</code></td>
+<td>None</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Request and Response Logs</td>
+<td><code>RequestResponse</code></td>
+<td><code>AzureDiagnostics</code></td>
+<td>None</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Trace Logs</td>
+<td><code>Trace</code></td>
+<td><code>AzureDiagnostics</code></td>
+<td>None</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>Azure OpenAI Request Usage</td>
+<td><code>AzureOpenAIRequestUsage</code></td>
+<td><code>AzureDiagnostics</code></td>
+<td><strong>Exists</strong></td>
+<td>⭕ When tracking usage by token units</td>
+</tr>
+<tr>
+<td>Managed Network Events</td>
+<td><code>ManagedNetworkEvents</code></td>
+<td><code>AzureDiagnostics</code></td>
+<td><strong>Exists</strong></td>
+<td>⭕ When operating VNet/Private Endpoint</td>
+</tr>
+<tr>
+<td><strong>All metrics</strong></td>
+<td><code>AllMetrics</code></td>
+<td><code>AzureMetrics</code></td>
+<td>—</td>
+<td>✅ <strong>Required</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>"Additional export charges = none" does not mean it is free.</strong>
+AOAI log costs are incurred <strong>twice</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Cost</th>
+<th>Target</th>
+<th>Billing Entity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① <strong>Collection·Retention (ingestion / retention)</strong></td>
+<td><strong>All Categories</strong> (Including Audit·Trace)</td>
+<td>Log Analytics (in GB)</td>
+</tr>
+<tr>
+<td>② <strong>Export Platform Logs</strong></td>
+<td>Only the categories marked 'There is' in the table</td>
+<td>Azure Monitor <strong>Platform Logs</strong> meters</td>
+</tr>
+</tbody>
+</table>
+<p>In other words, <code>Audit</code> · <code>Trace</code> · <code>RequestResponse</code> are <strong>① incurred and ② exempted</strong>.
+The columns in the table correspond to the <em>Costs to export</em> values in the Azure Monitor reference, showing only whether <strong>additional charges will be added on top of ①</strong>.
+In particular, since <code>RequestResponse</code> collection grows proportionally with the number of calls, it is often the category that <strong>has the greatest impact on costs</strong> even if the cost is marked as "none." If your traffic is high, measure the collection volume first (§2.4).</p>
+</blockquote>
+<h3 id="en-22-bicep">2.2 Bicep Example</h3>
+<div class="codehilite"><pre><span></span><code>resource aoai 'Microsoft.CognitiveServices/accounts@2024-10-01' existing = {
+  name: aoaiName
+}
 
+resource diag 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  name: 'aoai-to-law'
+  scope: aoai
+  properties: {
+    workspaceId: lawId
+    logs: [
+      { category: 'Audit',                   enabled: true }
+      { category: 'RequestResponse',         enabled: true }
+      { category: 'Trace',                   enabled: true }
+      { category: 'AzureOpenAIRequestUsage', enabled: true }
+    ]
+    metrics: [
+      { category: 'AllMetrics', enabled: true }
+    ]
+  }
+}
+</code></pre></div>
+<div class="codehilite"><pre><span></span><code>az<span class="w"> </span>monitor<span class="w"> </span>diagnostic-settings<span class="w"> </span>create<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--name<span class="w"> </span>aoai-to-law<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--resource<span class="w"> </span><span class="nv">$AOAI_RESOURCE_ID</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--workspace<span class="w"> </span><span class="nv">$LAW_RESOURCE_ID</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--logs<span class="w"> </span><span class="s1">'[{"category":"Audit","enabled":true},</span>
+<span class="s1">           {"category":"RequestResponse","enabled":true},</span>
+<span class="s1">           {"category":"Trace","enabled":true},</span>
+<span class="s1">           {"category":"AzureOpenAIRequestUsage","enabled":true}]'</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--metrics<span class="w"> </span><span class="s1">'[{"category":"AllMetrics","enabled":true}]'</span>
+</code></pre></div>
+<h3 id="en-23">2.3 ⚠️ Two Limits You Must Know</h3>
+<p>If you don't know these two things, you will end up in a situation where <strong>“I used KQL, but no data comes out.”</strong></p>
+<p><strong>① There are metrics that do not go to Log Analytics even if <code>AllMetrics</code> is enabled.</strong>
+Metrics with the <em>DS Export</em> column marked as <code>No</code> in the metric reference cannot be exported via diagnostic settings.</p>
+<table>
+<thead>
+<tr>
+<th>Export Not Allowed (DS Export = No)</th>
+<th>Alternative Means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AzureOpenAIProvisionedManagedUtilizationV2</code> (PTU Usage Rate)</td>
+<td>Metrics Explorer, <strong>Metric Alerts</strong>, Grafana (Azure Monitor data source)</td>
+</tr>
+<tr>
+<td><code>AzureOpenAIContextTokensCacheMatchRate</code> (Prompt Cache Hit Rate)</td>
+<td>Same</td>
+</tr>
+<tr>
+<td><code>AzureOpenAIAvailabilityRate</code> (Availability)</td>
+<td>Same</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>In other words, <strong>PTU usage rate cannot be queried with KQL.</strong> Alerts must be created as <strong>metric alerts</strong> rather than log alerts, and for dashboards, you need to use the <em>Metrics</em> part of the Workbook or Grafana.</p>
+</blockquote>
+<p><strong>② The <code>AzureMetrics</code> table does not have dimension columns.</strong>
+Since <code>AzureMetrics</code> only contains aggregated values per resource, it cannot be broken down by dimensions such as <code>StatusCode</code> or <code>ModelDeploymentName</code>.</p>
+<ul>
+<li>❌ <code>AzureMetrics | where MetricName == "Requests" | where ResponseCode == "429"</code> → <strong>Does not work</strong> (The column itself does not exist)</li>
+<li>✅ If dimension separation is needed → <strong>Metrics Explorer / Dimension filter in metric alerts</strong>, or <strong><code>AzureDiagnostics</code>(RequestResponse) logs</strong>, or <strong>APIM/App Insights</strong></li>
+</ul>
+<h3 id="en-24">2.4 Retention Policy and Cost Management</h3>
+<table>
+<thead>
+<tr>
+<th>Data</th>
+<th>Preservation</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Metrics(Analytics)</td>
+<td>30~90 days</td>
+<td>Operations Dashboard</td>
+</tr>
+<tr>
+<td>Audit</td>
+<td>365 Days+ (Archive)</td>
+<td>Compliance</td>
+</tr>
+<tr>
+<td>RequestResponse / RequestUsage</td>
+<td>30~90 days</td>
+<td>Failure and Usage Analysis</td>
+</tr>
+<tr>
+<td>LLM Message Log(APIM)</td>
+<td>30 days (after reviewing sensitive information)</td>
+<td>Quality/Accident Analysis</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Measure the collection volume first.</strong> Which category actually generates costs depends on traffic patterns.</p>
+<div class="codehilite"><pre><span></span><code><span class="c">// Actual billed volume by category (last 7 days)</span>
+<span class="n">AzureDiagnostics</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">ResourceProvider</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">"MICROSOFT.COGNITIVESERVICES"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">TimeGenerated</span><span class="w"> </span><span class="p">&gt;</span><span class="w"> </span><span class="n">ago</span><span class="p">(</span><span class="mi">7</span><span class="n">d</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">BillableGB</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">_BilledSize</span><span class="p">)</span><span class="w"> </span><span class="p">/</span><span class="w"> </span><span class="mf">1024.0</span><span class="w"> </span><span class="p">/</span><span class="w"> </span><span class="mf">1024.0</span><span class="w"> </span><span class="p">/</span><span class="w"> </span><span class="mf">1024.0</span><span class="p">,</span>
+<span class="w">            </span><span class="n">Records</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">count</span><span class="p">()</span>
+<span class="w">        </span><span class="k">by</span><span class="w"> </span><span class="n">Category</span>
+<span class="p">|</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">BillableGB</span><span class="w"> </span><span class="n">desc</span>
+</code></pre></div>
+<div class="codehilite"><pre><span></span><code><span class="c">// The proportion of AOAI in the entire workspace</span>
+<span class="n">Usage</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">TimeGenerated</span><span class="w"> </span><span class="p">&gt;</span><span class="w"> </span><span class="n">ago</span><span class="p">(</span><span class="mi">30</span><span class="n">d</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">IsBillable</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="n">true</span>
+<span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">GB</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">Quantity</span><span class="p">)</span><span class="w"> </span><span class="p">/</span><span class="w"> </span><span class="mf">1024.0</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">DataType</span>
+<span class="p">|</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">GB</span><span class="w"> </span><span class="n">desc</span>
+</code></pre></div>
+<p><strong>Cost-saving measures</strong></p>
+<table>
+<thead>
+<tr>
+<th>Means</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Transformation at collection (ingestion-time transformation)</td>
+<td>Remove unnecessary columns and records</td>
+</tr>
+<tr>
+<td>Category Selection Activation</td>
+<td><code>RequestResponse</code> increases proportionally with traffic</td>
+</tr>
+<tr>
+<td>Reduced retention period + Archive transition</td>
+<td>Reduction of long-term storage unit cost</td>
+</tr>
+<tr>
+<td>Commitment Tier</td>
+<td>If over 100GB/day, up to 30% discount</td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<h2 id="en-3-azure-monitor-metric">3. Metrics You Must See in Azure Monitor</h2>
+<blockquote>
+<p>The <em>REST API name</em> below is the value actually used in alert rules, Grafana, and CLI. It differs from the portal display name, so please be sure to check it.</p>
+</blockquote>
+<h3 id="en-31">3.1 Failure / Performance</h3>
+<table>
+<thead>
+<tr>
+<th>Display Name</th>
+<th>REST API Name</th>
+<th>Main dimensions</th>
+<th>Export Log</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Azure OpenAI Requests</td>
+<td><code>AzureOpenAIRequests</code></td>
+<td><code>StatusCode</code>, <code>ModelDeploymentName</code>, <code>ModelName</code>, <code>ModelVersion</code>, <code>Region</code>, <code>StreamType</code>, <strong><code>IsSpillover</code></strong>, <code>ServiceTierRequest/Response</code></td>
+<td>✅</td>
+<td><strong>Reference metrics for analyzing call volume and status codes</strong></td>
+</tr>
+<tr>
+<td>Azure OpenAI AvailabilityRate</td>
+<td><code>AzureOpenAIAvailabilityRate</code></td>
+<td><code>ModelDeploymentName</code>, <code>Region</code>, etc.</td>
+<td>❌</td>
+<td>(Total − 5xx)/Total Availability</td>
+</tr>
+<tr>
+<td>Time to Response</td>
+<td><code>AzureOpenAITimeToResponse</code></td>
+<td><code>StatusCode</code>, <code>ModelDeploymentName</code>, <code>Region</code>, etc.</td>
+<td>✅</td>
+<td><strong>Recommended Delay Indicator</strong> (until first response)</td>
+</tr>
+<tr>
+<td>Time to Last Byte</td>
+<td><code>AzureOpenAITTLTInMS</code></td>
+<td><code>ModelDeploymentName</code>, <code>Region</code></td>
+<td>✅</td>
+<td>Total Generation Time</td>
+</tr>
+<tr>
+<td>Normalized Time to First Byte</td>
+<td><code>AzureOpenAINormalizedTTFTInMS</code></td>
+<td><code>ModelDeploymentName</code>, <code>Region</code></td>
+<td>✅</td>
+<td>Token normalized first byte delay</td>
+</tr>
+<tr>
+<td>Time Between Token</td>
+<td><code>AzureOpenAINormalizedTBTInMS</code></td>
+<td><code>ModelDeploymentName</code>, <code>Region</code></td>
+<td>✅</td>
+<td>Streaming Token Generation Interval</td>
+</tr>
+<tr>
+<td>Tokens Per Second</td>
+<td><code>AzureOpenAITokenPerSecond</code></td>
+<td><code>ModelDeploymentName</code>, <code>Region</code></td>
+<td>✅</td>
+<td>Generation Performance</td>
+</tr>
+<tr>
+<td>Active Tokens</td>
+<td><code>ActiveTokens</code></td>
+<td><code>ModelDeploymentName</code>, <code>Region</code></td>
+<td>✅</td>
+<td>Total tokens − cache tokens. <strong>Load based on PTU TPM</strong></td>
+</tr>
+<tr>
+<td>Provisioned-managed Utilization V2</td>
+<td><code>AzureOpenAIProvisionedManagedUtilizationV2</code></td>
+<td><code>ModelDeploymentName</code>, <code>StreamType</code>, <code>Region</code></td>
+<td>❌</td>
+<td><strong>PTU Usage Rate(%)</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>Common Pitfall</strong>: The <code>TotalCalls</code>, <code>SuccessfulCalls</code>, <code>ClientErrors</code>, <code>ServerErrors</code>, <code>BlockedCalls</code>, <code>Latency</code>, and <code>SuccessRate</code> shown together in the portal are common Cognitive Services metrics and are explicitly marked in the official documentation as <strong>'Do not use for Azure OpenAI service'</strong>. Do not use them for AOAI monitoring. AOAI should use <code>AzureOpenAI*</code> series metrics.</p>
+</blockquote>
+<h3 id="en-32">3.2 Cost / Usage</h3>
+<table>
+<thead>
+<tr>
+<th>Display Name</th>
+<th>REST API Name</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Processed Prompt Tokens</td>
+<td><code>ProcessedPromptTokens</code></td>
+<td>Input Token</td>
+</tr>
+<tr>
+<td>Generated Completion Tokens</td>
+<td><code>GeneratedTokens</code></td>
+<td>Output Token</td>
+</tr>
+<tr>
+<td>Processed Inference Tokens</td>
+<td><code>TokenTransaction</code></td>
+<td>Total Input + Output</td>
+</tr>
+<tr>
+<td>Prompt Token Cache Match Rate</td>
+<td><code>AzureOpenAIContextTokensCacheMatchRate</code></td>
+<td>Prompt cache hit rate (%) — PTU/PTU-managed only, log export ❌</td>
+</tr>
+<tr>
+<td>Audio Prompt / Completion Tokens</td>
+<td><code>AudioPromptTokens</code> / <code>AudioCompletionTokens</code></td>
+<td>When using the audio model</td>
+</tr>
+<tr>
+<td>Realtime API Seconds Used</td>
+<td><code>RealtimeUsageTime</code></td>
+<td>Realtime API usage time</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 If the cache hit rate is low, <strong>fix the system prompt and common context at the front of the prompt</strong> and move the variable parts to the back. Since the prefix must match for the cache to hit, simply changing the order can improve both cost and TTFT at the same time.</p>
+</blockquote>
+<h3 id="en-33-responsible-ai">3.3 Responsible AI / Content Filter</h3>
+<table>
+<thead>
+<tr>
+<th>Display Name</th>
+<th>REST API Name</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Blocked Volume</td>
+<td><code>RAIRejectedRequests</code></td>
+<td>Number of calls blocked by content filter</td>
+</tr>
+<tr>
+<td>Harmful Volume Detected</td>
+<td><code>RAIHarmfulRequests</code></td>
+<td>Number of harmful content detections (by <code>Category</code> and <code>Severity</code>)</td>
+</tr>
+<tr>
+<td>Total Volume Sent For Safety Check</td>
+<td><code>RAITotalRequests</code></td>
+<td>Total Amount Passed Through Filter</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>If 400 errors have increased and you don't know the cause, look at this metric first. In many cases, content filter blocking is the reason.</p>
+</blockquote>
+<h3 id="en-34-ptu-3">3.4 PTU 3-piece Set (Must Watch Together)</h3>
+<div class="codehilite"><pre><span></span><code>AzureOpenAIProvisionedManagedUtilizationV2  &gt; 80%
+        +
+AzureOpenAIRequests (StatusCode = 429)      increase
+        +
+AzureOpenAITimeToResponse                   Increase
+</code></pre></div>
+<p>When the three indicators move <strong>simultaneously</strong>, there is only one diagnosis.</p>
+<blockquote>
+<p>Many actual customer cases are <strong>not 'AOAI failures' but 'PTU saturation'</strong>.
+In the documentation, if utilization reaches 100%, calls are throttled and a 429 is returned, so placing the three metrics on one screen significantly reduces misjudgments and unnecessary escalations.</p>
+</blockquote>
+<h3 id="en-35-spillover">3.5 Spillover Monitoring</h3>
+<p>By separating <strong><code>IsSpillover</code></strong> in <code>AzureOpenAIRequests</code>, you can distinguish between "requests processed in PTU" and "requests moved to standard deployment."</p>
+<ul>
+<li>The Spillover ratio remains consistently high → <strong>Signal to consider PTU expansion</strong></li>
+<li>Spike in spillover rate + increased latency → peak load or surge in a specific tenant</li>
+</ul>
+<hr/>
+<h2 id="en-4-http">4. HTTP Status Code Interpretation Guide</h2>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+<th>Main Cause</th>
+<th>First Measure</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>429</strong></td>
+<td>Throttle</td>
+<td>TPM/RPM quota exceeded, PTU usage reached 100%</td>
+<td><code>retry-after</code> compliance + exponential backoff, spillover, capacity expansion</td>
+</tr>
+<tr>
+<td><strong>499</strong></td>
+<td>Client Abort</td>
+<td><strong>The client disconnected before completing the response</strong></td>
+<td>Client/gateway timeout increase, switch to streaming (SSE), ensure timeout consistency</td>
+</tr>
+<tr>
+<td><strong>500 / 503</strong></td>
+<td>Service Error</td>
+<td>Backend error, temporary capacity shortage</td>
+<td>Retry + Region Failover</td>
+</tr>
+<tr>
+<td><strong>502 / 504</strong></td>
+<td>Gateway Error</td>
+<td>APIM·Proxy·Network Path</td>
+<td>APIM Backend Timeout Check</td>
+</tr>
+<tr>
+<td><strong>400</strong></td>
+<td>Request Error</td>
+<td>Context length exceeded, content filter blocked</td>
+<td>Check <code>RAIRejectedRequests</code>, inspect prompt length</td>
+</tr>
+<tr>
+<td><strong>401 / 403</strong></td>
+<td>Authentication/Authorization</td>
+<td>Key expired, Managed Identity permission missing</td>
+<td>Check RBAC (<code>Cognitive Services OpenAI User</code>)</td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<h2 id="en-5-application-insights-aoai">5. Application Insights — Reasons Why AOAI Alone Is Insufficient</h2>
+<p>The AOAI platform metrics <strong>do not know</strong> the following.</p>
+<ul>
+<li>Some <strong>User</strong></li>
+<li>In any <strong>Session / Conversation</strong></li>
+<li>While carrying out a <strong>business transaction</strong></li>
+<li>Which <strong>Prompt</strong> failed</li>
+</ul>
+<p>Therefore, <strong>Application Insights must be attached to the application layer</strong>.</p>
+<h3 id="en-51">5.1 Collection Target</h3>
+<ul>
+<li>✅ <strong>Dependency</strong> (AOAI calls must be recorded as Dependency)</li>
+<li>✅ Request</li>
+<li>✅ Exception</li>
+<li>✅ Custom Events</li>
+<li>✅ Custom Metrics</li>
+</ul>
+<h3 id="en-52-custom-property">5.2 Recommended Custom Property (Standardization Required)</h3>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"UserId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"u-8391"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"SessionId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"s-2f10"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"ConversationId"</span><span class="p">:</span><span class="w"> </span><span class="s2">"c-77a1"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"Model"</span><span class="p">:</span><span class="w"> </span><span class="s2">"gpt-4o"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"Deployment"</span><span class="p">:</span><span class="w"> </span><span class="s2">"prod-krc"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"Region"</span><span class="p">:</span><span class="w"> </span><span class="s2">"KoreaCentral"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"Tier"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ptu"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"PromptTokens"</span><span class="p">:</span><span class="w"> </span><span class="mi">1820</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"CompletionTokens"</span><span class="p">:</span><span class="w"> </span><span class="mi">430</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"StatusCode"</span><span class="p">:</span><span class="w"> </span><span class="mi">429</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"RetryCount"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"AppName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"assistant-web"</span>
+<span class="p">}</span>
+</code></pre></div>
+<blockquote>
+<p>🔒 Privacy Notice: <code>UserId</code> uses a <strong>pseudonymized identifier</strong>, and logging the original Prompt should only be done after data governance approval.</p>
+</blockquote>
+<h3 id="en-53">5.3 Trace Chain</h3>
+<div class="codehilite"><pre><span></span><code>429 Occurred
+   ↓ Some user (UserId)
+   ↓ Some app (AppName)
+   ↓ Which model (Model / Deployment)
+   ↓ Some Session (SessionId / ConversationId)
+   ↓ A certain prompt pattern (token length / template version)
+</code></pre></div>
+<p>It must be connected up to this point for <strong>“eliminating the cause” rather than “responding to the problem”</strong> to be possible.</p>
+<h3 id="en-54">5.4 Implementation Snippet</h3>
+<p><strong>Python (OpenTelemetry + Azure Monitor)</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">azure.monitor.opentelemetry</span><span class="w"> </span><span class="kn">import</span> <span class="n">configure_azure_monitor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">opentelemetry</span><span class="w"> </span><span class="kn">import</span> <span class="n">trace</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">AzureOpenAI</span>
+
+<span class="n">configure_azure_monitor</span><span class="p">(</span><span class="n">connection_string</span><span class="o">=</span><span class="n">APPINSIGHTS_CONNECTION_STRING</span><span class="p">)</span>
+<span class="n">tracer</span> <span class="o">=</span> <span class="n">trace</span><span class="o">.</span><span class="n">get_tracer</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">client</span> <span class="o">=</span> <span class="n">AzureOpenAI</span><span class="p">(</span><span class="n">azure_endpoint</span><span class="o">=</span><span class="n">ENDPOINT</span><span class="p">,</span> <span class="n">api_version</span><span class="o">=</span><span class="s2">"2024-10-21"</span><span class="p">,</span>
+                     <span class="n">azure_ad_token_provider</span><span class="o">=</span><span class="n">token_provider</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">tracer</span><span class="o">.</span><span class="n">start_as_current_span</span><span class="p">(</span><span class="s2">"aoai.chat.completions"</span><span class="p">)</span> <span class="k">as</span> <span class="n">span</span><span class="p">:</span>
+    <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"UserId"</span><span class="p">,</span> <span class="n">user_id</span><span class="p">)</span>
+    <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"SessionId"</span><span class="p">,</span> <span class="n">session_id</span><span class="p">)</span>
+    <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"Deployment"</span><span class="p">,</span> <span class="s2">"prod-krc"</span><span class="p">)</span>
+    <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"Model"</span><span class="p">,</span> <span class="s2">"gpt-4o"</span><span class="p">)</span>
+    <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"Region"</span><span class="p">,</span> <span class="s2">"KoreaCentral"</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="s2">"prod-krc"</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span> <span class="n">max_tokens</span><span class="o">=</span><span class="mi">800</span><span class="p">)</span>
+        <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"PromptTokens"</span><span class="p">,</span> <span class="n">resp</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">prompt_tokens</span><span class="p">)</span>
+        <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"CompletionTokens"</span><span class="p">,</span> <span class="n">resp</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">completion_tokens</span><span class="p">)</span>
+        <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"StatusCode"</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">span</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="s2">"StatusCode"</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="s2">"status_code"</span><span class="p">,</span> <span class="mi">500</span><span class="p">))</span>
+        <span class="n">span</span><span class="o">.</span><span class="n">record_exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">raise</span>
+</code></pre></div>
+<p><strong>C# (.NET)</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="k">using</span><span class="w"> </span><span class="nn">var</span><span class="w"> </span><span class="n">activity</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ActivitySource</span><span class="p">.</span><span class="n">StartActivity</span><span class="p">(</span><span class="s">"aoai.chat.completions"</span><span class="p">);</span>
+<span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">"UserId"</span><span class="p">,</span><span class="w"> </span><span class="n">userId</span><span class="p">);</span>
+<span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">"SessionId"</span><span class="p">,</span><span class="w"> </span><span class="n">sessionId</span><span class="p">);</span>
+<span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">"Deployment"</span><span class="p">,</span><span class="w"> </span><span class="s">"prod-krc"</span><span class="p">);</span>
+<span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">"Model"</span><span class="p">,</span><span class="w"> </span><span class="s">"gpt-4o"</span><span class="p">);</span>
+
+<span class="k">try</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="kt">var</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">await</span><span class="w"> </span><span class="n">chatClient</span><span class="p">.</span><span class="n">CompleteChatAsync</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="p">);</span>
+<span class="w">    </span><span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">"PromptTokens"</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">Value</span><span class="p">.</span><span class="n">Usage</span><span class="p">.</span><span class="n">InputTokenCount</span><span class="p">);</span>
+<span class="w">    </span><span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">"CompletionTokens"</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">Value</span><span class="p">.</span><span class="n">Usage</span><span class="p">.</span><span class="n">OutputTokenCount</span><span class="p">);</span>
+<span class="w">    </span><span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">"StatusCode"</span><span class="p">,</span><span class="w"> </span><span class="mi">200</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="n">ClientResultException</span><span class="w"> </span><span class="n">ex</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">activity</span><span class="o">?.</span><span class="n">SetTag</span><span class="p">(</span><span class="s">"StatusCode"</span><span class="p">,</span><span class="w"> </span><span class="n">ex</span><span class="p">.</span><span class="n">Status</span><span class="p">);</span>
+<span class="w">    </span><span class="n">activity</span><span class="o">?.</span><span class="n">SetStatus</span><span class="p">(</span><span class="n">ActivityStatusCode</span><span class="p">.</span><span class="n">Error</span><span class="p">,</span><span class="w"> </span><span class="n">ex</span><span class="p">.</span><span class="n">Message</span><span class="p">);</span>
+<span class="w">    </span><span class="k">throw</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+<blockquote>
+<p>Since it is not possible to track detailed usage at the Prompt/Response level with only AOAI platform metrics, <strong>utilizing Application Insights or the Gateway layer (APIM)</strong> is practically essential.</p>
+</blockquote>
+<hr/>
+<h2 id="en-6-apim-ai-gateway">6. Utilizing APIM AI Gateway</h2>
+<p>In customer environments, the following structure is almost always recommended.</p>
+<div class="codehilite"><pre><span></span><code>User → APIM AI Gateway → AOAI (Multiple Deployment / Multiple Regions)
+</code></pre></div>
+<h3 id="en-61-apim">6.1 What You Gain from APIM</h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Policy / Settings</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Token Metric Emission</td>
+<td><code>llm-emit-token-metric</code></td>
+<td>Send token usage to Application Insights custom metrics</td>
+</tr>
+<tr>
+<td>Token-based quota</td>
+<td><code>llm-token-limit</code></td>
+<td>Token consumption limits per tenant/user</td>
+</tr>
+<tr>
+<td>Semantic Caching</td>
+<td><code>llm-semantic-cache-lookup</code> / <code>llm-semantic-cache-store</code></td>
+<td>Reduce cost and delay with similar query cache</td>
+</tr>
+<tr>
+<td>Backend Pool &amp; Circuit Breaker</td>
+<td>Backend Pool + Circuit Breaker</td>
+<td>Automatic Failover on 429/5xx</td>
+</tr>
+<tr>
+<td>LLM Message Logging</td>
+<td>Diagnostic Settings → <code>ApiManagementGatewayLlmLog</code></td>
+<td>Query Prompt/Completion/Token with KQL</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-62">6.2 Policy Examples</h3>
+<div class="codehilite"><pre><span></span><code><span class="nt">&lt;policies&gt;</span>
+<span class="w">  </span><span class="nt">&lt;inbound&gt;</span>
+<span class="w">    </span><span class="nt">&lt;base</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;set-variable</span><span class="w"> </span><span class="na">name=</span><span class="s">"tenantId"</span><span class="w"> </span><span class="na">value=</span><span class="s">"@(context.Subscription?.Id ?? "</span><span class="err">anonymous")"</span><span class="w"> </span><span class="nt">/&gt;</span>
+
+<span class="w">    </span><span class="nt">&lt;llm-token-limit</span>
+<span class="w">        </span><span class="na">counter-key=</span><span class="s">"@((string)context.Variables["</span><span class="err">tenantId"])"</span>
+<span class="w">        </span><span class="na">tokens-per-minute=</span><span class="s">"60000"</span>
+<span class="w">        </span><span class="na">estimate-prompt-tokens=</span><span class="s">"true"</span>
+<span class="w">        </span><span class="na">remaining-tokens-header-name=</span><span class="s">"x-remaining-tokens"</span>
+<span class="w">        </span><span class="na">tokens-consumed-header-name=</span><span class="s">"x-consumed-tokens"</span><span class="w"> </span><span class="nt">/&gt;</span>
+
+<span class="w">    </span><span class="nt">&lt;llm-emit-token-metric</span><span class="w"> </span><span class="na">namespace=</span><span class="s">"aoai-gateway"</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;dimension</span><span class="w"> </span><span class="na">name=</span><span class="s">"TenantId"</span><span class="w"> </span><span class="na">value=</span><span class="s">"@((string)context.Variables["</span><span class="err">tenantId"])"</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">      </span><span class="nt">&lt;dimension</span><span class="w"> </span><span class="na">name=</span><span class="s">"Deployment"</span><span class="w"> </span><span class="na">value=</span><span class="s">"@(context.Request.MatchedParameters.GetValueOrDefault("</span><span class="err">deployment-id",""))"</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">      </span><span class="nt">&lt;dimension</span><span class="w"> </span><span class="na">name=</span><span class="s">"ApiId"</span><span class="w"> </span><span class="na">value=</span><span class="s">"@(context.Api.Id)"</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">      </span><span class="nt">&lt;dimension</span><span class="w"> </span><span class="na">name=</span><span class="s">"Region"</span><span class="w"> </span><span class="na">value=</span><span class="s">"@(context.Deployment.Region)"</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/llm-emit-token-metric&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/inbound&gt;</span>
+
+<span class="w">  </span><span class="nt">&lt;backend&gt;</span>
+<span class="w">    </span><span class="nt">&lt;retry</span><span class="w"> </span><span class="na">condition=</span><span class="s">"@(context.Response.StatusCode == 429 || context.Response.StatusCode &gt;= 500)"</span>
+<span class="w">           </span><span class="na">count=</span><span class="s">"2"</span><span class="w"> </span><span class="na">interval=</span><span class="s">"1"</span><span class="w"> </span><span class="na">max-interval=</span><span class="s">"5"</span><span class="w"> </span><span class="na">delta=</span><span class="s">"1"</span><span class="w"> </span><span class="na">first-fast-retry=</span><span class="s">"true"</span><span class="nt">&gt;</span>
+<span class="w">      </span><span class="nt">&lt;forward-request</span><span class="w"> </span><span class="na">buffer-request-body=</span><span class="s">"true"</span><span class="w"> </span><span class="na">timeout=</span><span class="s">"120"</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/retry&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/backend&gt;</span>
+
+<span class="w">  </span><span class="nt">&lt;on-error&gt;</span>
+<span class="w">    </span><span class="nt">&lt;base</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/on-error&gt;</span>
+<span class="nt">&lt;/policies&gt;</span>
+</code></pre></div>
+<blockquote>
+<p>The <code>timeout="120"</code> value should be set to be <strong>less than or equal to</strong> the client timeout, following the timeout consistency principle (client timeout ≥ APIM backend timeout ≥ expected maximum generation time).</p>
+</blockquote>
+<h3 id="en-63-llm">6.3 Enabling LLM Message Logging</h3>
+<p><code>APIM → Diagnostic settings → Category ApiManagementGatewayLlmLog → Log Analytics</code></p>
+<p>Afterwards, you can query Prompt / Completion / Token Usage / model call information using KQL.</p>
+<blockquote>
+<p>⚠️ Logging message bodies may include personal or confidential information. Make sure to combine this with sampling rate limits, shortened retention periods, and access RBAC restrictions.</p>
+</blockquote>
+<hr/>
+<h2 id="en-7-kql">7. KQL Query Collection</h2>
+<blockquote>
+<p><strong>Premise</strong>: First, check the two limitations in §2.3. PTU usage, cache hit rate, and availability are handled not by KQL but by <strong>Metric Alerts/Metrics Explorer</strong>. The actual column names in <code>AzureDiagnostics</code> may differ with suffixes (<code>_s</code>, <code>_d</code>, <code>_g</code>) depending on the API version, so first <strong>check the schema using the exploratory queries in 7.1</strong> before finalizing your queries.</p>
+</blockquote>
+<h3 id="en-71">7.1 Run First — Schema Exploration</h3>
+<div class="codehilite"><pre><span></span><code><span class="n">AzureDiagnostics</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">ResourceProvider</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">"MICROSOFT.COGNITIVESERVICES"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">TimeGenerated</span><span class="w"> </span><span class="p">&gt;</span><span class="w"> </span><span class="n">ago</span><span class="p">(</span><span class="mi">1</span><span class="n">h</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">take</span><span class="w"> </span><span class="mi">5</span>
+<span class="p">|</span><span class="w"> </span><span class="k">evaluate</span><span class="w"> </span><span class="n">narrow</span><span class="p">()</span>
+</code></pre></div>
+<div class="codehilite"><pre><span></span><code><span class="c">// Check which categories are actually coming in</span>
+<span class="n">AzureDiagnostics</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">ResourceProvider</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">"MICROSOFT.COGNITIVESERVICES"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">Rows</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">count</span><span class="p">()</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">Category</span><span class="p">,</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">TimeGenerated</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="n">h</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="en-72-429-499-5xx">7.2 Status Code Distribution (429 / 499 / 5xx)</h3>
+<div class="codehilite"><pre><span></span><code><span class="n">AzureDiagnostics</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">ResourceProvider</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">"MICROSOFT.COGNITIVESERVICES"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">Category</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">"RequestResponse"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">Code</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">toint</span><span class="p">(</span><span class="n">coalesce</span><span class="p">(</span><span class="n">column_ifexists</span><span class="p">(</span><span class="s">"resultSignature_d"</span><span class="p">,</span><span class="w"> </span><span class="k">real</span><span class="p">(</span><span class="n">null</span><span class="p">)),</span>
+<span class="w">                               </span><span class="n">todouble</span><span class="p">(</span><span class="n">column_ifexists</span><span class="p">(</span><span class="s">"ResultSignature"</span><span class="p">,</span><span class="w"> </span><span class="s">""</span><span class="p">))))</span>
+<span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">Bucket</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">case</span><span class="p">(</span><span class="n">Code</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="mi">429</span><span class="p">,</span><span class="w"> </span><span class="s">"429 Throttle"</span><span class="p">,</span>
+<span class="w">                       </span><span class="n">Code</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="mi">499</span><span class="p">,</span><span class="w"> </span><span class="s">"499 Client Abort"</span><span class="p">,</span>
+<span class="w">                       </span><span class="n">Code</span><span class="w"> </span><span class="p">&gt;=</span><span class="w"> </span><span class="mi">500</span><span class="p">,</span><span class="w"> </span><span class="s">"5xx Server"</span><span class="p">,</span>
+<span class="w">                       </span><span class="n">Code</span><span class="w"> </span><span class="p">&gt;=</span><span class="w"> </span><span class="mi">400</span><span class="p">,</span><span class="w"> </span><span class="s">"4xx Client"</span><span class="p">,</span>
+<span class="w">                       </span><span class="s">"2xx Success"</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">Cnt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">count</span><span class="p">()</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">Bucket</span><span class="p">,</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">TimeGenerated</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="n">m</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">render</span><span class="w"> </span><span class="n">columnchart</span>
+</code></pre></div>
+<h3 id="en-73-429-app-insights-apim">7.3 Top 429 Deployments (App Insights or APIM Recommended)</h3>
+<p>Since <code>AzureMetrics</code> does not have a deployment name dimension, 429s by deployment can be <strong>separated by <code>AzureOpenAIRequests</code> into <code>StatusCode</code> + <code>ModelDeploymentName</code> in Metrics Explorer</strong> or use App Insights as shown below.</p>
+<div class="codehilite"><pre><span></span><code><span class="n">dependencies</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">has</span><span class="w"> </span><span class="s">"chat.completions"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">Code</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">toint</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">"StatusCode"</span><span class="p">]),</span>
+<span class="w">         </span><span class="n">Deployment</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tostring</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">"Deployment"</span><span class="p">])</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">Code</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="mi">429</span>
+<span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">Throttled</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">count</span><span class="p">()</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">Deployment</span><span class="p">,</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="n">m</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">Throttled</span><span class="w"> </span><span class="n">desc</span>
+</code></pre></div>
+<h3 id="en-74-aoai">7.4 AOAI Latency Trends (Per Resource)</h3>
+<div class="codehilite"><pre><span></span><code><span class="n">AzureMetrics</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">ResourceProvider</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">"MICROSOFT.COGNITIVESERVICES"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">MetricName</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">"AzureOpenAITimeToResponse"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">Avg</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">avg</span><span class="p">(</span><span class="n">Average</span><span class="p">),</span><span class="w"> </span><span class="n">Max</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="n">Maximum</span><span class="p">)</span>
+<span class="w">        </span><span class="k">by</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">TimeGenerated</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="n">m</span><span class="p">),</span><span class="w"> </span><span class="n">Resource</span>
+<span class="p">|</span><span class="w"> </span><span class="k">render</span><span class="w"> </span><span class="n">timechart</span>
+</code></pre></div>
+<div class="codehilite"><pre><span></span><code><span class="c">// Total generation completion time — used for client timeout/499 diagnostics</span>
+<span class="n">AzureMetrics</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">MetricName</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">"AzureOpenAITTLTInMS"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">P95Approx</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="n">Maximum</span><span class="p">),</span><span class="w"> </span><span class="n">Avg</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">avg</span><span class="p">(</span><span class="n">Average</span><span class="p">)</span>
+<span class="w">        </span><span class="k">by</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">TimeGenerated</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="n">m</span><span class="p">),</span><span class="w"> </span><span class="n">Resource</span>
+<span class="p">|</span><span class="w"> </span><span class="k">render</span><span class="w"> </span><span class="n">timechart</span>
+</code></pre></div>
+<h3 id="en-75">7.5 Token Usage and Cost Estimation</h3>
+<div class="codehilite"><pre><span></span><code><span class="n">let</span><span class="w"> </span><span class="n">promptRate</span><span class="w">   </span><span class="p">=</span><span class="w"> </span><span class="mf">0.0000025</span><span class="p">;</span><span class="w">   </span><span class="c">// USD / token — Replace with the actual unit price</span>
+<span class="n">let</span><span class="w"> </span><span class="n">completeRate</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mf">0.00001</span><span class="p">;</span>
+<span class="n">AzureMetrics</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">ResourceProvider</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">"MICROSOFT.COGNITIVESERVICES"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">MetricName</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="p">(</span><span class="s">"ProcessedPromptTokens"</span><span class="p">,</span><span class="w"> </span><span class="s">"GeneratedTokens"</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">Tokens</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">Total</span><span class="p">)</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">MetricName</span><span class="p">,</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">TimeGenerated</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="n">h</span><span class="p">),</span><span class="w"> </span><span class="n">Resource</span>
+<span class="p">|</span><span class="w"> </span><span class="k">evaluate</span><span class="w"> </span><span class="n">pivot</span><span class="p">(</span><span class="n">MetricName</span><span class="p">,</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">Tokens</span><span class="p">))</span>
+<span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">EstCostUSD</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">round</span><span class="p">(</span><span class="n">coalesce</span><span class="p">(</span><span class="n">ProcessedPromptTokens</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">)</span><span class="w"> </span><span class="p">*</span><span class="w"> </span><span class="n">promptRate</span>
+<span class="w">                          </span><span class="p">+</span><span class="w"> </span><span class="n">coalesce</span><span class="p">(</span><span class="n">GeneratedTokens</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">)</span><span class="w"> </span><span class="p">*</span><span class="w"> </span><span class="n">completeRate</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">render</span><span class="w"> </span><span class="n">timechart</span>
+</code></pre></div>
+<div class="codehilite"><pre><span></span><code><span class="c">// Total inference tokens</span>
+<span class="n">AzureMetrics</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">MetricName</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="s">"TokenTransaction"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">InferenceTokens</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">Total</span><span class="p">)</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">TimeGenerated</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="n">h</span><span class="p">),</span><span class="w"> </span><span class="n">Resource</span>
+<span class="p">|</span><span class="w"> </span><span class="k">render</span><span class="w"> </span><span class="n">timechart</span>
+</code></pre></div>
+<h3 id="en-76">7.6 Content Filter Blocking Trends</h3>
+<div class="codehilite"><pre><span></span><code><span class="n">AzureMetrics</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">MetricName</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="p">(</span><span class="s">"RAIRejectedRequests"</span><span class="p">,</span><span class="w"> </span><span class="s">"RAITotalRequests"</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">Cnt</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">Total</span><span class="p">)</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">MetricName</span><span class="p">,</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">TimeGenerated</span><span class="p">,</span><span class="w"> </span><span class="mi">15</span><span class="n">m</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">evaluate</span><span class="w"> </span><span class="n">pivot</span><span class="p">(</span><span class="n">MetricName</span><span class="p">,</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">Cnt</span><span class="p">))</span>
+<span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">BlockRate</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">round</span><span class="p">(</span><span class="n">coalesce</span><span class="p">(</span><span class="n">RAIRejectedRequests</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">)</span><span class="w"> </span><span class="p">*</span><span class="w"> </span><span class="mf">100.0</span>
+<span class="w">                         </span><span class="p">/</span><span class="w"> </span><span class="n">iff</span><span class="p">(</span><span class="n">coalesce</span><span class="p">(</span><span class="n">RAITotalRequests</span><span class="p">,</span><span class="w"> </span><span class="mf">0.0</span><span class="p">)</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="n">RAITotalRequests</span><span class="p">),</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">render</span><span class="w"> </span><span class="n">timechart</span>
+</code></pre></div>
+<h3 id="en-77-app-insights-429-top-n">7.7 App Insights — Top N Users Experiencing 429</h3>
+<div class="codehilite"><pre><span></span><code><span class="n">dependencies</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">has</span><span class="w"> </span><span class="s">"chat.completions"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">Code</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">toint</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">"StatusCode"</span><span class="p">]),</span>
+<span class="w">         </span><span class="n">UserId</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tostring</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">"UserId"</span><span class="p">]),</span>
+<span class="w">         </span><span class="n">Deployment</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tostring</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">"Deployment"</span><span class="p">])</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">Code</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="mi">429</span>
+<span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">Failures</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">count</span><span class="p">(),</span>
+<span class="w">            </span><span class="n">Sessions</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">dcount</span><span class="p">(</span><span class="n">tostring</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">"SessionId"</span><span class="p">]))</span>
+<span class="w">        </span><span class="k">by</span><span class="w"> </span><span class="n">UserId</span><span class="p">,</span><span class="w"> </span><span class="n">Deployment</span>
+<span class="p">|</span><span class="w"> </span><span class="k">top</span><span class="w"> </span><span class="mi">20</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">Failures</span><span class="w"> </span><span class="n">desc</span>
+</code></pre></div>
+<h3 id="en-78-app-insights">7.8 App Insights — Effective Success Rate After Retries</h3>
+<p>If a 429 occurs but the request succeeds after a retry, there is no impact on the user. <strong>It is less noisy to set alerts based on this metric rather than on "whether a 429 occurred".</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="n">dependencies</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">has</span><span class="w"> </span><span class="s">"chat.completions"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">Conv</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">tostring</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">"ConversationId"</span><span class="p">]),</span>
+<span class="w">         </span><span class="n">Code</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">toint</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">"StatusCode"</span><span class="p">])</span>
+<span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">AnySuccess</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="n">Code</span><span class="w"> </span><span class="p">==</span><span class="w"> </span><span class="mi">200</span><span class="p">)</span><span class="w"> </span><span class="p">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">Conv</span><span class="p">,</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="n">m</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">EffectiveSuccessRate</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">round</span><span class="p">(</span><span class="n">countif</span><span class="p">(</span><span class="n">AnySuccess</span><span class="p">)</span><span class="w"> </span><span class="p">*</span><span class="w"> </span><span class="mf">100.0</span><span class="w"> </span><span class="p">/</span><span class="w"> </span><span class="k">count</span><span class="p">(),</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span>
+<span class="w">        </span><span class="k">by</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="n">m</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">render</span><span class="w"> </span><span class="n">timechart</span>
+</code></pre></div>
+<h3 id="en-79-app-insights-max_tokens">7.9 App Insights — Output Token Distribution (<code>max_tokens</code> Tuning Basis)</h3>
+<div class="codehilite"><pre><span></span><code><span class="n">dependencies</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">has</span><span class="w"> </span><span class="s">"chat.completions"</span>
+<span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">CompletionTokens</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">toint</span><span class="p">(</span><span class="n">customDimensions</span><span class="p">[</span><span class="s">"CompletionTokens"</span><span class="p">])</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">isnotnull</span><span class="p">(</span><span class="n">CompletionTokens</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">P50</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">percentile</span><span class="p">(</span><span class="n">CompletionTokens</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">),</span>
+<span class="w">            </span><span class="n">P95</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">percentile</span><span class="p">(</span><span class="n">CompletionTokens</span><span class="p">,</span><span class="w"> </span><span class="mi">95</span><span class="p">),</span>
+<span class="w">            </span><span class="n">P99</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">percentile</span><span class="p">(</span><span class="n">CompletionTokens</span><span class="p">,</span><span class="w"> </span><span class="mi">99</span><span class="p">),</span>
+<span class="w">            </span><span class="n">Max</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">max</span><span class="p">(</span><span class="n">CompletionTokens</span><span class="p">)</span>
+<span class="w">        </span><span class="k">by</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="n">h</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">render</span><span class="w"> </span><span class="n">timechart</span>
+</code></pre></div>
+<blockquote>
+<p>By setting a value slightly above P99 as <code>max_tokens</code>, you can control tail latency without cutting off responses.</p>
+</blockquote>
+<h3 id="en-710-apim">7.10 APIM — Token Consumption by Deployment</h3>
+<div class="codehilite"><pre><span></span><code><span class="n">ApiManagementGatewayLlmLog</span>
+<span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">PromptTokens</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">PromptTokens</span><span class="p">),</span>
+<span class="w">            </span><span class="n">CompletionTokens</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sum</span><span class="p">(</span><span class="n">CompletionTokens</span><span class="p">),</span>
+<span class="w">            </span><span class="n">Calls</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">count</span><span class="p">()</span>
+<span class="w">        </span><span class="k">by</span><span class="w"> </span><span class="n">DeploymentName</span><span class="p">,</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">TimeGenerated</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="n">h</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">extend</span><span class="w"> </span><span class="n">TotalTokens</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">PromptTokens</span><span class="w"> </span><span class="p">+</span><span class="w"> </span><span class="n">CompletionTokens</span>
+<span class="p">|</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">TotalTokens</span><span class="w"> </span><span class="n">desc</span>
+</code></pre></div>
+<h3 id="en-711-apim-failover">7.11 APIM — Errors / Failover by Backend</h3>
+<div class="codehilite"><pre><span></span><code><span class="n">ApiManagementGatewayLogs</span>
+<span class="p">|</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">BackendResponseCode</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="p">(</span><span class="mi">429</span><span class="p">,</span><span class="w"> </span><span class="mi">500</span><span class="p">,</span><span class="w"> </span><span class="mi">502</span><span class="p">,</span><span class="w"> </span><span class="mi">503</span><span class="p">,</span><span class="w"> </span><span class="mi">504</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">summarize</span><span class="w"> </span><span class="n">Failures</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="k">count</span><span class="p">()</span>
+<span class="w">        </span><span class="k">by</span><span class="w"> </span><span class="n">BackendUrl</span><span class="p">,</span><span class="w"> </span><span class="n">BackendResponseCode</span><span class="p">,</span><span class="w"> </span><span class="n">bin</span><span class="p">(</span><span class="n">TimeGenerated</span><span class="p">,</span><span class="w"> </span><span class="mi">15</span><span class="n">m</span><span class="p">)</span>
+<span class="p">|</span><span class="w"> </span><span class="k">render</span><span class="w"> </span><span class="n">columnchart</span>
+</code></pre></div>
+<hr/>
+<h2 id="en-8">8. Dashboard Configuration</h2>
+<p>For production, place at <strong>least the following 8 items on one screen</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Panel</th>
+<th>Data Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Request Count</td>
+<td><code>AzureOpenAIRequests</code> (Metrics)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>429 Count</td>
+<td><code>AzureOpenAIRequests</code> + <code>StatusCode</code> dimension filter</td>
+</tr>
+<tr>
+<td>3</td>
+<td>5xx Count</td>
+<td><code>AzureOpenAIRequests</code> + <code>StatusCode</code> dimension filter</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Time to Response (Average/Maximum)</td>
+<td><code>AzureOpenAITimeToResponse</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Prompt Tokens</td>
+<td><code>ProcessedPromptTokens</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td>Completion Tokens</td>
+<td><code>GeneratedTokens</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>PTU Utilization V2</strong></td>
+<td><code>AzureOpenAIProvisionedManagedUtilizationV2</code> — <strong>Only possible with metrics part</strong></td>
+</tr>
+<tr>
+<td>8</td>
+<td>Cost Trend</td>
+<td>Estimation based on token metrics or Cost Management</td>
+</tr>
+</tbody>
+</table>
+<p>When using APIM additionally:</p>
+<ol start="9">
+<li>Call volume per deployment (separate by <code>ModelDeploymentName</code>)</li>
+<li>Failover occurrences per region (<code>ApiManagementGatewayLogs</code>)</li>
+<li>Top N token consumption per tenant (<code>llm-emit-token-metric</code> dimension)</li>
+<li>Semantic Cache Hit Rate</li>
+</ol>
+<p>Additional when using Spillover:</p>
+<ol start="13">
+<li>Spillover ratio (<code>AzureOpenAIRequests</code> + <code>IsSpillover</code> dimension)</li>
+</ol>
+<h3 id="en-81">8.1 Recommended Screen Layout</h3>
+<div class="codehilite"><pre><span></span><code>┌────────────┬────────────┬────────────┬────────────┐
+│ Requests   │ 429 Count  │ 5xx Count  │ TimeToResp │  ← KPI Tile
+├────────────┴────────────┼────────────┴────────────┤
+│ Status Code Distribution (Time Series) │ PTU Utilization V2 │  ← Metric Part
+├─────────────────────────┼─────────────────────────┤
+│ Token Usage (Prompt/Comp) │ Cost Trend             │
+├─────────────────────────┴─────────────────────────┤
+│ Call volume by Deployment / Spillover / Failover (Table) │
+└───────────────────────────────────────────────────┘
+</code></pre></div>
+<blockquote>
+<p><strong>Workbook Composition Tips</strong>: PTU usage cannot be exported via logs, so it needs to be added in the <strong><em>Metric</em> part</strong> rather than the <em>Query</em> part in the Workbook. It is very common to fail when trying to create it in the KQL part without knowing this.</p>
+</blockquote>
+<h3 id="en-82">8.2 Alternative Tools</h3>
+<ul>
+<li><strong>Azure Managed Grafana</strong>: Integrated view across multiple subscriptions and resources, friendly for on-call teams. Metric dimension separation is more convenient than in Workbooks</li>
+<li><strong>Azure Monitor Dashboard (Portal)</strong>: Simple view for executive summaries</li>
+<li><strong>Power BI / Cost Management</strong>: Monthly cost and usage reporting</li>
+</ul>
+<hr/>
+<h2 id="en-9-alert-rule">9. Alert Rule Design</h2>
+<blockquote>
+<p><strong>Important</strong>: Among the alerts below, <strong>PTU usage and availability must be created as "Metric alerts"</strong> (log alerts are not allowed, §2.3). 429 and 5xx should be configured in metric alerts with <code>StatusCode</code> <strong>dimension filter</strong>.</p>
+</blockquote>
+<h3 id="en-91-critical">9.1 Critical</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Signal</th>
+<th>Condition</th>
+<th>Evaluation</th>
+<th>Severity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AOAI-429-Spike</strong></td>
+<td><code>AzureOpenAIRequests</code> (Dim: <code>StatusCode</code>)</td>
+<td>Total &gt; Threshold</td>
+<td>1 min / 5 min window</td>
+<td>Sev1</td>
+</tr>
+<tr>
+<td><strong>AOAI-5xx</strong></td>
+<td><code>AzureOpenAIRequests</code> (Dim: <code>StatusCode</code>)</td>
+<td>Total &gt; 0</td>
+<td>1 min / 5 min window</td>
+<td>Sev1</td>
+</tr>
+<tr>
+<td><strong>AOAI-PTU-Critical</strong></td>
+<td><code>AzureOpenAIProvisionedManagedUtilizationV2</code></td>
+<td>Avg &gt; <strong>90%</strong></td>
+<td>5 min / 15 min window</td>
+<td>Sev1</td>
+</tr>
+<tr>
+<td><strong>AOAI-Availability-Drop</strong></td>
+<td><code>AzureOpenAIAvailabilityRate</code></td>
+<td>Avg &lt; 99%</td>
+<td>5 min / 15 min window</td>
+<td>Sev1</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-92-warning">9.2 Warning</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Signal</th>
+<th>Condition</th>
+<th>Severity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>AOAI-PTU-Warning</strong></td>
+<td><code>AzureOpenAIProvisionedManagedUtilizationV2</code></td>
+<td>Avg &gt; <strong>80%</strong></td>
+<td>Sev2</td>
+</tr>
+<tr>
+<td><strong>AOAI-Latency-Degrade</strong></td>
+<td><code>AzureOpenAITimeToResponse</code></td>
+<td>Dynamic threshold or baseline × 1.5</td>
+<td>Sev2</td>
+</tr>
+<tr>
+<td><strong>AOAI-TTLB-Near-Timeout</strong></td>
+<td><code>AzureOpenAITTLTInMS</code></td>
+<td>Max &gt; Client timeout × 0.8</td>
+<td>Sev2</td>
+</tr>
+<tr>
+<td><strong>AOAI-499-Spike</strong></td>
+<td>App Insights log alert</td>
+<td>499 rate surge</td>
+<td>Sev3</td>
+</tr>
+<tr>
+<td><strong>AOAI-ContentFilter-Spike</strong></td>
+<td><code>RAIRejectedRequests</code></td>
+<td>Blocking rate surge</td>
+<td>Sev3</td>
+</tr>
+<tr>
+<td><strong>AOAI-Spillover-High</strong></td>
+<td><code>AzureOpenAIRequests</code> (Dim: <code>IsSpillover</code>)</td>
+<td>Spillover rate continuous increase</td>
+<td>Sev3</td>
+</tr>
+<tr>
+<td><strong>AOAI-CacheHit-Drop</strong></td>
+<td><code>AzureOpenAIContextTokensCacheMatchRate</code></td>
+<td>Drop</td>
+<td>Sev3</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-93-cli-ptu-80">9.3 CLI Example — PTU 80% Warning</h3>
+<div class="codehilite"><pre><span></span><code>az<span class="w"> </span>monitor<span class="w"> </span>metrics<span class="w"> </span>alert<span class="w"> </span>create<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--name<span class="w"> </span><span class="s2">"AOAI-PTU-Warning"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--resource-group<span class="w"> </span><span class="nv">$RG</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--scopes<span class="w"> </span><span class="nv">$AOAI_RESOURCE_ID</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--condition<span class="w"> </span><span class="s2">"avg AzureOpenAIProvisionedManagedUtilizationV2 &gt; 80"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--window-size<span class="w"> </span>5m<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--evaluation-frequency<span class="w"> </span>5m<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--severity<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--action<span class="w"> </span><span class="nv">$ACTION_GROUP_ID</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--description<span class="w"> </span><span class="s2">"PTU utilization exceeded 80% - capacity pressure"</span>
+</code></pre></div>
+<h3 id="en-94-cli-429-statuscode">9.4 CLI Example — 429 Surge (StatusCode Dimension Filter)</h3>
+<div class="codehilite"><pre><span></span><code>az<span class="w"> </span>monitor<span class="w"> </span>metrics<span class="w"> </span>alert<span class="w"> </span>create<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--name<span class="w"> </span><span class="s2">"AOAI-429-Spike"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--resource-group<span class="w"> </span><span class="nv">$RG</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--scopes<span class="w"> </span><span class="nv">$AOAI_RESOURCE_ID</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--condition<span class="w"> </span><span class="s2">"total AzureOpenAIRequests &gt; 50 where StatusCode includes 429"</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--window-size<span class="w"> </span>5m<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--evaluation-frequency<span class="w"> </span>1m<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--severity<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--action<span class="w"> </span><span class="nv">$ACTION_GROUP_ID</span>
+</code></pre></div>
+<blockquote>
+<p>The <code>StatusCode</code> dimension value can appear as a number (<code>429</code>) or a category (<code>clienterrors</code>) depending on the environment. <strong>Check the dimension value first in Metrics Explorer</strong> before reflecting it in alert conditions.</p>
+</blockquote>
+<h3 id="en-95-alert">9.5 Alert Design Principles</h3>
+<ul>
+<li>Apply <strong>Dynamic Threshold</strong> to Latency and Request Count → Respond to traffic seasonality</li>
+<li><strong>Action Group</strong>: Teams Webhook + PagerDuty/ITSM + Logic App (automatic mitigation)</li>
+<li><strong>Alert Suppression</strong>: Apply suppression rules during the deployment window</li>
+<li><strong>Noise Prevention</strong>: Page using <strong>effective success rate after retry (§7.8)</strong> rather than raw 429 count, and keep the 429 count at alert level</li>
+</ul>
+<hr/>
+<h2 id="en-10-runbook">10. Incident Response Runbook</h2>
+<h3 id="en-101-429">10.1 429 Surge</h3>
+<div class="codehilite"><pre><span></span><code>1. Check AzureOpenAIProvisionedManagedUtilizationV2 (Metrics Explorer)
+   ├─ &gt;85% → Capacity issue confirmed
+   │    → Spillover activation / PTU expansion / standard distribution routing
+   └─ Low → Suspected specific tenant overload or standard deployment quota exceeded
+        → Query Top N UserId/TenantId in App Insights (§7.7)
+        → Isolated due to APIM llm-token-limit
+2. Check client retry logic — compliance with retry-after header
+   → Immediate retry ignoring the header amplifies 429
+3. Reduce max_tokens / Switch to streaming to alleviate momentary load
+</code></pre></div>
+<h3 id="en-102-499">10.2 499 Surge</h3>
+<div class="codehilite"><pre><span></span><code>1. Check AzureOpenAITTLTInMS (total generation time) p95
+   ├─ Approaching client timeout → Type A (Timeout)
+   │    → Introduction of streaming, increase in timeout, adjustment of max_tokens
+   └─ Has leisure → Type B (user canceled) → UX/product issue
+2. Check timeout consistency between Client ↔ APIM ↔ AOAI
+3. Securing the basis for max_tokens with the output token distribution (§7.9)
+</code></pre></div>
+<h3 id="en-103-5xx">10.3 5xx Surge</h3>
+<div class="codehilite"><pre><span></span><code>1. Check Azure Service Health / Resource Health
+2. Whether it is a single-region issue → Compare separately at the region level
+3. Verify APIM Backend Pool Automatic Failover Operation (§7.11)
+4. Support ticket for continuous issues (attach apim-request-id / x-ms-request-id)
+</code></pre></div>
+<h3 id="en-104-latency">10.4 Latency Degradation</h3>
+<div class="codehilite"><pre><span></span><code>1. Separate Analysis of TimeToResponse vs TTLB
+   ├─ TimeToResponse ↑ → Queuing/Capacity Pressure (Check PTU Utilization)
+   └─ Only TTLB ↑        → Increase output tokens (check prompt/max_tokens)
+2. Check Prompt Token Cache Match Rate → Whether cache misses are increasing
+3. Check the input token length distribution (RAG context inflation is the most common cause)
+4. Check whether AzureOpenAITokenPerSecond is decreasing
+</code></pre></div>
+<hr/>
+<h2 id="en-11_1">11. Monitoring from a Cost Optimization Perspective</h2>
+<table>
+<thead>
+<tr>
+<th>Lever</th>
+<th>Observable Metrics</th>
+<th>Expected Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prompt Caching</td>
+<td><code>AzureOpenAIContextTokensCacheMatchRate</code></td>
+<td>Improvement in Input Cost / TTFT</td>
+</tr>
+<tr>
+<td>Model Routing (Lightweight Model First)</td>
+<td><code>AzureOpenAIRequests</code> × <code>ModelName</code></td>
+<td>Unit Cost Reduction</td>
+</tr>
+<tr>
+<td><code>max_tokens</code> Limit</td>
+<td><code>GeneratedTokens</code></td>
+<td>Direct reduction of output costs + control of tail latency</td>
+</tr>
+<tr>
+<td>Semantic Cache(APIM)</td>
+<td>Cache Hit Rate</td>
+<td>Elimination of duplicate queries</td>
+</tr>
+<tr>
+<td>Switch to Batch API</td>
+<td>Batch throughput</td>
+<td>Reduction of asynchronous workload costs</td>
+</tr>
+<tr>
+<td>RAG context compression</td>
+<td><code>ProcessedPromptTokens</code></td>
+<td>Reduction of input costs</td>
+</tr>
+<tr>
+<td>PTU vs standard mix</td>
+<td>PTU utilization + <code>IsSpillover</code></td>
+<td>Base load PTU, peak is standard</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Monthly review routine</strong>: Top 5 apps by token usage → Prompt length distribution → Cache hit rate → Identification of model downgrade candidates</p>
+<hr/>
+<h2 id="en-12">12. Security &amp; Governance Checklist</h2>
+<ul>
+<li>[ ] Use <strong>Managed Identity + Entra ID RBAC</strong> instead of API Key (<code>Cognitive Services OpenAI User</code>)</li>
+<li>[ ] Configure <strong>Private Endpoint</strong> + block public network access</li>
+<li>[ ] Allow AOAI access only from APIM (network ACL)</li>
+<li>[ ] Content Filter policy and monitor <code>RAIRejectedRequests</code></li>
+<li>[ ] When logging Prompt/Completion, implement <strong>PII masking + retention policy</strong></li>
+<li>[ ] Separate RBAC for Log Analytics access (operator vs auditor)</li>
+<li>[ ] Enforce diagnostic settings with Azure Policy (<code>DeployIfNotExists</code>)</li>
+<li>[ ] <code>AzureOpenAIRequestUsage</code> / <code>ManagedNetworkEvents</code> incur <strong>additional charges for platform log export</strong>, so enable after reviewing costs</li>
+<li>[ ] Log <strong>collection and retention costs occur for all categories</strong>, so periodically check actual volume based on <code>_BilledSize</code> (§2.4)</li>
+</ul>
+<hr/>
+<h2 id="en-a-top-10">Appendix A. Top 10 Common Mistakes</h2>
+<ol>
+<li>Disabling <code>AllMetrics</code> → all subsequent observations become ineffective</li>
+<li><strong>Assuming <code>AzureMetrics</code> has dimension columns</strong> → <code>ResponseCode</code> filter quietly returns 0 results</li>
+<li><strong>Trying to query PTU utilization with KQL</strong> → this metric cannot be exported to logs (use Metric Alerts/Metrics Explorer)</li>
+<li><strong>Use of <code>TotalCalls</code> / <code>ClientErrors</code> / <code>Latency</code></strong> → Metrics prohibited for AOAI in official documentation</li>
+<li>Looking only at AOAI metrics without connecting App Insights → Cannot trace causes at user/session level</li>
+<li>Reporting 429 as "AOAI failure" → Actually PTU saturation or quota exceeded</li>
+<li>Immediate retry ignoring <code>retry-after</code> → Amplifies throttling</li>
+<li>Not setting <code>max_tokens</code> → Simultaneous surge in cost and tail latency, causes 499</li>
+<li>Misclassifying 499 as server error → Wrong escalation (actually client-side disconnect)</li>
+<li>Single region, single deployment → No failover path</li>
+</ol>
+<h2 id="en-b">Appendix B. Reference Documents</h2>
+<ul>
+<li>Supported metrics — Microsoft.CognitiveServices/accounts: https://learn.microsoft.com/azure/azure-monitor/reference/supported-metrics/microsoft-cognitiveservices-accounts-metrics</li>
+<li>Supported logs — Microsoft.CognitiveServices/accounts: https://learn.microsoft.com/azure/azure-monitor/reference/supported-logs/microsoft-cognitiveservices-accounts-logs</li>
+<li>Supported resource log categories (Export cost description): https://learn.microsoft.com/azure/azure-monitor/reference/logs-index</li>
+<li>Azure Monitor Logs cost calculation: https://learn.microsoft.com/azure/azure-monitor/logs/cost-logs</li>
+<li>Azure Monitor pricing (Platform Logs section): https://azure.microsoft.com/pricing/details/monitor/</li>
+<li>Monitor Azure OpenAI: https://learn.microsoft.com/azure/ai-services/openai/how-to/monitor-openai</li>
+<li>Provisioned Throughput (PTU): https://learn.microsoft.com/azure/ai-services/openai/concepts/provisioned-throughput</li>
+<li>Provisioned spillover: https://learn.microsoft.com/azure/ai-services/openai/how-to/spillover-traffic-management</li>
+<li>APIM GenAI gateway capabilities: https://learn.microsoft.com/azure/api-management/genai-gateway-capabilities</li>
+<li>Azure OpenAI gateway architecture guide: https://learn.microsoft.com/azure/architecture/ai-ml/guide/azure-openai-gateway-guide</li>
+<li>Azure Monitor Workbooks: https://learn.microsoft.com/azure/azure-monitor/visualize/workbooks-overview</li>
+</ul>
+<hr/>
+<p class="meta">Last modified 2026-08-10 · Microsoft Scout</p>
+</main>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 <script>
 (function () {

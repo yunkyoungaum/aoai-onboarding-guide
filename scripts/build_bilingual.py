@@ -23,6 +23,7 @@ GUIDES = {
     "06": ROOT / "guides/06-aoai-cache-performance/index.html",
 }
 HANGUL = re.compile(r"[가-힣]")
+HANGUL_PHRASE = re.compile(r"[가-힣]+(?:[ \t·/]+[가-힣]+)*")
 SKIP_TAGS = {"script", "style", "code", "pre", "kbd", "samp"}
 BLOCK_TAGS = {"h1", "h2", "h3", "h4", "p", "li", "th", "td", "caption", "blockquote"}
 TERM_FIXES = (
@@ -33,6 +34,7 @@ TERM_FIXES = (
     (re.compile(r"\bCustomer Management Key\b", re.I), "customer-managed key"),
     (re.compile(r"\bquarter\b", re.I), "quota"),
 )
+BATCH_SIZE = 900
 
 
 def load_cache():
@@ -74,6 +76,69 @@ def translate(text, cache):
     return result
 
 
+def translate_fully(text, cache):
+    result = translate(text, cache)
+    for phrase in set(HANGUL_PHRASE.findall(result)):
+        result = result.replace(phrase, translate(phrase, cache))
+    return result
+
+
+def pretranslate_html(elements, cache):
+    pending = [str(element) for element in elements if HANGUL.search(str(element)) and str(element).strip() not in cache]
+    batches = []
+    batch = []
+    batch_length = 0
+    for source in pending:
+        wrapped_length = len(source) + len('<div data-translation-id="9999"></div>')
+        if batch and batch_length + wrapped_length > BATCH_SIZE:
+            batches.append(batch)
+            batch = []
+            batch_length = 0
+        batch.append(source)
+        batch_length += wrapped_length
+    if batch:
+        batches.append(batch)
+
+    def translate_batch(sources):
+        wrapper = "".join(
+            f'<div data-translation-id="{index}">{source}</div>'
+            for index, source in enumerate(sources)
+        )
+        translated = None
+        for attempt in range(4):
+            try:
+                translated = ts.translate_text(
+                    wrapper,
+                    translator="bing",
+                    from_language="ko",
+                    to_language="en",
+                )
+                break
+            except Exception:
+                if attempt == 3:
+                    raise
+                time.sleep(2 ** attempt)
+        fragment = BeautifulSoup(translated, "html.parser")
+        translated_blocks = fragment.select("[data-translation-id]")
+        if len(translated_blocks) != len(sources):
+            if len(sources) > 1:
+                midpoint = len(sources) // 2
+                translate_batch(sources[:midpoint])
+                translate_batch(sources[midpoint:])
+                return
+            translated = translate(sources[0], cache)
+            cache[sources[0].strip()] = translated
+            save_cache(cache)
+            return
+        for index, source in enumerate(sources):
+            cache[source.strip()] = translated_blocks[index].decode_contents()
+        save_cache(cache)
+        time.sleep(0.25)
+
+    for sources in batches:
+        translate_batch(sources)
+
+
 def translate_html(element, cache):
     source = str(element)
     translated = translate(source, cache)
@@ -91,7 +156,7 @@ def translate_mermaid(container, cache):
 
             def replace_label(match):
                 quote, label = match.groups()
-                return quote + translate(label, cache) + quote
+                return quote + translate_fully(label, cache) + quote
 
             translated = re.sub(r'(["\'])([^"\']*[가-힣][^"\']*)\1', replace_label, source)
             if translated != source:
@@ -107,7 +172,7 @@ def translate_code_comments(container, cache):
                 match = re.match(r"(.*?#\s*)(.*[가-힣].*)(\r?\n)?$", line)
                 if match:
                     prefix, comment, ending = match.groups()
-                    line = prefix + translate(comment, cache) + (ending or "")
+                    line = prefix + translate_fully(comment, cache) + (ending or "")
                 elif HANGUL.search(line):
                     content = line.rstrip("\r\n")
                     ending = line[len(content):]
@@ -158,22 +223,28 @@ def build(path, cache):
     english["class"] = korean_classes + ["lang-en"]
     prefix_anchors(english)
 
-    for element in list(english.find_all(BLOCK_TAGS)):
-        if element.find_parent(class_="mermaid") or "mermaid" in element.get("class", []):
-            continue
-        if element.has_attr("data-no-translate") or element.find_parent(attrs={"data-no-translate": True}):
-            continue
+    blocks = [
+        element
+        for element in english.find_all(BLOCK_TAGS)
+        if not element.find(BLOCK_TAGS)
+        if not element.find_parent(class_="mermaid")
+        and "mermaid" not in element.get("class", [])
+        and not element.has_attr("data-no-translate")
+        and not element.find_parent(attrs={"data-no-translate": True})
+    ]
+    pretranslate_html(blocks, cache)
+    for element in blocks:
         translate_html(element, cache)
 
     for node in list(english.find_all(string=True)):
-        if should_translate(node) and not node.find_parent(BLOCK_TAGS):
-            node.replace_with(NavigableString(translate(str(node), cache)))
+        if should_translate(node):
+            node.replace_with(NavigableString(translate_fully(str(node), cache)))
     translate_mermaid(english, cache)
     translate_code_comments(english, cache)
     for element in english.find_all(attrs={"title": True}):
-        element["title"] = translate(element["title"], cache)
+        element["title"] = translate_fully(element["title"], cache)
     for element in english.find_all(attrs={"aria-label": True}):
-        element["aria-label"] = translate(element["aria-label"], cache)
+        element["aria-label"] = translate_fully(element["aria-label"], cache)
 
     korean.insert_after(english)
     body["data-lang"] = "ko"
@@ -181,7 +252,8 @@ def build(path, cache):
     if english_h1:
         body["data-title-en"] = english_h1.get_text(" ", strip=True)
     body["data-title-ko"] = soup.title.get_text(strip=True)
-    path.write_text(str(soup), encoding="utf-8")
+    rendered = re.sub(r"[ \t]+$", "", str(soup), flags=re.MULTILINE)
+    path.write_text(rendered, encoding="utf-8")
 
 
 def main():
