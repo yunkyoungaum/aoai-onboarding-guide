@@ -21,9 +21,13 @@ window.GUIDES = [
     no: "01",
     slug: "01-oai-to-aoai-onboarding",
     title: "OAI → Azure OpenAI 온보딩 가이드",
+    titleEn: "OAI → Azure OpenAI onboarding guide",
     summary:
       "OpenAI를 쓰던 팀이 Azure OpenAI로 전환할 때 필요한 리소스 생성, 인증, 네트워크, 배포 절차를 단계별로 정리했습니다.",
+    summaryEn:
+      "A step-by-step guide to resource creation, authentication, networking, and deployment when moving from OpenAI to Azure OpenAI.",
     tags: ["온보딩", "마이그레이션", "인증", "네트워크"],
+    tagsEn: ["Onboarding", "Migration", "Authentication", "Networking"],
     updated: "2026-08-05",
     status: "published"
   },
@@ -31,9 +35,13 @@ window.GUIDES = [
     no: "02",
     slug: "02-aoai-foundations",
     title: "Azure OpenAI 기본 개념 — 리소스 · 배포 · 쿼터 · PTU 신청과 예약",
+    titleEn: "Azure OpenAI foundations — resources, deployments, quota, and PTU",
     summary:
       "리소스와 배포의 관계, 배포 유형 전체 지도, 쿼터와 용량의 차이, PTU 쿼터 신청부터 Azure 예약 구매까지의 순서를 정리했습니다. 헷갈리기 쉬운 개념을 먼저 잡고 싶다면 여기서 시작하세요.",
+    summaryEn:
+      "Understand the relationship between resources and deployments, deployment types, quota versus capacity, and the path from PTU quota requests to Azure Reservations.",
     tags: ["기본 개념", "쿼터", "용량", "PTU", "예약"],
+    tagsEn: ["Foundations", "Quota", "Capacity", "PTU", "Reservations"],
     updated: "2026-08-07",
     status: "published",
     source: "source.md"
@@ -42,9 +50,13 @@ window.GUIDES = [
     no: "03",
     slug: "03-aoai-deployment-monitoring",
     title: "Azure OpenAI 배포 & 운영 모니터링 가이드",
+    titleEn: "Azure OpenAI deployment and operations monitoring guide",
     summary:
       "PTU/표준 배포 설계부터 Diagnostic Settings, 메트릭·KQL, Alert Rule, APIM AI Gateway, 장애 대응 Runbook까지 운영 관측 체계를 다룹니다.",
+    summaryEn:
+      "Build an operations observability system covering PTU and standard deployments, Diagnostic Settings, metrics, KQL, alert rules, APIM AI Gateway, and incident runbooks.",
     tags: ["모니터링", "PTU", "KQL", "Alert", "APIM"],
+    tagsEn: ["Monitoring", "PTU", "KQL", "Alerts", "APIM"],
     updated: "2026-08-06",
     status: "published",
     source: "source.md"
@@ -53,9 +65,13 @@ window.GUIDES = [
     no: "04",
     slug: "04-aoai-high-availability",
     title: "Azure OpenAI 고가용성(HA) 아키텍처 가이드",
+    titleEn: "Azure OpenAI high-availability architecture guide",
     summary:
       "장애 유형 분류부터 Spillover, APIM 백엔드 풀·서킷 브레이커, 멀티 리전 Failover, 쿼터 확보, 성능 저하 모드, Failover 훈련까지 가용성 설계를 다룹니다.",
+    summaryEn:
+      "Design for availability with failure classification, Spillover, APIM backend pools and circuit breakers, multi-region failover, quota planning, degraded mode, and failover drills.",
     tags: ["HA", "Failover", "Spillover", "APIM", "멀티 리전"],
+    tagsEn: ["HA", "Failover", "Spillover", "APIM", "Multi-region"],
     updated: "2026-08-10",
     status: "published",
     source: "source.md"
@@ -64,9 +80,13 @@ window.GUIDES = [
     no: "05",
     slug: "05-aoai-model-router",
     title: "Azure OpenAI Model Router 가이드 — 요청별 모델 자동 선택으로 비용과 지연 줄이기",
+    titleEn: "Azure OpenAI Model Router — reduce cost and latency with automatic model selection",
     summary:
       "프롬프트를 실시간 분석해 최적 모델로 라우팅하는 model router의 개념부터 라우팅 모드(Balanced·Cost·Quality), 포털 배포 절차, 모델 서브셋과 페일오버, 성능·비용 관측과 제약까지 정리했습니다. (작성 중)",
+    summaryEn:
+      "Covers model router concepts, Balanced/Cost/Quality modes, portal deployment, model subsets, failover, performance and cost observability, and constraints. (Work in progress)",
     tags: ["Model Router", "비용 최적화", "라우팅", "Foundry", "거버넌스"],
+    tagsEn: ["Model Router", "Cost optimization", "Routing", "Foundry", "Governance"],
     updated: "2026-08-31",
     status: "draft",
     source: "source.md"
@@ -75,9 +95,13 @@ window.GUIDES = [
     no: "06",
     slug: "06-aoai-cache-performance",
     title: "Azure OpenAI 캐시 성능 최적화 가이드 — 프롬프트 캐싱으로 TTFT와 비용 줄이기",
+    titleEn: "Azure OpenAI cache performance guide — reduce TTFT and cost with prompt caching",
     summary:
       "프롬프트 캐싱 동작 원리부터 히트율 진단, 앞 1,024 토큰 고정 · 보존 기간 연장 · prompt_cache_key 농도 조절 3단계 개선, 배포 유형과 APIM 계층 선택, 비용 모델과 SLO 연결까지 다룹니다. (작성 중)",
+    summaryEn:
+      "Covers prompt caching, hit-rate diagnosis, three improvement steps, deployment and APIM tier choices, and connecting the cost model to SLOs. (Work in progress)",
     tags: ["프롬프트 캐싱", "TTFT", "비용 최적화", "PTU", "APIM"],
+    tagsEn: ["Prompt caching", "TTFT", "Cost optimization", "PTU", "APIM"],
     updated: "2026-08-27",
     status: "draft",
     source: "source.md"

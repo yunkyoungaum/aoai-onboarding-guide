@@ -153,7 +153,10 @@ footer.page code {
       <h1>Azure OpenAI 실무 가이드 모음</h1>
       <p>현장에서 반복적으로 마주치는 Azure OpenAI 설계·운영 주제를 가이드 단위로 정리합니다.</p>
     </div>
-    <button class="toggle" id="themeToggle" type="button">테마 전환</button>
+    <div>
+      <button class="toggle" id="languageToggle" type="button">English</button>
+      <button class="toggle" id="themeToggle" type="button">테마 전환</button>
+    </div>
   </header>
 
   <div class="toolbar">
@@ -182,6 +185,8 @@ footer.page code {
   var empty = document.getElementById("empty");
   var search = document.getElementById("search");
   var toggle = document.getElementById("themeToggle");
+  var languageToggle = document.getElementById("languageToggle");
+  var language = localStorage.getItem("aoai-guide-language") || "ko";
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -191,7 +196,7 @@ footer.page code {
 
   function cardHtml(g) {
     var href = "guides/" + esc(g.slug) + "/";
-    var tags = (g.tags || []).map(function (t) {
+    var tags = (language === "en" ? (g.tagsEn || g.tags) : g.tags || []).map(function (t) {
       return '<span class="tag">' + esc(t) + "</span>";
     }).join("");
     var draft = g.status === "draft" ? '<span class="draft">draft</span>' : "";
@@ -203,11 +208,11 @@ footer.page code {
       '<div class="card" data-href="' + href + '">' +
         '<div class="card-head">' +
           '<span class="num">' + esc(g.no) + "</span>" +
-          '<h2><a href="' + href + '">' + esc(g.title) + "</a></h2>" + draft +
+          '<h2><a href="' + href + '">' + esc(language === "en" ? (g.titleEn || g.title) : g.title) + "</a></h2>" + draft +
         "</div>" +
-        '<p class="summary">' + esc(g.summary) + "</p>" +
+          '<p class="summary">' + esc(language === "en" ? (g.summaryEn || g.summary) : g.summary) + "</p>" +
         '<div class="metarow">' + tags + src +
-          '<span class="updated">업데이트 ' + esc(g.updated) + "</span>" +
+          '<span class="updated">' + (language === "en" ? "Updated " : "업데이트 ") + esc(g.updated) + "</span>" +
         "</div>" +
       "</div>";
   }
@@ -216,7 +221,7 @@ footer.page code {
     var needle = (q || "").trim().toLowerCase();
     var shown = list.filter(function (g) {
       if (!needle) return true;
-      var hay = [g.no, g.title, g.summary].concat(g.tags || []).join(" ").toLowerCase();
+      var hay = [g.no, g.title, g.titleEn, g.summary, g.summaryEn].concat(g.tags || [], g.tagsEn || []).join(" ").toLowerCase();
       return hay.indexOf(needle) !== -1;
     });
     cards.innerHTML = shown.map(cardHtml).join("");
@@ -236,6 +241,27 @@ footer.page code {
     var cur = document.documentElement.getAttribute("data-theme");
     document.documentElement.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
   });
+
+  languageToggle.addEventListener("click", function () {
+    language = language === "en" ? "ko" : "en";
+    localStorage.setItem("aoai-guide-language", language);
+    document.documentElement.lang = language;
+    languageToggle.textContent = language === "en" ? "한국어" : "English";
+    document.querySelector("header.page h1").textContent = language === "en" ? "Azure OpenAI practical guides" : "Azure OpenAI 실무 가이드 모음";
+    document.querySelector("header.page p").textContent = language === "en" ? "Practical guides for recurring Azure OpenAI design and operations topics." : "현장에서 반복적으로 마주치는 Azure OpenAI 설계·운영 주제를 가이드 단위로 정리합니다.";
+    search.placeholder = language === "en" ? "Search title, summary, or tags (for example: PTU, monitoring, onboarding)" : "제목 · 요약 · 태그 검색 (예: PTU, 모니터링, 온보딩)";
+    empty.textContent = language === "en" ? "No guides found." : "검색 결과가 없습니다.";
+    render(search.value);
+  });
+
+  if (language === "en") {
+    document.documentElement.lang = "en";
+    languageToggle.textContent = "한국어";
+    document.querySelector("header.page h1").textContent = "Azure OpenAI practical guides";
+    document.querySelector("header.page p").textContent = "Practical guides for recurring Azure OpenAI design and operations topics.";
+    search.placeholder = "Search title, summary, or tags (for example: PTU, monitoring, onboarding)";
+    empty.textContent = "No guides found.";
+  }
 
   render("");
 })();

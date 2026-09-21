@@ -1,8 +1,9 @@
 <!DOCTYPE html>
+
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>OAI → Azure OpenAI 온보딩 가이드</title>
 <script>
   (() => {
@@ -211,165 +212,308 @@ mark.hl {
 footer { text-align: center; color: var(--cp-text-soft); font-size: 0.8rem; margin-top: 2rem; }
 </style>
 </head>
-<body>
-<div class="wrap">
-  <header class="page">
-    <h1>OpenAI → Azure OpenAI 온보딩 가이드</h1>
-    <p>고객 전환 시 핵심 4단계 · 2025.10 문서 개정 반영 (콘텐츠 필터 = Guardrails)</p>
-  </header>
-
-  <!-- 1 -->
-  <section class="card">
-    <div class="card-head">
-      <div class="num">1</div>
-      <h2>쿼터 확인</h2>
-      <span class="tag">필수</span>
-    </div>
-    <p>쿼터는 <strong>구독 전체가 아니라 리전 · 모델 · 배포 단위</strong>로 <code>TPM</code>(분당 토큰) / <code>RPM</code>(분당 요청)으로 할당됩니다.</p>
-    <ul>
-      <li><strong>확인 위치</strong>: Azure AI Foundry 포털 → <em>Quotas</em>, 또는 Azure Portal → 구독 → <em>Usage + quotas</em></li>
-      <li>원하는 <strong>모델이 원하는 리전에 존재</strong>하고 TPM 여유가 있는지 확인</li>
-      <li>부족하면 <strong>Quota 증설 요청</strong> 제출 (또는 계정팀 경유)</li>
-      <li>대규모/일정 트래픽이면 <strong>PTU(Provisioned)</strong> 또는 <strong>Global 배포 + 다중 리전 로드밸런싱</strong> 검토</li>
-    </ul>
-    <div class="note">TPM은 배포에 나눠 할당되므로, 배포를 여러 개 만들면 리전 쿼터를 서로 나눠 씁니다.</div>
-  </section>
-
-  <!-- 2 -->
-  <section class="card">
-    <div class="card-head">
-      <div class="num">2</div>
-      <h2>모델 배포 방식 (간략)</h2>
-    </div>
-    <p>OAI는 <code>model</code> 이름을 직접 쓰지만, AOAI는 모델을 <strong>배포(Deployment)</strong>로 만들고 <strong>배포 이름</strong>을 호출합니다.</p>
-    <ol class="steps">
-      <li>Foundry 포털 → <em>Deployments</em> → <em>Create</em></li>
-      <li>모델 + 버전 선택 → <strong>배포 유형</strong> 선택 (아래)</li>
-      <li>TPM 할당 → 배포 이름 지정 → 생성</li>
-      <li>코드에서 <code>model</code> 자리에 <strong>배포 이름</strong> 사용 + <code>api-version</code> 지정</li>
-    </ol>
-    <p class="muted"><strong>배포 유형</strong> — Standard(단일 리전) · Global Standard(광역·저비용) · DataZone(권역 내) · Provisioned/PTU(예약 처리량).</p>
-    <pre>endpoint = https://{resource}.openai.azure.com
+<body data-lang="ko" data-title-en="OpenAI → Azure OpenAI Onboarding Guide" data-title-ko="OAI → Azure OpenAI 온보딩 가이드">
+<div class="wrap lang-ko">
+<header class="page">
+<h1>OpenAI → Azure OpenAI 온보딩 가이드</h1>
+<p>고객 전환 시 핵심 4단계 · 2025.10 문서 개정 반영 (콘텐츠 필터 = Guardrails)</p>
+</header>
+<!-- 1 -->
+<section class="card">
+<div class="card-head">
+<div class="num">1</div>
+<h2>쿼터 확인</h2>
+<span class="tag">필수</span>
+</div>
+<p>쿼터는 <strong>구독 전체가 아니라 리전 · 모델 · 배포 단위</strong>로 <code>TPM</code>(분당 토큰) / <code>RPM</code>(분당 요청)으로 할당됩니다.</p>
+<ul>
+<li><strong>확인 위치</strong>: Azure AI Foundry 포털 → <em>Quotas</em>, 또는 Azure Portal → 구독 → <em>Usage + quotas</em></li>
+<li>원하는 <strong>모델이 원하는 리전에 존재</strong>하고 TPM 여유가 있는지 확인</li>
+<li>부족하면 <strong>Quota 증설 요청</strong> 제출 (또는 계정팀 경유)</li>
+<li>대규모/일정 트래픽이면 <strong>PTU(Provisioned)</strong> 또는 <strong>Global 배포 + 다중 리전 로드밸런싱</strong> 검토</li>
+</ul>
+<div class="note">TPM은 배포에 나눠 할당되므로, 배포를 여러 개 만들면 리전 쿼터를 서로 나눠 씁니다.</div>
+</section>
+<!-- 2 -->
+<section class="card">
+<div class="card-head">
+<div class="num">2</div>
+<h2>모델 배포 방식 (간략)</h2>
+</div>
+<p>OAI는 <code>model</code> 이름을 직접 쓰지만, AOAI는 모델을 <strong>배포(Deployment)</strong>로 만들고 <strong>배포 이름</strong>을 호출합니다.</p>
+<ol class="steps">
+<li>Foundry 포털 → <em>Deployments</em> → <em>Create</em></li>
+<li>모델 + 버전 선택 → <strong>배포 유형</strong> 선택 (아래)</li>
+<li>TPM 할당 → 배포 이름 지정 → 생성</li>
+<li>코드에서 <code>model</code> 자리에 <strong>배포 이름</strong> 사용 + <code>api-version</code> 지정</li>
+</ol>
+<p class="muted"><strong>배포 유형</strong> — Standard(단일 리전) · Global Standard(광역·저비용) · DataZone(권역 내) · Provisioned/PTU(예약 처리량).</p>
+<pre>endpoint = https://{resource}.openai.azure.com
 auth     = api-key  또는  Entra ID(Managed Identity)
 model    = &lt;deployment name&gt;   # 모델명 아님
 api-version = 2024-xx-xx</pre>
-  </section>
-
-  <!-- 2-2 -->
-  <section class="card">
-    <div class="card-head">
-      <div class="num sub">2-2</div>
-      <h2>네트워크 구성: Public vs Private</h2>
-    </div>
-    <p>배포 후 <strong>리소스 접근 경로</strong>를 어떻게 열지 결정합니다. 보통 AOAI 전환의 핵심 이유가 <strong>Private(사설망) 격리</strong>입니다.</p>
-    <div class="grid2">
-      <div class="mini">
-        <h3><span class="dot pub"></span>Public 배포</h3>
-        <ul>
-          <li>퍼블릭 엔드포인트로 인터넷에서 접근</li>
-          <li>키 또는 Entra ID 인증으로 보호</li>
-          <li><strong>방화벽 규칙</strong>으로 허용 IP/VNet 제한 가능</li>
-          <li>구성 간단 · PoC/개발에 적합</li>
-        </ul>
-      </div>
-      <div class="mini">
-        <h3><span class="dot pri"></span>Private 배포</h3>
-        <ul>
-          <li><strong>Private Endpoint</strong> + VNet 통합</li>
-          <li>퍼블릭 액세스 <strong>완전 차단</strong> (Disabled)</li>
-          <li><strong>Private DNS Zone</strong>로 사내망 해석</li>
-          <li>Managed Identity·CMK와 결합 → 프로덕션 권장</li>
-        </ul>
-      </div>
-    </div>
-    <p class="muted" style="margin-top:0.7rem;">Public Network Access 설정: <code>Enabled</code> / <code>Enabled with rules</code>(IP·VNet 허용) / <code>Disabled</code>(Private Endpoint 전용).</p>
-    <div class="note">Private로 완전 격리하려면 Public access를 <strong>Disabled</strong>로 두고, Private Endpoint + Private DNS Zone(<code>privatelink.openai.azure.com</code>)을 반드시 함께 구성해야 사내 이름 해석이 됩니다.</div>
-  </section>
-
-  <!-- 3 -->
-  <section class="card">
-    <div class="card-head">
-      <div class="num">3</div>
-      <h2>콘텐츠 필터링 Off (Modified Guardrails)</h2>
-      <span class="tag">승인 필요</span>
-    </div>
-    <p>유해 콘텐츠(Hate·Sexual·Violence·Self-harm) <strong>실시간 차단 필터</strong>를 부분/완전히 끄는 신청입니다.</p>
-    <ul>
-      <li>severity <strong>임계값 조정은 신청 없이</strong> 가능 — 완전/부분 <strong>Off는 승인 필요</strong></li>
-      <li><strong>Microsoft 계정팀 관리(managed) 고객</strong>만 신청 가능</li>
-      <li>승인 후: 커스텀 필터 구성 생성 → <strong>각 배포에 연결</strong></li>
-    </ul>
-    <div class="note">Protected material(code) 필터를 끄면 <strong>Customer Copyright Commitment</strong> 커버리지에 영향 → 신중히 결정.</div>
-    <a class="btn" target="_blank" href="https://customervoice.microsoft.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbR7en2Ais5pxKtso_Pz4b1_xUMlBQNkZMR0lFRldORTdVQzQ0TEI5Q1ExOSQlQCN0PWcu">Modified Guardrails 신청 폼 →</a>
-  </section>
-
-  <!-- 4 -->
-  <section class="card">
-    <div class="card-head">
-      <div class="num">4</div>
-      <h2>Abuse Monitoring Off (Opt-out)</h2>
-      <span class="tag">승인 필요</span>
-    </div>
-    <p>abuse 탐지용 <strong>프롬프트/응답 저장 + Microsoft 직원 human review</strong>를 중단하는 신청입니다. (민감·기밀 데이터 고객)</p>
-    <ul>
-      <li>승인 후에도 <strong>자동(AI) 검토는 유지</strong> — 심각/반복 abuse 시 접근 제한 가능</li>
-      <li><strong>검증</strong>: 리소스 JSON view / CLI에서 <code>ContentLogging = false</code> 확인</li>
-    </ul>
-    <pre>az cognitiveservices account show \
+</section>
+<!-- 2-2 -->
+<section class="card">
+<div class="card-head">
+<div class="num sub">2-2</div>
+<h2>네트워크 구성: Public vs Private</h2>
+</div>
+<p>배포 후 <strong>리소스 접근 경로</strong>를 어떻게 열지 결정합니다. 보통 AOAI 전환의 핵심 이유가 <strong>Private(사설망) 격리</strong>입니다.</p>
+<div class="grid2">
+<div class="mini">
+<h3><span class="dot pub"></span>Public 배포</h3>
+<ul>
+<li>퍼블릭 엔드포인트로 인터넷에서 접근</li>
+<li>키 또는 Entra ID 인증으로 보호</li>
+<li><strong>방화벽 규칙</strong>으로 허용 IP/VNet 제한 가능</li>
+<li>구성 간단 · PoC/개발에 적합</li>
+</ul>
+</div>
+<div class="mini">
+<h3><span class="dot pri"></span>Private 배포</h3>
+<ul>
+<li><strong>Private Endpoint</strong> + VNet 통합</li>
+<li>퍼블릭 액세스 <strong>완전 차단</strong> (Disabled)</li>
+<li><strong>Private DNS Zone</strong>로 사내망 해석</li>
+<li>Managed Identity·CMK와 결합 → 프로덕션 권장</li>
+</ul>
+</div>
+</div>
+<p class="muted" style="margin-top:0.7rem;">Public Network Access 설정: <code>Enabled</code> / <code>Enabled with rules</code>(IP·VNet 허용) / <code>Disabled</code>(Private Endpoint 전용).</p>
+<div class="note">Private로 완전 격리하려면 Public access를 <strong>Disabled</strong>로 두고, Private Endpoint + Private DNS Zone(<code>privatelink.openai.azure.com</code>)을 반드시 함께 구성해야 사내 이름 해석이 됩니다.</div>
+</section>
+<!-- 3 -->
+<section class="card">
+<div class="card-head">
+<div class="num">3</div>
+<h2>콘텐츠 필터링 Off (Modified Guardrails)</h2>
+<span class="tag">승인 필요</span>
+</div>
+<p>유해 콘텐츠(Hate·Sexual·Violence·Self-harm) <strong>실시간 차단 필터</strong>를 부분/완전히 끄는 신청입니다.</p>
+<ul>
+<li>severity <strong>임계값 조정은 신청 없이</strong> 가능 — 완전/부분 <strong>Off는 승인 필요</strong></li>
+<li><strong>Microsoft 계정팀 관리(managed) 고객</strong>만 신청 가능</li>
+<li>승인 후: 커스텀 필터 구성 생성 → <strong>각 배포에 연결</strong></li>
+</ul>
+<div class="note">Protected material(code) 필터를 끄면 <strong>Customer Copyright Commitment</strong> 커버리지에 영향 → 신중히 결정.</div>
+<a class="btn" href="https://customervoice.microsoft.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbR7en2Ais5pxKtso_Pz4b1_xUMlBQNkZMR0lFRldORTdVQzQ0TEI5Q1ExOSQlQCN0PWcu" target="_blank">Modified Guardrails 신청 폼 →</a>
+</section>
+<!-- 4 -->
+<section class="card">
+<div class="card-head">
+<div class="num">4</div>
+<h2>Abuse Monitoring Off (Opt-out)</h2>
+<span class="tag">승인 필요</span>
+</div>
+<p>abuse 탐지용 <strong>프롬프트/응답 저장 + Microsoft 직원 human review</strong>를 중단하는 신청입니다. (민감·기밀 데이터 고객)</p>
+<ul>
+<li>승인 후에도 <strong>자동(AI) 검토는 유지</strong> — 심각/반복 abuse 시 접근 제한 가능</li>
+<li><strong>검증</strong>: 리소스 JSON view / CLI에서 <code>ContentLogging = false</code> 확인</li>
+</ul>
+<pre>az cognitiveservices account show \
   --name &lt;RESOURCE&gt; --resource-group &lt;RG&gt; \
   --query "properties.capabilities"   # ContentLogging: false</pre>
-    <a class="btn" target="_blank" href="https://customervoice.microsoft.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbR7en2Ais5pxKtso_Pz4b1_xUOE9MUTFMUlpBNk5IQlZWWkcyUEpWWEhGOCQlQCN0PWcu">Modified Abuse Monitoring 신청 폼 →</a>
-  </section>
-
-  <!-- 5 -->
-  <section class="card">
-    <div class="card-head">
-      <div class="num">5</div>
-      <h2>인증 · 보안</h2>
-      <span class="tag">권장</span>
-    </div>
-    <p>AOAI 전환의 핵심 강점. 키 기반에서 <strong>키리스(Managed Identity)</strong>로 넘어가는 것을 권장합니다.</p>
-    <ul>
-      <li><strong>Managed Identity + RBAC</strong> — 키 대신 <code>Cognitive Services OpenAI User / Contributor</code> 역할 부여</li>
-      <li>키를 쓴다면 <strong>Key Vault</strong>에 보관 (코드·환경변수 하드코딩 금지)</li>
-      <li><strong>CMK(고객 관리 키)</strong> 암호화 필요 여부 검토</li>
-      <li>저장 기능(Stored completions · Responses API data store) 사용 시 <strong>저장 위치·레지던시</strong> 인지</li>
-    </ul>
-    <div class="note">데이터 레지던시: Global/DataZone 배포는 <strong>처리(processing)</strong>가 광역일 수 있음. 저장(at rest)은 지정 geography 내.</div>
-  </section>
-
-  <!-- 6 -->
-  <section class="card">
-    <div class="card-head">
-      <div class="num">6</div>
-      <h2>안정성 · 관측성 · 비용</h2>
-      <span class="tag">프로덕션</span>
-    </div>
-    <div class="grid2">
-      <div class="mini">
-        <h3>안정성 (HA)</h3>
-        <ul>
-          <li><strong>다중 리전 + 로드밸런싱</strong> / failover</li>
-          <li><strong>APIM을 AI Gateway로</strong> — 토큰 제한·스로틀링·라우팅</li>
-          <li>지연·일정 트래픽이면 <strong>PTU</strong></li>
-          <li><mark class="hl">429: <code>Retry-After</code> + 지수 백오프</mark></li>
-        </ul>
-      </div>
-      <div class="mini">
-        <h3>관측성 · 비용</h3>
-        <ul>
-          <li><strong>Azure Monitor / App Insights</strong> + Diagnostic logs</li>
-          <li><strong>Cost Management + 태그</strong>로 배포별 토큰 추적</li>
-          <li><strong>PTU 예약</strong>으로 비용 최적화</li>
-          <li>모델 <strong>버전 retirement</strong> 일정 관리</li>
-        </ul>
-      </div>
-    </div>
-    <div class="note">코드 이관 시 <code>seed</code>·<code>response_format</code>·tool calling 등 파라미터 차이로 <strong>회귀 테스트</strong> 필수. ⚠️ OAI 파인튜닝 모델은 이전 불가 → AOAI에서 재튜닝.</div>
-  </section>
-
-  <footer>
+<a class="btn" href="https://customervoice.microsoft.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbR7en2Ais5pxKtso_Pz4b1_xUOE9MUTFMUlpBNk5IQlZWWkcyUEpWWEhGOCQlQCN0PWcu" target="_blank">Modified Abuse Monitoring 신청 폼 →</a>
+</section>
+<!-- 5 -->
+<section class="card">
+<div class="card-head">
+<div class="num">5</div>
+<h2>인증 · 보안</h2>
+<span class="tag">권장</span>
+</div>
+<p>AOAI 전환의 핵심 강점. 키 기반에서 <strong>키리스(Managed Identity)</strong>로 넘어가는 것을 권장합니다.</p>
+<ul>
+<li><strong>Managed Identity + RBAC</strong> — 키 대신 <code>Cognitive Services OpenAI User / Contributor</code> 역할 부여</li>
+<li>키를 쓴다면 <strong>Key Vault</strong>에 보관 (코드·환경변수 하드코딩 금지)</li>
+<li><strong>CMK(고객 관리 키)</strong> 암호화 필요 여부 검토</li>
+<li>저장 기능(Stored completions · Responses API data store) 사용 시 <strong>저장 위치·레지던시</strong> 인지</li>
+</ul>
+<div class="note">데이터 레지던시: Global/DataZone 배포는 <strong>처리(processing)</strong>가 광역일 수 있음. 저장(at rest)은 지정 geography 내.</div>
+</section>
+<!-- 6 -->
+<section class="card">
+<div class="card-head">
+<div class="num">6</div>
+<h2>안정성 · 관측성 · 비용</h2>
+<span class="tag">프로덕션</span>
+</div>
+<div class="grid2">
+<div class="mini">
+<h3>안정성 (HA)</h3>
+<ul>
+<li><strong>다중 리전 + 로드밸런싱</strong> / failover</li>
+<li><strong>APIM을 AI Gateway로</strong> — 토큰 제한·스로틀링·라우팅</li>
+<li>지연·일정 트래픽이면 <strong>PTU</strong></li>
+<li><mark class="hl">429: <code>Retry-After</code> + 지수 백오프</mark></li>
+</ul>
+</div>
+<div class="mini">
+<h3>관측성 · 비용</h3>
+<ul>
+<li><strong>Azure Monitor / App Insights</strong> + Diagnostic logs</li>
+<li><strong>Cost Management + 태그</strong>로 배포별 토큰 추적</li>
+<li><strong>PTU 예약</strong>으로 비용 최적화</li>
+<li>모델 <strong>버전 retirement</strong> 일정 관리</li>
+</ul>
+</div>
+</div>
+<div class="note">코드 이관 시 <code>seed</code>·<code>response_format</code>·tool calling 등 파라미터 차이로 <strong>회귀 테스트</strong> 필수. ⚠️ OAI 파인튜닝 모델은 이전 불가 → AOAI에서 재튜닝.</div>
+</section>
+<footer>
     출처: Microsoft Learn — Limited access / Abuse monitoring / Data privacy for Azure OpenAI
+  </footer>
+</div><div class="wrap lang-en">
+<header class="page">
+<h1>OpenAI → Azure OpenAI Onboarding Guide</h1>
+<p>Four Key Steps in Customer Conversion · Document Revision Reflecting October 2025 (Content Filter = Guardrails)</p>
+</header>
+<!-- 1 -->
+<section class="card">
+<div class="card-head">
+<div class="num">1</div>
+<h2>Check Quota</h2>
+<span class="tag">Required</span>
+</div>
+<p>Quotas are allocated <strong>not for the entire subscription but by region, model, and deployment</strong> in <code>TPM</code> (tokens per minute) / <code>RPM</code> (requests per minute).</p>
+<ul>
+<li><strong>Check Location</strong>: Azure AI Foundry Portal → <em>Quotas</em>, or Azure Portal → Subscriptions → <em>Usage + quotas</em></li>
+<li>Check if the desired <strong>model exists in the desired region</strong> and if there is available TPM</li>
+<li>If insufficient, submit a <strong>Quota increase request</strong> (or via the account team)</li>
+<li>If it is large-scale/scheduled traffic, consider <strong>PTU (Provisioned)</strong> or <strong>Global deployment + multi-region load balancing</strong></li>
+</ul>
+<div class="note">Since TPM is allocated in distributed shares, creating multiple deployments will divide the regional quota among them.</div>
+</section>
+<!-- 2 -->
+<section class="card">
+<div class="card-head">
+<div class="num">2</div>
+<h2>Model Deployment Method (Brief)</h2>
+</div>
+<p>OAI directly uses the <code>model</code> name, but AOAI creates the model as a <strong>Deployment</strong> and calls the <strong>deployment name</strong>.</p>
+<ol class="steps">
+<li>Foundry Portal → <em>Deployments</em> → <em>Create</em></li>
+<li>Select model + version → choose <strong>deployment type</strong> (below)</li>
+<li>Assign TPM → Specify deployment name → Create</li>
+<li>Use <strong>deployment name</strong> in place of <code>model</code> in the code + specify <code>api-version</code></li>
+</ol>
+<p class="muted"><strong>Deployment type</strong> — Standard (single region) · Global Standard (wide-area, low-cost) · DataZone (within region) · Provisioned/PTU (reserved throughput).</p>
+<pre>endpoint = https://{resource}.openai.azure.com
+auth     = api-key  or  Entra ID(Managed Identity)
+model    = &lt;deployment name&gt;   # Not a model name
+api-version = 2024-xx-xx</pre>
+</section>
+<!-- 2-2 -->
+<section class="card">
+<div class="card-head">
+<div class="num sub">2-2</div>
+<h2>Network Configuration: Public vs Private</h2>
+</div>
+<p>After deployment, decide how to open the <strong>resource access path</strong>. Usually, the main reason for switching to AOAI is <strong>Private (internal network) isolation</strong>.</p>
+<div class="grid2">
+<div class="mini">
+<h3><span class="dot pub"></span>Public deployment</h3>
+<ul>
+<li>Access from the internet via a public endpoint</li>
+<li>Protected by key or Entra ID authentication</li>
+<li><strong>Firewall rules</strong> allow restriction by IP/VNet</li>
+<li>Simple configuration · Suitable for PoC/development</li>
+</ul>
+</div>
+<div class="mini">
+<h3><span class="dot pri"></span>Private deployment</h3>
+<ul>
+<li><strong>Private Endpoint</strong> + VNet Integration</li>
+<li>Public access <strong>completely blocked</strong> (Disabled)</li>
+<li>Resolve within the internal network using a <strong>Private DNS Zone</strong></li>
+<li>Combine with Managed Identity·CMK → Recommended for production</li>
+</ul>
+</div>
+</div>
+<p class="muted" style="margin-top:0.7rem;">Public Network Access settings: <code>Enabled</code> / <code>Enabled with rules</code> (IP·VNet allowed) / <code>Disabled</code> (Private Endpoint only).</p>
+<div class="note">To completely isolate it as Private, you need Public access <strong>Disabled</strong>Set as, Private Endpoint + Private DNS Zone(<code>privatelink.openai.azure.com</code>) must be included together in order to interpret the company name.</div>
+</section>
+<!-- 3 -->
+<section class="card">
+<div class="card-head">
+<div class="num">3</div>
+<h2>Content Filtering Off (Modified Guardrails)</h2>
+<span class="tag">Approval required</span>
+</div>
+<p>This is an application to partially/completely turn off the <strong>real-time blocking filter</strong> for harmful content (Hate·Sexual·Violence·Self-harm).</p>
+<ul>
+<li>severity <strong>Threshold adjustment is possible without application</strong> — full/partial <strong>Off requires approval</strong></li>
+<li><strong>Only customers managed by the Microsoft account team</strong> are eligible to apply</li>
+<li>After approval: Create custom filter configuration → <strong>Connect to each deployment</strong></li>
+</ul>
+<div class="note">If you turn off the protected material (code) filter <strong>Customer Copyright Commitment</strong> Impact on coverage → Decide carefully.</div>
+<a class="btn" href="https://customervoice.microsoft.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbR7en2Ais5pxKtso_Pz4b1_xUMlBQNkZMR0lFRldORTdVQzQ0TEI5Q1ExOSQlQCN0PWcu" target="_blank">Modified Guardrails application form →</a>
+</section>
+<!-- 4 -->
+<section class="card">
+<div class="card-head">
+<div class="num">4</div>
+<h2>Abuse Monitoring Off (Opt-out)</h2>
+<span class="tag">Approval required</span>
+</div>
+<p>This is an application to stop <strong>prompt/response storage + Microsoft employee human review</strong> for abuse detection. (Sensitive/confidential data customer)</p>
+<ul>
+<li>Even after approval, <strong>automatic (AI) review is maintained</strong> — access may be restricted in case of severe/repeated abuse</li>
+<li><strong>Verification</strong>: Check <code>ContentLogging = false</code> in the resource JSON view / CLI</li>
+</ul>
+<pre>az cognitiveservices account show \
+  --name &lt;RESOURCE&gt; --resource-group &lt;RG&gt; \
+  --query "properties.capabilities"   # ContentLogging: false</pre>
+<a class="btn" href="https://customervoice.microsoft.com/Pages/ResponsePage.aspx?id=v4j5cvGGr0GRqy180BHbR7en2Ais5pxKtso_Pz4b1_xUOE9MUTFMUlpBNk5IQlZWWkcyUEpWWEhGOCQlQCN0PWcu" target="_blank">Modified Abuse Monitoring Application Form →</a>
+</section>
+<!-- 5 -->
+<section class="card">
+<div class="card-head">
+<div class="num">5</div>
+<h2>Authentication · Security</h2>
+<span class="tag">Recommended</span>
+</div>
+<p>Key strengths of AOAI transition. It is recommended to move from key-based to <strong>keyless (Managed Identity)</strong>.</p>
+<ul>
+<li><strong>Managed Identity + RBAC</strong> — Assign the <code>Cognitive Services OpenAI User / Contributor</code> role instead of a key</li>
+<li>If you use keys, store them in <strong>Key Vault</strong> (do not hardcode in code or environment variables)</li>
+<li><strong>CMK (customer-managed key)</strong> Review whether encryption is needed</li>
+<li>Be aware of the <strong>storage location and residency</strong> when using the stored completions (Responses API data store)</li>
+</ul>
+<div class="note">Data Residency: Global/DataZone Deployment is <strong>Processing</strong>Can be regional. Storage (at rest) is within the specified geography.</div>
+</section>
+<!-- 6 -->
+<section class="card">
+<div class="card-head">
+<div class="num">6</div>
+<h2>Stability · Observability · Cost</h2>
+<span class="tag">Production</span>
+</div>
+<div class="grid2">
+<div class="mini">
+<h3>Stability (HA)</h3>
+<ul>
+<li><strong>Multi-region + load balancing</strong> / failover</li>
+<li><strong>APIM as an AI Gateway</strong> — Token Limits · Throttling · Routing</li>
+<li>If it's latency or scheduled traffic, <strong>PTU</strong></li>
+<li><mark class="hl">429: <code>Retry-After</code> + exponential backoff</mark></li>
+</ul>
+</div>
+<div class="mini">
+<h3>Observability · Cost</h3>
+<ul>
+<li><strong>Azure Monitor / App Insights</strong> + Diagnostic logs</li>
+<li><strong>Cost Management + Tags</strong> for tracking tokens by deployment</li>
+<li><strong>Cost optimization</strong> through PTU reservation</li>
+<li>Manage <strong>model version retirement</strong> schedule</li>
+</ul>
+</div>
+</div>
+<div class="note">When transferring code <code>seed</code>·<code>response_format</code>·Due to parameter differences such as tool calling <strong>Regression Test</strong> Mandatory. ⚠️ OAI fine-tuning models cannot be transferred → Retune in AOAI.</div>
+</section>
+<footer>
+    Source: Microsoft Learn — Limited access / Abuse monitoring / Data privacy for Azure OpenAI
   </footer>
 </div>
 <script src="../../assets/guide-nav.js"></script>
