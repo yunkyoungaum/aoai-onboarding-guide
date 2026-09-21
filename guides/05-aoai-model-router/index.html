@@ -1,8 +1,9 @@
 <!DOCTYPE html>
+
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
 <title>Azure OpenAI Model Router 가이드</title>
 <script>
   (() => {
@@ -357,10 +358,10 @@ html[data-theme="dark"] .codehilite .vm { color: #F8F8F2 } /* Name.Variable.Magi
 html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Integer.Long */
 </style>
 </head>
-<body>
-<div class="layout">
-  <nav class="sidebar">
-    <h2>목차</h2>
+<body data-lang="ko" data-title-en="Azure OpenAI Model Router Guide — Reducing Costs and Latency by Automatically Selecting Models per Request" data-title-ko="Azure OpenAI Model Router 가이드">
+<div class="layout lang-ko">
+<nav class="sidebar">
+<h2>목차</h2>
 <div class="toc">
 <ul>
 <li><a href="#0-tldr">0. TL;DR</a><ul>
@@ -416,21 +417,20 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li><a href="#_3">참고 자료</a></li>
 </ul>
 </div>
-
-  </nav>
-  <main>
-    <div class="topbar">
-      <span class="badge">Azure OpenAI · Model Router</span>
-      <button class="toggle" id="themeToggle" type="button">테마 전환</button>
-    </div>
+</nav>
+<main>
+<div class="topbar">
+<span class="badge">Azure OpenAI · Model Router</span>
+<button class="toggle" id="themeToggle" type="button">테마 전환</button>
+</div>
 <h1 id="azure-openai-model-router">Azure OpenAI Model Router 가이드 — 요청별 모델 자동 선택으로 비용과 지연 줄이기</h1>
 <blockquote>
-<p>🚧 <strong>WIP / Draft</strong> &nbsp;·&nbsp; 계속 갱신 중인 문서입니다. 모델 목록·리전·가격은 배포 전 공식 문서로 재확인하세요.</p>
-<p><strong>대상</strong> &nbsp;·&nbsp; 여러 모델 사이에서 품질과 비용을 저울질하며 라우팅 로직을 직접 짜고 있는 애플리케이션·플랫폼 팀</p>
-<p><strong>범위</strong> &nbsp;·&nbsp; 개념 → 라우팅 모드 → 포털 배포 → 호출·검증 → 운영·거버넌스 → 관측과 비용</p>
-<p><strong>관련 가이드</strong> &nbsp;·&nbsp; <a href="../01-oai-to-aoai-onboarding/">01 온보딩</a> · <a href="../02-aoai-foundations/">02 기본 개념</a> · <a href="../03-aoai-deployment-monitoring/">03 배포 &amp; 운영 모니터링</a> · <a href="../04-aoai-high-availability/">04 고가용성(HA)</a> · <a href="../06-aoai-cache-performance/">06 캐시 성능 최적화</a></p>
+<p>🚧 <strong>WIP / Draft</strong>  ·  계속 갱신 중인 문서입니다. 모델 목록·리전·가격은 배포 전 공식 문서로 재확인하세요.</p>
+<p><strong>대상</strong>  ·  여러 모델 사이에서 품질과 비용을 저울질하며 라우팅 로직을 직접 짜고 있는 애플리케이션·플랫폼 팀</p>
+<p><strong>범위</strong>  ·  개념 → 라우팅 모드 → 포털 배포 → 호출·검증 → 운영·거버넌스 → 관측과 비용</p>
+<p><strong>관련 가이드</strong>  ·  <a href="../01-oai-to-aoai-onboarding/">01 온보딩</a> · <a href="../02-aoai-foundations/">02 기본 개념</a> · <a href="../03-aoai-deployment-monitoring/">03 배포 &amp; 운영 모니터링</a> · <a href="../04-aoai-high-availability/">04 고가용성(HA)</a> · <a href="../06-aoai-cache-performance/">06 캐시 성능 최적화</a></p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="0-tldr">0. TL;DR</h2>
 <p><strong>Model router는 프롬프트를 실시간으로 분석해 가장 적합한 모델로 라우팅하는, 그 자체가 학습된 모델입니다.</strong> 하나의 배포(deployment)처럼 다루면 되고, 쉬운 요청은 작고 싼 모델로, 어려운 요청은 큰 모델·추론 모델로 보내 <strong>비용과 지연을 줄이면서 품질을 유지</strong>합니다.</p>
 <table>
@@ -471,7 +471,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li>결과에 따라 <strong>routing mode</strong>와 <strong>model subset</strong>을 <strong>한 번에 하나씩만</strong> 바꿔가며 조정 (§7.4)</li>
 <li>Azure Monitor / Cost analysis에 배포명 필터를 걸어 상시 관측</li>
 </ol>
-<hr />
+<hr/>
 <h2 id="1-model-router">1. Model Router란</h2>
 <h3 id="11">1.1 동작 원리</h3>
 <p>Model router는 <strong>LLM이 아니라, 빠른 추론에 최적화된 경량 ML 모델</strong>입니다. 수십만 건의 다양한 시나리오(QA, 코드 생성, 수학적 추론, 요약, 대화, 에이전트 워크플로)로 학습되었습니다.</p>
@@ -517,7 +517,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <blockquote>
 <p>💡 Model router는 "드롭인 배포"인 동시에 <strong>최적화 레이어</strong>입니다. 모델 탐색(hill-climbing)에 드는 시간을 줄여줄 뿐, 평가를 대체하지는 않습니다.</p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="2">2. 라우팅 모드</h2>
 <p>배포 시 <strong>routing mode</strong>로 라우팅 로직의 성향을 정합니다. 지정하지 않으면 <strong>Balanced</strong>가 기본값입니다.</p>
 <table>
@@ -576,7 +576,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <blockquote>
 <p>💡 도입 전에 자기 프롬프트 코퍼스로 분포를 미리 보고 싶다면 <a href="https://github.com/guygregory/ModelRouter-Distribution">ModelRouter-Distribution</a> 실험 도구를 쓸 수 있습니다.</p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="3">3. 지원 모델과 리전</h2>
 <h3 id="31">3.1 버전 정책</h3>
 <table>
@@ -642,7 +642,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </blockquote>
 <h3 id="33">3.3 리전</h3>
 <p><strong>Global Standard</strong>는 Korea Central을 포함해 28개 리전에서 지원되며, 그중 대부분이 <strong>Data Zone Standard</strong>도 지원합니다. 다만 <strong>각 리전에서 라우팅 가능한 모델은 그 리전에 존재하는 하부 모델로 한정</strong>됩니다 — 리전마다 실효 라우팅 풀이 다를 수 있습니다.</p>
-<hr />
+<hr/>
 <h2 id="4-ui">4. 배포 — 포털(UI) 절차</h2>
 <h3 id="41">4.1 사전 준비</h3>
 <ul>
@@ -683,27 +683,27 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
   --resource https://management.azure.com --query accessToken -o tsv)
 </code></pre>
 <p>기본 배포:</p>
-<pre><code class="language-bash">curl -X PUT &quot;https://management.azure.com/subscriptions/&lt;SUB_ID&gt;/resourceGroups/&lt;RG&gt;/providers/Microsoft.CognitiveServices/accounts/&lt;ACCOUNT&gt;/deployments/model-router-deployment?api-version=2025-10-01-preview&quot; \
-  -H &quot;Content-Type: application/json&quot; \
-  -H &quot;Authorization: Bearer $AZURE_AI_AUTH_TOKEN&quot; \
+<pre><code class="language-bash">curl -X PUT "https://management.azure.com/subscriptions/&lt;SUB_ID&gt;/resourceGroups/&lt;RG&gt;/providers/Microsoft.CognitiveServices/accounts/&lt;ACCOUNT&gt;/deployments/model-router-deployment?api-version=2025-10-01-preview" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $AZURE_AI_AUTH_TOKEN" \
   -d '{
-    &quot;sku&quot;: {&quot;name&quot;: &quot;GlobalStandard&quot;, &quot;capacity&quot;: 10},
-    &quot;properties&quot;: {
-      &quot;model&quot;: {&quot;format&quot;: &quot;OpenAI&quot;, &quot;name&quot;: &quot;model-router&quot;, &quot;version&quot;: &quot;2025-11-18&quot;}
+    "sku": {"name": "GlobalStandard", "capacity": 10},
+    "properties": {
+      "model": {"format": "OpenAI", "name": "model-router", "version": "2025-11-18"}
     }
   }'
 </code></pre>
 <p>라우팅 모드 + 모델 서브셋 지정:</p>
 <pre><code class="language-bash">  -d '{
-    &quot;sku&quot;: {&quot;name&quot;: &quot;GlobalStandard&quot;, &quot;capacity&quot;: 10},
-    &quot;properties&quot;: {
-      &quot;model&quot;: {&quot;format&quot;: &quot;OpenAI&quot;, &quot;name&quot;: &quot;model-router&quot;, &quot;version&quot;: &quot;2025-11-18&quot;},
-      &quot;routing&quot;: {
-        &quot;mode&quot;: &quot;balanced&quot;,
-        &quot;models&quot;: [
-          {&quot;format&quot;: &quot;OpenAI&quot;, &quot;name&quot;: &quot;gpt-4.1&quot;,     &quot;version&quot;: &quot;2025-04-14&quot;},
-          {&quot;format&quot;: &quot;OpenAI&quot;, &quot;name&quot;: &quot;gpt-5.6-sol&quot;, &quot;version&quot;: &quot;2026-07-09&quot;},
-          {&quot;format&quot;: &quot;Meta&quot;,   &quot;name&quot;: &quot;Llama-4-Maverick-17B-128E-Instruct-FP8&quot;, &quot;version&quot;: &quot;1&quot;}
+    "sku": {"name": "GlobalStandard", "capacity": 10},
+    "properties": {
+      "model": {"format": "OpenAI", "name": "model-router", "version": "2025-11-18"},
+      "routing": {
+        "mode": "balanced",
+        "models": [
+          {"format": "OpenAI", "name": "gpt-4.1",     "version": "2025-04-14"},
+          {"format": "OpenAI", "name": "gpt-5.6-sol", "version": "2026-07-09"},
+          {"format": "Meta",   "name": "Llama-4-Maverick-17B-128E-Instruct-FP8", "version": "1"}
         ]
       }
     }
@@ -712,28 +712,28 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <blockquote>
 <p>💡 <code>routing</code> 블록은 <strong>기본값을 바꿀 때만</strong> 넣으면 됩니다. 이 REST 경로는 Foundry 프로젝트 없이 계정 리소스에 직접 배포하므로 기존 고객의 자동화에 적합합니다.</p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="5">5. 호출과 검증</h2>
 <h3 id="51">5.1 코드에서 호출</h3>
 <p>일반 chat 모델과 <strong>완전히 동일하게</strong> 호출합니다. <code>model</code> 파라미터에 <strong>배포 이름</strong>을 넣으면 끝입니다.</p>
 <pre><code class="language-python"># Chat Completions (openai&gt;=1.75.0)
 response = client.chat.completions.create(
     model=deployment,                     # model router 배포 이름
-    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;...&quot;}],
+    messages=[{"role": "user", "content": "..."}],
 )
 
 # Foundry Responses (azure-ai-projects&gt;=2.0.0)
-response = openai_client.responses.create(model=deployment, input=&quot;...&quot;)
+response = openai_client.responses.create(model=deployment, input="...")
 </code></pre>
 <h3 id="52">5.2 어떤 모델이 응답했는지 확인</h3>
 <p>응답 JSON은 표준 chat completions 스키마와 동일하며, <strong><code>model</code> 필드가 실제 선택된 하부 모델</strong>을 알려줍니다.</p>
 <pre><code class="language-json">{
-  &quot;model&quot;: &quot;gpt-5-mini-2025-08-07&quot;,
-  &quot;usage&quot;: {
-    &quot;prompt_tokens&quot;: 3254,
-    &quot;prompt_tokens_details&quot;: { &quot;cached_tokens&quot;: 3200 },
-    &quot;completion_tokens&quot;: 163,
-    &quot;completion_tokens_details&quot;: { &quot;reasoning_tokens&quot;: 128 }
+  "model": "gpt-5-mini-2025-08-07",
+  "usage": {
+    "prompt_tokens": 3254,
+    "prompt_tokens_details": { "cached_tokens": 3200 },
+    "completion_tokens": 163,
+    "completion_tokens_details": { "reasoning_tokens": 128 }
   }
 }
 </code></pre>
@@ -757,7 +757,7 @@ response = openai_client.responses.create(model=deployment, input=&quot;...&quot
 </tr>
 </tbody>
 </table>
-<hr />
+<hr/>
 <h2 id="6">6. 운영 — 페일오버 · 캐싱 · 거버넌스</h2>
 <h3 id="61">6.1 자동 페일오버</h3>
 <p>특정 모델에 일시적 문제가 생기면 <strong>다음으로 적합한 모델로 투명하게 재라우팅</strong>됩니다. 기본 활성이며 별도 설정이 필요 없습니다.</p>
@@ -772,7 +772,7 @@ response = openai_client.responses.create(model=deployment, input=&quot;...&quot
 </blockquote>
 <h3 id="63-azure-policy">6.3 Azure Policy 거버넌스</h3>
 <p>Model router는 일반 모델 배포를 통제하는 <strong>동일한 built-in Foundry 모델 배포 정책</strong>을 따릅니다. 정책은 개발자가 <strong>model subset에 넣을 수 있는 모델 범위</strong>에 적용되며, <strong>Foundry 포털 · REST API · Azure CLI · ARM 템플릿 전반에서 일관되게</strong> 배포 시점에 강제됩니다.</p>
-<hr />
+<hr/>
 <h2 id="7">7. 관측 — 성능과 비용</h2>
 <h3 id="71">7.1 성능</h3>
 <p>Azure Portal → 리소스 → <strong>Monitoring &gt; Metrics</strong></p>
@@ -886,7 +886,7 @@ response = openai_client.responses.create(model=deployment, input=&quot;...&quot
 </blockquote>
 <p>통제된 비교만으로는 프로덕션 조건을 다 재현하지 못합니다. 전면 도입 전에 <strong>제한적 프로덕션 테스트</strong>로 품질 신호 · 실제 비용 · 중앙값과 꼬리 지연 · 오류와 페일오버 동작 · 선택 모델 분포를 관찰하세요. <strong>결정적 모델 선택이 필요한 요청은 직접 모델 배포로 남겨두는 하이브리드</strong>도 정당한 결론입니다.</p>
 <p>선택한 구성은 끝이 아니라 <strong>새 baseline</strong>입니다. 트래픽 믹스 · 라우팅 설정 · 지원 모델 · 애플리케이션 동작 · 가격이 바뀌면 평가를 반복하세요.</p>
-<hr />
+<hr/>
 <h2 id="8">8. 제약과 함정</h2>
 <table>
 <thead>
@@ -986,7 +986,7 @@ response = openai_client.responses.create(model=deployment, input=&quot;...&quot
 </tr>
 </tbody>
 </table>
-<hr />
+<hr/>
 <h2 id="9">9. 도입 체크리스트</h2>
 <ul>
 <li>☐ 워크로드의 요청 난이도가 실제로 <strong>섞여 있는지</strong> 확인했다</li>
@@ -1000,7 +1000,7 @@ response = openai_client.responses.create(model=deployment, input=&quot;...&quot
 <li>☐ baseline 대비 <strong>품질 · 비용 · 지연 평가</strong>를 마쳤다</li>
 <li>☐ Azure Monitor 메트릭과 <strong>Cost analysis 태그 필터</strong>를 설정했다</li>
 </ul>
-<hr />
+<hr/>
 <h2 id="_3">참고 자료</h2>
 <ul>
 <li>Model router 개념: https://learn.microsoft.com/azure/foundry/openai/concepts/model-router</li>
@@ -1019,12 +1019,673 @@ response = openai_client.responses.create(model=deployment, input=&quot;...&quot
 <li>라우팅 분포 실험 도구: https://github.com/guygregory/ModelRouter-Distribution</li>
 <li>라우팅 모드 비교 데모: https://github.com/leestott/router-demo-app</li>
 </ul>
-
-    <hr>
-    <p class="meta">최종 수정 2026-08-31 · Microsoft Scout</p>
-  </main>
+<hr/>
+<p class="meta">최종 수정 2026-08-31 · Microsoft Scout</p>
+</main>
+</div><div class="layout lang-en">
+<nav class="sidebar">
+<h2>Table of Contents</h2>
+<div class="toc">
+<ul>
+<li><a href="#en-0-tldr">0. TL;DR</a><ul>
+<li><a href="#en-_1">Minimum Introduction Order</a></li>
+</ul>
+</li>
+<li><a href="#en-1-model-router">1. What is a Model Router</a><ul>
+<li><a href="#en-11">1.1 Operating Principle</a></li>
+<li><a href="#en-12">1.2 When to Use and When Not to Use</a></li>
+</ul>
+</li>
+<li><a href="#en-2">2. Routing Mode</a><ul>
+<li><a href="#en-_2">Traffic Distribution by Mode</a></li>
+</ul>
+</li>
+<li><a href="#en-3">3. Supported Models and Regions</a><ul>
+<li><a href="#en-31">3.1 Version Policy</a></li>
+<li><a href="#en-32-2025-11-18">3.2 Routing Pool (As of 2025-11-18)</a></li>
+<li><a href="#en-33">3.3 Region</a></li>
+</ul>
+</li>
+<li><a href="#en-4-ui">4. Distribution — Portal (UI) Procedure</a><ul>
+<li><a href="#en-41">4.1 Preparation</a></li>
+<li><a href="#en-42-default-settings">4.2 Default Deployment (Default settings)</a></li>
+<li><a href="#en-43-custom-settings">4.3 Custom Deployment (Custom settings)</a></li>
+<li><a href="#en-44-rest-api">4.4 REST API Deployment (for Automation)</a></li>
+</ul>
+</li>
+<li><a href="#en-5">5. Invocation and Verification</a><ul>
+<li><a href="#en-51">5.1 Calling from Code</a></li>
+<li><a href="#en-52">5.2 Check Which Model Responded</a></li>
+<li><a href="#en-53">5.3 Parameter Precautions</a></li>
+</ul>
+</li>
+<li><a href="#en-6">6. Operations — Failover · Caching · Governance</a><ul>
+<li><a href="#en-61">6.1 Automatic Failover</a></li>
+<li><a href="#en-62">6.2 Prompt Caching</a></li>
+<li><a href="#en-63-azure-policy">6.3 Azure Policy Governance</a></li>
+</ul>
+</li>
+<li><a href="#en-7">7. Observation — Performance and Cost</a><ul>
+<li><a href="#en-71">7.1 Performance</a></li>
+<li><a href="#en-72">7.2 Cost</a></li>
+<li><a href="#en-73-3">7.3 Three Levers to Reduce Cost</a></li>
+<li><a href="#en-74">7.4 Pre-Production Evaluation</a></li>
+</ul>
+</li>
+<li><a href="#en-8">8. Limitations and Pitfalls</a><ul>
+<li><a href="#en-81">8.1 Troubleshooting Quick Reference</a></li>
+</ul>
+</li>
+<li><a href="#en-9">9. Deployment Checklist</a></li>
+<li><a href="#en-_3">References</a></li>
+</ul>
 </div>
+</nav>
+<main>
+<div class="topbar">
+<span class="badge">Azure OpenAI · Model Router</span>
+<button class="toggle" id="en-themeToggle" type="button">Theme switch</button>
+</div>
+<h1 id="en-azure-openai-model-router">Azure OpenAI Model Router Guide — Reducing Costs and Latency by Automatically Selecting Models per Request</h1>
+<blockquote>
+<p>🚧 <strong>WIP / Draft</strong> · This document is continuously being updated. Confirm model lists, regions, and pricing with the official documentation before deployment.</p>
+<p><strong>Audience</strong> · Application and platform teams that are building routing logic themselves while weighing quality and cost across multiple models</p>
+<p><strong>Scope</strong> · Concepts → Routing Modes → Portal Deployment → Invocation &amp; Validation → Operations &amp; Governance → Observability &amp; Cost</p>
+<p><strong>Related Guides</strong>  ·  <a href="../01-oai-to-aoai-onboarding/">01 Onboarding</a> · <a href="../02-aoai-foundations/">02 Fundamentals</a> · <a href="../03-aoai-deployment-monitoring/">03 Deployment &amp; Operational Monitoring</a> · <a href="../04-aoai-high-availability/">04 High Availability (HA)</a> · <a href="../06-aoai-cache-performance/">06 Cache Performance Optimization</a></p>
+</blockquote>
+<hr/>
+<h2 id="en-0-tldr">0. TL;DR</h2>
+<p><strong>The model router is a trained model itself that analyzes prompts in real time and routes them to the most appropriate model.</strong> It can be treated like a single deployment, sending simple requests to smaller, cheaper models and difficult requests to larger or inference models, <strong>reducing cost and latency while maintaining quality</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Do the sub-models need to be deployed separately?</td>
+<td><strong>No.</strong> Only <strong>Claude (Anthropic)</strong> is an exception and requires pre-deployment</td>
+</tr>
+<tr>
+<td>Are there additional fees?</td>
+<td>None. Charged based on <strong>the sum of token fees for the selected sub-model</strong></td>
+</tr>
+<tr>
+<td>Can I know which model responded?</td>
+<td>Shown in the <strong><code>model</code> field</strong> of the response JSON and in Playground</td>
+</tr>
+<tr>
+<td>Can the routing target be restricted?</td>
+<td>Possible with <strong>Model subset</strong> (compliance, cost, context control)</td>
+</tr>
+<tr>
+<td>What is the latest version?</td>
+<td><strong><code>2025-11-18</code></strong> — New models continue to be added without changing version numbers</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-_1">Minimum Implementation Order</h3>
+<ol>
+<li>Deploy <code>model-router</code> from Foundry portal (Default = Balanced + full model pool)</li>
+<li>Test representative prompts in Playground to check <strong>which model is selected</strong></li>
+<li>Use the existing single model deployment as the baseline and perform <strong>quality, cost, and latency A/B comparison</strong></li>
+<li>Based on the results, adjust <strong>routing mode</strong> and <strong>model subset</strong> <strong>one at a time</strong> (§7.4)</li>
+<li>Continuously monitor by applying deployment name filters in Azure Monitor / Cost analysis</li>
+</ol>
+<hr/>
+<h2 id="en-1-model-router">1. What is a Model Router</h2>
+<h3 id="en-11">1.1 Operating Principle</h3>
+<p>The model router is a <strong>lightweight ML model optimized for fast inference, not an LLM</strong>. It has been trained on hundreds of thousands of diverse scenarios (QA, code generation, mathematical reasoning, summarization, conversation, agent workflows).</p>
+<p>When a request comes in, it is processed in three steps.</p>
+<ol>
+<li><strong>Understanding the prompt</strong> — Analyze the entire request, including <strong>system messages, user messages, tool definitions, and conversation history</strong>, to determine what is required and its difficulty level.</li>
+<li><strong>Model selection</strong> — Estimate the model that will produce the best results for this prompt from the pool, reflecting the configured routing mode.</li>
+<li><strong>Routing and response</strong> — Delivered to the selected model. <strong>Routing overhead is only a tiny fraction of LLM inference time</strong>.</li>
+</ol>
+<ul>
+<li>The prompt is <strong>not saved.</strong></li>
+<li>Only consider models that match the user's <strong>access privileges and deployment type</strong>, and comply with <strong>data zone boundaries</strong>.</li>
+<li>Since the model is selected per request, different models can respond even within the same application.</li>
+<li><strong>When the model subset changes, the router automatically recalibrates</strong> based on the remaining models.</li>
+</ul>
+<h3 id="en-12">1.2 When to Use and When Not to Use</h3>
+<table>
+<thead>
+<tr>
+<th>Suitable Cases</th>
+<th>Cases to Reconsider</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Workloads with <strong>mixed</strong> request difficulty (chatbots, customer support, internal assistants)</td>
+<td>Workloads where all requests are <strong>uniform in difficulty</strong></td>
+</tr>
+<tr>
+<td>Teams that are <strong>directly implementing</strong> routing logic while comparing multiple models</td>
+<td>Pipelines that <strong>strongly rely on the unique output characteristics</strong> of a specific model</td>
+</tr>
+<tr>
+<td>Teams that want to quickly adopt new models</td>
+<td>Workloads that always require a <strong>long context</strong> (see §8)</td>
+</tr>
+<tr>
+<td>Cases where there is a cost limit but quality cannot be compromised</td>
+<td>Regulatory/audit requirements where the response model <strong>must be fixed</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 The model router is a <strong>drop-in deployment</strong> as well as an <strong>optimization layer</strong>. It only reduces the time spent on model exploration (hill-climbing) and does not replace evaluation.</p>
+</blockquote>
+<hr/>
+<h2 id="en-2">2. Routing Modes</h2>
+<p>When deploying, you set the tendency of the routing logic with <strong>routing mode</strong>. If not specified, <strong>Balanced</strong> is the default.</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Action</th>
+<th>Suitable Workloads</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Balanced</strong> (Default)</td>
+<td>Selects the cheapest model within <strong>about 1–2% quality band</strong> compared to the highest quality model</td>
+<td>Universal</td>
+</tr>
+<tr>
+<td><strong>Cost</strong></td>
+<td>Allows up to <strong>about 5–6% quality band</strong> and prioritizes lowest cost</td>
+<td>High-volume or budget-sensitive (classification, simple Q&amp;A)</td>
+</tr>
+<tr>
+<td><strong>Quality</strong></td>
+<td>Ignore costs and select the <strong>highest quality</strong> model for this prompt</td>
+<td>Legal review, medical summarization, complex reasoning</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ Changing the routing mode takes up to <strong>5 minutes</strong> to take effect.</p>
+</blockquote>
+<h3 id="en-_2">Traffic distribution by mode</h3>
+<p>When you change the mode, the <strong>traffic distribution to underlying models changes as well.</strong> This can be observed in Azure Monitor (§7.1).</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Distribution tendency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Balanced</td>
+<td>Widely distributed <strong>across the model pool</strong> depending on prompt complexity</td>
+</tr>
+<tr>
+<td>Cost</td>
+<td>Mostly to <strong>small and inexpensive models</strong>, escalating to higher models only when necessary</td>
+</tr>
+<tr>
+<td>Quality</td>
+<td><strong>Frontier and high-performance models</strong> handle most of the traffic</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 If you want to see the distribution of your own prompts corpus before introduction, you can use the <a href="https://github.com/guygregory/ModelRouter-Distribution">ModelRouter-Distribution</a> experimental tool.</p>
+</blockquote>
+<hr/>
+<h2 id="en-3">3. Supported Models and Regions</h2>
+<h3 id="en-31">3.1 Version Policy</h3>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>Status</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>2025-11-18</code></td>
+<td><strong>Active (latest)</strong></td>
+<td>New models and features are <strong>added in-place without changing the version number</strong></td>
+</tr>
+<tr>
+<td><code>2025-08-07</code></td>
+<td>Frozen</td>
+<td>Model set is fixed</td>
+</tr>
+<tr>
+<td><code>2025-05-19</code></td>
+<td>Frozen</td>
+<td>Model set is fixed</td>
+</tr>
+</tbody>
+</table>
+<p>If you turn on <strong>Auto-update</strong> during deployment, the new version will be applied automatically. Keep in mind that <strong>the underlying model configuration may change, which can also affect performance and cost</strong>.</p>
+<h3 id="en-32-2025-11-18">3.2 Routing Pool (<code>as of 2025-11-18</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>Provider</th>
+<th>Model</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OpenAI</td>
+<td><code>gpt-5.6-sol</code> / <code>-terra</code> / <code>-luna</code>, <code>gpt-5.5</code>, <code>gpt-5.4</code> · <code>-mini</code> · <code>-nano</code>, <code>gpt-5.2</code>, <code>gpt-5</code> · <code>-mini</code> · <code>-nano</code>, <code>o4-mini</code>, <code>gpt-4.1</code> · <code>-mini</code> · <code>-nano</code>, <code>gpt-4o</code> · <code>-mini</code>, <code>gpt-oss-120b</code></td>
+</tr>
+<tr>
+<td>Anthropic</td>
+<td><code>claude-opus-4-8</code> / <code>4-7</code> / <code>4-6</code>, <code>claude-sonnet-4-5</code>, <code>claude-haiku-4-5</code></td>
+</tr>
+<tr>
+<td>xAI</td>
+<td><code>grok-4</code>, <code>grok-4-1-fast-reasoning</code></td>
+</tr>
+<tr>
+<td>DeepSeek</td>
+<td><code>DeepSeek-V3.2</code></td>
+</tr>
+<tr>
+<td>Meta</td>
+<td><code>Llama-4-Maverick-17B-128E-Instruct-FP8</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>Only the Claude model is an exception.</strong> To include it in the routing pool, you must <strong>deploy it first with the same SKU under the same Foundry account</strong>. If you add it to <code>routing.models</code> without deploying, you will get an <code>InvalidResourceProperties</code> error.</p>
+</blockquote>
+<h3 id="en-33">3.3 Regions</h3>
+<p><strong>Global Standard</strong> is supported in 28 regions, including Korea Central, and most of these also support <strong>Data Zone Standard</strong>. However, <strong>the routable models in each region are limited to the sub-models that exist in that region</strong> — the effective routing pool may vary by region.</p>
+<hr/>
+<h2 id="en-4-ui">4. Deployment — Portal (UI) Procedure</h2>
+<h3 id="en-41">4.1 Preparation</h3>
+<ul>
+<li><a href="https://ai.azure.com">Microsoft Foundry Portal</a> login → Top right <strong>Turn ON New Foundry toggle</strong></li>
+<li>Prepare Foundry resources (or projects)</li>
+<li>To include Claude in routing, <strong>deploy Claude first from the model catalog</strong></li>
+<li>If your organization controls model deployment with Azure Policy, the allowed publishers must include both <strong><code>Microsoft</code></strong> (publisher of the model router) and the publisher of the model to be included (e.g., <code>Anthropic</code>). Deployment will be blocked if this is not met.</li>
+</ul>
+<h3 id="en-42-default-settings">4.2 Default deployment (Default settings)</h3>
+<ol>
+<li>Left side <strong>Model catalog</strong> → Search <code>model-router</code> → Select → <strong>Deploy</strong></li>
+<li>Enter deployment information<ul>
+<li><strong>Deployment name</strong> — e.g.: <code>model-router-deployment</code></li>
+<li><strong>Deployment type</strong> — <code>Global Standard</code> or <code>Data Zone Standard</code></li>
+<li><strong>Model version</strong> — <code>2025-11-18</code></li>
+<li><strong>Auto-update</strong> — Whether to automatically apply new versions</li>
+<li><strong>Content filter / TPM</strong> — ⚠️ Set <strong>only once here</strong></li>
+</ul>
+</li>
+<li><strong>Default settings</strong> select → <strong>Balanced mode + full support model pool</strong></li>
+<li><strong>Deploy</strong></li>
+</ol>
+<blockquote>
+<p>⚠️ Content filter and tokens per minute (TPM) limits apply to the <strong>model router deployment unit</strong>. Do not set them separately for each sub-model. There is no need to deploy sub-models separately (except Claude).</p>
+</blockquote>
+<h3 id="en-43-custom-settings">4.3 Custom Deployment (Custom settings)</h3>
+<p><strong>① Routing mode dropdown</strong> — Choose among <code>Balanced</code> / <code>Quality</code> / <code>Cost</code> (§2)</p>
+<p><strong>② Route to a subset of models</strong> — Directly select the sub-models to use for routing</p>
+<ul>
+<li>At least 1 required. <strong>Select 2 or more to enable failover</strong> (§6.1)</li>
+<li>If nothing is selected, the default model set for that mode is used</li>
+<li><strong>New models added later are not automatically included</strong> — you must explicitly add them</li>
+<li>If long context is needed, select <strong>only large context models</strong> here (§8)</li>
+<li>Up to 5 minutes for changes to take effect</li>
+</ul>
+<h3 id="en-44-rest-api">4.4 REST API Deployment (for automation)</h3>
+<pre><code class="language-bash">export AZURE_AI_AUTH_TOKEN=$(az account get-access-token \
+  --resource https://management.azure.com --query accessToken -o tsv)
+</code></pre>
+<p>Default deployment:</p>
+<pre><code class="language-bash">curl -X PUT "https://management.azure.com/subscriptions/&lt;SUB_ID&gt;/resourceGroups/&lt;RG&gt;/providers/Microsoft.CognitiveServices/accounts/&lt;ACCOUNT&gt;/deployments/model-router-deployment?api-version=2025-10-01-preview" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $AZURE_AI_AUTH_TOKEN" \
+  -d '{
+    "sku": {"name": "GlobalStandard", "capacity": 10},
+    "properties": {
+      "model": {"format": "OpenAI", "name": "model-router", "version": "2025-11-18"}
+    }
+  }'
+</code></pre>
+<p>Routing mode + specifying model subset:</p>
+<pre><code class="language-bash">  -d '{
+    "sku": {"name": "GlobalStandard", "capacity": 10},
+    "properties": {
+      "model": {"format": "OpenAI", "name": "model-router", "version": "2025-11-18"},
+      "routing": {
+        "mode": "balanced",
+        "models": [
+          {"format": "OpenAI", "name": "gpt-4.1",     "version": "2025-04-14"},
+          {"format": "OpenAI", "name": "gpt-5.6-sol", "version": "2026-07-09"},
+          {"format": "Meta",   "name": "Llama-4-Maverick-17B-128E-Instruct-FP8", "version": "1"}
+        ]
+      }
+    }
+  }'
+</code></pre>
+<blockquote>
+<p>💡 The <code>routing</code> block only needs to be added <strong>when changing the default</strong>. This REST path is deployed directly to the account resources without a Foundry project, making it suitable for automations of existing customers.</p>
+</blockquote>
+<hr/>
+<h2 id="en-5">5. Calling and Verification</h2>
+<h3 id="en-51">5.1 Calling from Code</h3>
+<p>Call it in exactly the same way as a regular chat model. Just put the <strong>deployment name</strong> in the <code>model</code> parameter.</p>
+<pre><code class="language-python"># Chat Completions (openai&gt;=1.75.0)
+response = client.chat.completions.create(
+    model=deployment,                     # model router deployment name
+    messages=[{"role": "user", "content": "..."}],
+)
 
+# Foundry Responses (azure-ai-projects&gt;=2.0.0)
+response = openai_client.responses.create(model=deployment, input="...")
+</code></pre>
+<h3 id="en-52">5.2 Checking Which Model Responded</h3>
+<p>The response JSON follows the standard chat completions schema, and the <strong><code>model</code> field shows the actual selected sub-model</strong>.</p>
+<pre><code class="language-json">{
+  "model": "gpt-5-mini-2025-08-07",
+  "usage": {
+    "prompt_tokens": 3254,
+    "prompt_tokens_details": { "cached_tokens": 3200 },
+    "completion_tokens": 163,
+    "completion_tokens_details": { "reasoning_tokens": 128 }
+  }
+}
+</code></pre>
+<p>In the Playground (<strong>Models + endpoints</strong> → select deployment), the selected model is also displayed for each response.</p>
+<h3 id="en-53">5.3 Parameter Caution</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>temperature</code>, <code>top_p</code>, <code>stop</code>, <code>presence_penalty</code>, <code>frequency_penalty</code>, <code>logit_bias</code>, <code>logprobs</code></td>
+<td>If an inference (o-series) model is selected, it is <strong>ignored</strong>. It is applied normally for other models.</td>
+</tr>
+<tr>
+<td><code>reasoning_effort</code></td>
+<td>From version <code>2025-11-18</code> <strong>supported</strong> — If an inference model is selected, it is passed as is.</td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<h2 id="en-6">6. Operations — Failover · Caching · Governance</h2>
+<h3 id="en-61">6.1 Automatic Failover</h3>
+<p>If a temporary issue occurs with a specific model, it will be <strong>transparently rerouted to the next suitable model</strong>. This is enabled by default and requires no separate configuration.</p>
+<ul>
+<li>Even in custom deployments, the <strong>selected routing mode is applied during failover</strong>.</li>
+<li><strong>Model subset is the fallback set</strong>. Instead of letting prompts flow to unapproved models, <strong>if you select only one, failover disappears.</strong> → Select at least two.</li>
+</ul>
+<h3 id="en-62">6.2 Prompt Caching</h3>
+<p>If the underlying model supports caching, it is <strong>applied automatically</strong> with no separate settings. However, the caching effect only occurs <strong>when the same model handles consecutive requests</strong>, so if routing decisions fluctuate, caching benefits are interrupted.</p>
+<blockquote>
+<p>For significantly increasing cache hit rates, refer to <a href="../06-aoai-cache-performance/">06 Cache Performance Optimization Guide</a>. For workloads where stable caching is important, <strong>narrowing the model subset to reduce routing fluctuations</strong> can be an effective lever.</p>
+</blockquote>
+<h3 id="en-63-azure-policy">6.3 Azure Policy Governance</h3>
+<p>The model router follows the <strong>same built-in Foundry model deployment policy</strong> that governs general model deployment. The policy applies to the <strong>range of models a developer can include in a model subset</strong> and is <strong>consistently enforced at deployment across the Foundry portal, REST API, Azure CLI, and ARM templates</strong>.</p>
+<hr/>
+<h2 id="en-7">7. Observability — Performance and Cost</h2>
+<h3 id="en-71">7.1 Performance</h3>
+<p>Azure Portal → Resources → <strong>Monitoring &gt; Metrics</strong></p>
+<ol>
+<li>Filter by <strong>model router deployment name</strong> (sub-models are not separate deployments, so they don't have separate deployment names)</li>
+<li>If needed, <strong>split by sub-model</strong> — you can see how much traffic each model receives, i.e., the <strong>routing distribution</strong> (§2)</li>
+</ol>
+<h3 id="en-72">7.2 Cost</h3>
+<p>The cost of the model router is <strong>the sum of the costs generated by the underlying models</strong>. There is no additional charge for the router itself, and billing is done at <strong>the unit price of each model as stated on the pricing page</strong>.</p>
+<p>Azure Portal → <strong>Cost analysis</strong></p>
+<ol>
+<li>Filter by Azure resources</li>
+<li><strong>Tag</strong> filter → Type <code>Deployment</code> → Select <strong>model router deployment name</strong> in Value</li>
+</ol>
+<h3 id="en-73-3">7.3 Three levers to reduce costs</h3>
+<table>
+<thead>
+<tr>
+<th>Lever</th>
+<th>Effect</th>
+<th>Trade-off</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Set routing mode to <strong><code>Cost</code></strong></td>
+<td>Expand quality bands to 5~6% to increase the proportion of cheaper models</td>
+<td>Slight quality drop</td>
+</tr>
+<tr>
+<td>Exclude expensive models from <strong>Model subset</strong></td>
+<td>Structurally cap the cost ceiling</td>
+<td>Decrease in the quality of difficult requests · Reduction in failover range</td>
+</tr>
+<tr>
+<td>Utilize <strong>prompt caching</strong></td>
+<td>Input token cost·TTFT ↓</td>
+<td>Effectiveness decreases if routing fluctuates</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-74">7.4 Pre-production Evaluation</h3>
+<p><strong>Treat the first deployment as a starting configuration, not the final setup</strong>. Before shifting production traffic, use the existing model deployment as a baseline and compare <strong>response quality · expected cost · latency</strong>.</p>
+<p>Tuning is done in a <strong>hill-climbing</strong> manner — measure baseline → <strong>change only one lever</strong> → re-measure → keep only if improved, otherwise rollback → next lever. The model router has two levers.</p>
+<table>
+<thead>
+<tr>
+<th>Lever</th>
+<th>Example of Tuning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Routing mode</strong></td>
+<td><code>Balanced</code> → <code>Cost</code> (Cost ↓, Quality slightly ↓)</td>
+</tr>
+<tr>
+<td><strong>Model subset</strong></td>
+<td>Exclude high-end models · Keep only large context models</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>Do not change both levers at the same time.</strong> Even if costs decrease, you won't know whether the cause is the mode or the subset, and you'll lose the basis for judgment in the next iteration. Using both levers <strong>together is fine</strong>, the problem is changing them "at once".</p>
+</blockquote>
+<p><strong>Principles for fair comparison</strong></p>
+<ul>
+<li><strong>Meaningful baseline</strong> — Compare to the model currently handling your workload, or directly to an alternative deployment to be adopted</li>
+<li><strong>Reflect traffic mix</strong> — Include normal requests, difficult edge cases, long inputs, and high-impact tasks, and <strong>group by category</strong> so that aggregation does not hide regressions in specific categories</li>
+<li><strong>Fix application settings</strong> — Keep prompts, system instructions, and output limits the same (differences in settings can appear like routing effects)</li>
+<li><strong>Plan for human review</strong> — Automated scoring is an estimate. Regulatory, domain-specific, or indeterminate cases should be checked by experts</li>
+<li><strong>Beware of small or biased samples</strong> — If there are few samples in an important category, add more prompts</li>
+</ul>
+<p><strong>Observation → Next steps to try</strong></p>
+<table>
+<thead>
+<tr>
+<th>Observation</th>
+<th>Actions to Consider</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Quality is below the required level</td>
+<td><strong>Quality mode</strong> or limit model subset</td>
+</tr>
+<tr>
+<td>Quality is fine but savings are minimal</td>
+<td>Try <strong>Cost mode</strong> and then recheck high-impact categories</td>
+</tr>
+<tr>
+<td>Only certain categories behave differently</td>
+<td>Before changing the entire setting, evaluate <strong>that category alone</strong></td>
+</tr>
+<tr>
+<td>Results are uncertain</td>
+<td>Add representative prompts · Review indeterminate cases and rerun</td>
+</tr>
+<tr>
+<td>Relying on unavailable or unapproved models</td>
+<td>Select a subset that is available in the deployment region and allowed by policy</td>
+</tr>
+<tr>
+<td>Tail latency (p90/p95) exceeds requirements</td>
+<td><strong>Re-verify under production-like traffic and concurrency</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 To automate comparisons, you can use the <a href="https://github.com/microsoft-foundry/Model-Router-Auto-Evaluation">Model Router Auto Evaluation toolkit</a>. Each time you run it, you should record the <strong>baseline · router version · routing mode · model subset · prompt dataset · evaluation criteria</strong> together so you can reproduce results later and attribute causes.</p>
+</blockquote>
+<p>Controlled comparisons alone cannot fully replicate production conditions. Before full deployment, observe quality signals, actual cost, median and tail latency, errors and failover behavior, and selected model distribution through <strong>limited production testing</strong>. A <strong>hybrid approach that leaves requests requiring deterministic model selection to direct model deployment</strong> is also a valid conclusion.</p>
+<p>The selected configuration is not the end, but a <strong>new baseline</strong>. Repeat evaluation if the traffic mix, routing settings, support model, application behavior, or pricing changes.</p>
+<hr/>
+<h2 id="en-8">8. Constraints and Pitfalls</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Content</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Context Window</strong></td>
+<td>Limited based on <strong>the smallest model among the underlying models</strong>. Larger contexts succeed only "when luckily routed to a larger model."</td>
+<td>Select only large context models from the model subset · summarize/truncate prompts · reduce via embedding search (RAG)</td>
+</tr>
+<tr>
+<td><strong>Input Modality</strong></td>
+<td><strong>Image input is supported</strong> but <strong>routing decisions are based solely on text</strong>. <strong>Audio input is not processed</strong></td>
+<td>Use direct model deployment for audio</td>
+</tr>
+<tr>
+<td><strong>Parameter Compatibility</strong></td>
+<td>Ignore <code>temperature</code> and the like when selecting an inference model</td>
+<td>If deterministic output is needed, exclude the inference model from the subset</td>
+</tr>
+<tr>
+<td><strong>Non-fixed response model</strong></td>
+<td>A different model responds for each request</td>
+<td>If there are audit requirements, log the <code>model</code> field. If deterministic selection is essential, maintain direct deployment</td>
+</tr>
+<tr>
+<td><strong>Router overhead</strong></td>
+<td>Even routing decisions take time (a very small portion compared to inference time)</td>
+<td>For latency-sensitive workloads, it is advantageous to increase the proportion of smaller models in <strong>Cost mode</strong></td>
+</tr>
+<tr>
+<td><strong>Auto-update</strong></td>
+<td>The underlying model set changes, causing performance and cost fluctuations</td>
+<td>If fluctuations are undesired, turn off auto-update and fix the subset</td>
+</tr>
+<tr>
+<td><strong>Claude pre-deployment</strong></td>
+<td>If not deployed <code>InvalidResourceProperties</code></td>
+<td>Deploy first with the same account·SKU</td>
+</tr>
+<tr>
+<td><strong>Configuration reflection delay</strong></td>
+<td>Up to 5 minutes for mode·subset changes</td>
+<td>Do not validate immediately after deployment</td>
+</tr>
+<tr>
+<td><strong>Quota</strong></td>
+<td>RPM/TPM limits scale according to <strong>subscription usage tier (Tier 1~6)</strong>. Global Standard is more generous than Data Zone Standard</td>
+<td>Check <a href="https://learn.microsoft.com/azure/foundry/openai/quotas-limits">Quota tiers</a> and request an increase · retry with exponential backoff</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-81">8.1 Quick Reference for Troubleshooting</h3>
+<table>
+<thead>
+<tr>
+<th>Symptoms</th>
+<th>Cause</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Deployment failure</td>
+<td>Resource is in an unsupported region</td>
+<td>Check supported regions (§3.3)</td>
+</tr>
+<tr>
+<td>Not routed to Claude</td>
+<td>Claude not deployed</td>
+<td>Deploy first in the model catalog</td>
+</tr>
+<tr>
+<td>Context exceeded error</td>
+<td>Exceeds minimum context model limit</td>
+<td>Reduce prompt or configure subset with a larger context model</td>
+</tr>
+<tr>
+<td>Unexpected model selected</td>
+<td>Routing mode / subset settings</td>
+<td>Review mode and subset</td>
+</tr>
+<tr>
+<td>High latency</td>
+<td>Router overhead + underlying model processing time</td>
+<td>Increase proportion of smaller models in Cost mode</td>
+</tr>
+<tr>
+<td>Rate limit exceeded</td>
+<td>TPM limit of router deployment reached</td>
+<td>Increase quota or retry with exponential backoff</td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<h2 id="en-9">9. Introduction Checklist</h2>
+<ul>
+<li>☐ Verified that the request difficulty of the workload is actually <strong>mixed</strong></li>
+<li>☐ If planning to use Claude, completed <strong>pre-deployment</strong></li>
+<li>☐ The allowed publishers in Azure Policy include <code>Microsoft</code> + necessary publishers</li>
+<li>☐ Set the content filter and <strong>TPM only per router deployment</strong></li>
+<li>☐ If using a model subset, selected <strong>at least two models</strong> to maintain failover</li>
+<li>☐ Confirmed that the minimum context window <strong>meets</strong> workload requirements</li>
+<li>☐ Paths that require audio input have been separated for <strong>direct model deployment</strong></li>
+<li>☐ Logging the <strong><code>model</code> field of responses</strong> to track model distribution</li>
+<li>☐ Completed <strong>quality · cost · latency evaluation</strong> compared to the baseline</li>
+<li>☐ Configured Azure Monitor metrics and <strong>Cost analysis tag filters</strong></li>
+</ul>
+<hr/>
+<h2 id="en-_3">References</h2>
+<ul>
+<li>Model router concept: https://learn.microsoft.com/azure/foundry/openai/concepts/model-router</li>
+<li>Routing operation principle: https://learn.microsoft.com/azure/foundry/openai/concepts/model-router-how-it-works</li>
+<li>Deployment and usage: https://learn.microsoft.com/azure/foundry/openai/how-to/model-router</li>
+<li>Workload Evaluation: https://learn.microsoft.com/azure/foundry/openai/how-to/evaluate-model-router</li>
+<li>Using with Foundry Agents: https://learn.microsoft.com/azure/foundry/openai/how-to/model-router-agents</li>
+<li>Governance with Azure Policy: https://learn.microsoft.com/azure/foundry/how-to/model-router-policy</li>
+<li>Deploying Claude Model: https://learn.microsoft.com/azure/foundry/foundry-models/how-to/use-foundry-models-claude</li>
+<li>Prompt Caching: https://learn.microsoft.com/azure/foundry/openai/how-to/prompt-caching</li>
+<li>Quotas and Limits: https://learn.microsoft.com/azure/foundry/openai/quotas-limits</li>
+<li>Azure OpenAI Pricing: https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/</li>
+<li>Comparison of Sub-Model Context Windows: https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure</li>
+<li>Python Sample: https://github.com/microsoft-foundry/foundry-samples/tree/main/samples/python/foundry-models/model-router</li>
+<li>Evaluation Automation Toolkit: https://github.com/microsoft-foundry/Model-Router-Auto-Evaluation</li>
+<li>Routing Distribution Experiment Tool: https://github.com/guygregory/ModelRouter-Distribution</li>
+<li>Routing Mode Comparison Demo: https://github.com/leestott/router-demo-app</li>
+</ul>
+<hr/>
+<p class="meta">Last modified 2026-08-31 · Microsoft Scout</p>
+</main>
+</div>
 <script>
 (function () {
   var toggle = document.getElementById("themeToggle");

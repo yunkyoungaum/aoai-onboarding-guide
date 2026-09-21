@@ -18,7 +18,7 @@
       "#guide-language-bar button{min-width:70px;padding:5px 10px;border:0;border-radius:7px;cursor:pointer;font:600 12.5px 'Segoe UI',Aptos,Calibri,sans-serif;color:var(--cp-text-muted,#5c5c5c);background:transparent}",
       "#guide-language-bar button[aria-pressed='true']{color:var(--cp-accent-fg,#fff);background:var(--cp-accent,#b11f4b)}",
       "@media print{#guide-nav-back,#guide-language-bar{display:none!important}}",
-      "@media(max-width:640px){#guide-nav-back,#guide-language-bar{position:static;margin:0 0 12px}#guide-language-bar{margin-left:8px}}"
+      "@media(max-width:640px){#guide-nav-back,#guide-language-bar{position:static;margin:0 0 12px}#guide-language-bar{margin-left:8px}.layout{width:100%;min-width:0}main{min-width:0;overflow-x:hidden}table{display:block;max-width:100%;overflow-x:auto}pre{max-width:100%;overflow-x:auto}}"
     ].join("");
 
     var style = document.createElement("style");
@@ -70,6 +70,13 @@
     bar.addEventListener("click", function (event) {
       var button = event.target.closest("[data-lang-btn]");
       if (button) apply(button.dataset.langBtn, true, true);
+    });
+
+    document.querySelectorAll("[id^='en-'][id$='themeToggle']").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var current = document.documentElement.getAttribute("data-theme");
+        document.documentElement.setAttribute("data-theme", current === "dark" ? "light" : "dark");
+      });
     });
 
     apply(language, false, false);

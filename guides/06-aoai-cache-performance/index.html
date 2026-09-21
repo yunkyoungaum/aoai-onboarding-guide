@@ -1,8 +1,9 @@
 <!DOCTYPE html>
+
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
 <title>Azure OpenAI 캐시 성능 최적화 가이드</title>
 <script>
   (() => {
@@ -357,10 +358,10 @@ html[data-theme="dark"] .codehilite .vm { color: #F8F8F2 } /* Name.Variable.Magi
 html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Integer.Long */
 </style>
 </head>
-<body>
-<div class="layout">
-  <nav class="sidebar">
-    <h2>목차</h2>
+<body data-lang="ko" data-title-en="Azure OpenAI Cache Performance Optimization Guide — Reducing TTFT and Costs with Prompt Caching" data-title-ko="Azure OpenAI 캐시 성능 최적화 가이드">
+<div class="layout lang-ko">
+<nav class="sidebar">
+<h2>목차</h2>
 <div class="toc">
 <ul>
 <li><a href="#0-tldr">0. TL;DR</a><ul>
@@ -419,21 +420,20 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li><a href="#_3">참고 자료</a></li>
 </ul>
 </div>
-
-  </nav>
-  <main>
-    <div class="topbar">
-      <span class="badge">Azure OpenAI · Cache Performance</span>
-      <button class="toggle" id="themeToggle" type="button">테마 전환</button>
-    </div>
+</nav>
+<main>
+<div class="topbar">
+<span class="badge">Azure OpenAI · Cache Performance</span>
+<button class="toggle" id="themeToggle" type="button">테마 전환</button>
+</div>
 <h1 id="azure-openai-ttft">Azure OpenAI 캐시 성능 최적화 가이드 — 프롬프트 캐싱으로 TTFT와 비용 줄이기</h1>
 <blockquote>
-<p>🚧 <strong>WIP / Draft</strong> &nbsp;·&nbsp; 계속 갱신 중인 문서입니다. 수치와 파라미터는 배포 전 공식 문서로 재확인하세요.</p>
-<p><strong>대상</strong> &nbsp;·&nbsp; AOAI에서 <strong>TTFT(첫 토큰 지연)</strong> 또는 <strong>입력 토큰 비용</strong>을 줄여야 하는 애플리케이션 팀, 플랫폼 팀</p>
-<p><strong>범위</strong> &nbsp;·&nbsp; 캐싱 원리 → 히트율 진단 → 3단계 개선 → 배포 유형·게이트웨이 선택 → 관측과 SLO</p>
-<p><strong>관련 가이드</strong> &nbsp;·&nbsp; <a href="../01-oai-to-aoai-onboarding/">01 온보딩</a> · <a href="../02-aoai-foundations/">02 기본 개념</a> · <a href="../03-aoai-deployment-monitoring/">03 배포 &amp; 운영 모니터링</a> · <a href="../04-aoai-high-availability/">04 고가용성(HA)</a> · <a href="../05-aoai-model-router/">05 Model Router</a></p>
+<p>🚧 <strong>WIP / Draft</strong>  ·  계속 갱신 중인 문서입니다. 수치와 파라미터는 배포 전 공식 문서로 재확인하세요.</p>
+<p><strong>대상</strong>  ·  AOAI에서 <strong>TTFT(첫 토큰 지연)</strong> 또는 <strong>입력 토큰 비용</strong>을 줄여야 하는 애플리케이션 팀, 플랫폼 팀</p>
+<p><strong>범위</strong>  ·  캐싱 원리 → 히트율 진단 → 3단계 개선 → 배포 유형·게이트웨이 선택 → 관측과 SLO</p>
+<p><strong>관련 가이드</strong>  ·  <a href="../01-oai-to-aoai-onboarding/">01 온보딩</a> · <a href="../02-aoai-foundations/">02 기본 개념</a> · <a href="../03-aoai-deployment-monitoring/">03 배포 &amp; 운영 모니터링</a> · <a href="../04-aoai-high-availability/">04 고가용성(HA)</a> · <a href="../05-aoai-model-router/">05 Model Router</a></p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="0-tldr">0. TL;DR</h2>
 <p>프롬프트 캐싱은 <strong>동일한 프롬프트 앞부분(prefix)의 KV 연산 결과를 재사용</strong>해 TTFT와 입력 토큰 비용을 줄입니다. 지원 모델에서 <strong>기본 활성화</strong>되어 있으므로 실무의 과제는 전부 <strong>히트율을 어떻게 올리느냐</strong>입니다. 캐시는 특정 추론 머신에 <strong>로컬로</strong> 존재하므로, 히트율은 ① 프롬프트가 얼마나 안정적인가 ② 캐시가 얼마나 오래 살아있는가 ③ 요청이 같은 머신으로 얼마나 잘 모이는가로 결정됩니다.</p>
 <h3 id="3">캐시 히트율 개선 3단계</h3>
@@ -523,7 +523,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li>[ ] 배포 유형이 <strong>locality 관점에서</strong> 선택되었다 (§6)</li>
 <li>[ ] TTFT <strong>p95를 캐시 히트율과 함께</strong> 본다 (§9.3)</li>
 </ul>
-<hr />
+<hr/>
 <h2 id="1">1. 프롬프트 캐싱이란</h2>
 <h3 id="11">1.1 동작 원리</h3>
 <p>LLM은 입력 토큰마다 Key/Value 텐서를 계산합니다(prefill). 프롬프트 앞부분이 이전 요청과 완전히 같다면 그 계산을 다시 할 이유가 없습니다. 프롬프트 캐싱은 이 KV 연산 결과를 임시 보관했다가 재사용합니다.</p>
@@ -601,17 +601,16 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <h3 id="14">1.4 히트 확인 방법</h3>
 <p>응답 본문의 <code>usage</code>에서 확인합니다.</p>
 <div class="codehilite"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;usage&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;prompt_tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1566</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;completion_tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1518</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;prompt_tokens_details&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;cached_tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1408</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;cache_write_tokens&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">  </span><span class="nt">"usage"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"prompt_tokens"</span><span class="p">:</span><span class="w"> </span><span class="mi">1566</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"completion_tokens"</span><span class="p">:</span><span class="w"> </span><span class="mi">1518</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"prompt_tokens_details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"cached_tokens"</span><span class="p">:</span><span class="w"> </span><span class="mi">1408</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"cache_write_tokens"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </code></pre></div>
-
 <table>
 <thead>
 <tr>
@@ -635,11 +634,10 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </table>
 <div class="codehilite"><pre><span></span><code>캐시 히트율 = cached_tokens / prompt_tokens
 </code></pre></div>
-
 <blockquote>
 <p>⚠️ 히트율은 요청 단위 boolean이 아니라 <strong>토큰 비율</strong>입니다. "히트/미스"로 세지 말고 토큰 가중 평균으로 집계하세요.</p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="2">2. 히트율이 낮게 느껴지는 이유</h2>
 <p>원인은 크게 <strong>캐시 수명</strong>과 <strong>라우팅 locality</strong> 둘 중 하나입니다.</p>
 <h3 id="21-gpu-local-global-standard-fan-out">2.1 캐시는 GPU-local, Global Standard는 fan-out 한다</h3>
@@ -659,7 +657,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <p>Foundry를 포함한 대부분의 모델 제공자는 <strong>prefix-hash 기반 라우팅</strong>을 씁니다. 같은 세션의 요청은 같은 GPU 노드로 떨어져 배치로 처리되는 것이 정상 동작입니다. 그런데도 세션 도중 미스를 느낀다면 라우팅이 아니라 <strong>캐시가 살아있는 시간</strong>이 문제일 가능성이 큽니다. 이 경우 <strong>확장 캐싱(§4)만으로도 체감이 크게 개선</strong>될 가능성이 높습니다.</p>
 <p><strong>분산 요청에서 드롭아웃되는 경우</strong></p>
 <p>세션 경계를 넘어 광범위하게 히트율이 낮다면 논의는 <strong>배포 유형</strong>으로 넘어갑니다. Regional 엔드포인트나 PTU로 트래픽을 집중시켜 locality를 확보하는 방향이고(§6), 그 다음이 <strong>APIM 계층</strong>입니다(§7).</p>
-<hr />
+<hr/>
 <h2 id="3-1-1024">3. 개선 1단계 — 앞 1,024 토큰을 고정하라</h2>
 <p>가장 싸고 효과가 큰 단계입니다. 코드 몇 줄로 히트율이 0%에서 70%대로 뛰는 경우가 흔합니다.</p>
 <h3 id="31">3.1 프롬프트 레이아웃 원칙</h3>
@@ -673,7 +671,6 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 │ ⑤ 이번 사용자 입력                   │  ← 가변
 └─────────────────────────────────────┘
 </code></pre></div>
-
 <blockquote>
 <p>💡 prefix가 1,024 토큰에 못 미치면 캐싱이 아예 동작하지 않습니다. 지침이 짧다면 <strong>few-shot 예시나 용어집을 앞에 배치</strong>해 임계를 넘기는 편이 이득일 수 있습니다.</p>
 </blockquote>
@@ -720,25 +717,23 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </tbody>
 </table>
 <div class="codehilite"><pre><span></span><code><span class="c1"># ❌ 캐시가 절대 안 걸림</span>
-<span class="n">system</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;당신은 상담원입니다. 현재 시각: </span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="si">}</span><span class="s2">. 사용자: </span><span class="si">{</span><span class="n">user_name</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">POLICY</span>
+<span class="n">system</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"당신은 상담원입니다. 현재 시각: </span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="si">}</span><span class="s2">. 사용자: </span><span class="si">{</span><span class="n">user_name</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="n">POLICY</span>
 
 <span class="c1"># ✅ 고정 prefix + 가변 정보는 뒤로</span>
 <span class="n">system</span> <span class="o">=</span> <span class="n">POLICY</span>                       <span class="c1"># 1,024 토큰 이상, 항상 동일</span>
-<span class="n">user</span>   <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;[시각 </span><span class="si">{</span><span class="n">now_hour</span><span class="si">}</span><span class="s2">] [사용자 </span><span class="si">{</span><span class="n">user_name</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="si">{</span><span class="n">question</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="n">user</span>   <span class="o">=</span> <span class="sa">f</span><span class="s2">"[시각 </span><span class="si">{</span><span class="n">now_hour</span><span class="si">}</span><span class="s2">] [사용자 </span><span class="si">{</span><span class="n">user_name</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="si">{</span><span class="n">question</span><span class="si">}</span><span class="s2">"</span>
 </code></pre></div>
-
 <h3 id="33-append-only">3.3 대화 컨텍스트는 append-only</h3>
 <p>멀티턴에서 캐시가 유지되려면 <strong>앞선 턴들이 그대로 남아 있어야</strong> 합니다.</p>
 <div class="codehilite"><pre><span></span><code>턴 1:  [S][U1]                    → prefix [S] 캐시
 턴 2:  [S][U1][A1][U2]            → prefix [S][U1][A1] 히트 ✅
 턴 3:  [S][요약(U1,A1)][U3]       → prefix 변경 → 전체 miss ❌
 </code></pre></div>
-
 <p>압축이 필요하다면 <strong>매 턴 요약하지 말고</strong>, 임계 도달 시 <strong>한 번에 잘라내고 새 prefix를 확립</strong>하세요. 압축 빈도를 낮추는 것이 히트율에 유리합니다.</p>
 <blockquote>
 <p>💡 GPT-5.6+ Responses API에는 서버 측 압축(<code>context_management</code> + <code>compact_threshold</code>) 옵션이 있습니다. 압축 시점이 캐시 경계와 맞물리므로 직접 구현한 요약 로직보다 캐시 친화적입니다.</p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="4-2">4. 개선 2단계 — 캐시 보존 기간을 늘려라</h2>
 <p><strong>파라미터 한 줄</strong>이라 시도 비용이 거의 없습니다. 요청 사이에 공백이 있는 워크로드에 특히 효과적입니다.</p>
 <h3 id="41-in-memory-vs-extended">4.1 in-memory vs extended</h3>
@@ -811,12 +806,11 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </tbody>
 </table>
 <div class="codehilite"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;your-gpt-5.4-deployment-name&gt;&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;input&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Your prompt goes here...&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;prompt_cache_retention&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;24h&quot;</span>
+<span class="w">  </span><span class="nt">"model"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;your-gpt-5.4-deployment-name&gt;"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"input"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Your prompt goes here..."</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"prompt_cache_retention"</span><span class="p">:</span><span class="w"> </span><span class="s2">"24h"</span>
 <span class="p">}</span>
 </code></pre></div>
-
 <blockquote>
 <p>⚠️ 허용값은 <code>in_memory</code> 와 <code>24h</code> 두 가지뿐입니다. 임의의 기간은 설정할 수 없습니다.</p>
 </blockquote>
@@ -868,7 +862,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <blockquote>
 <p>💡 규제 산업 고객에게는 반드시 짚어야 할 지점입니다. 경계를 벗어나지는 않지만 <strong>"임시 저장이 발생한다"</strong> 는 사실 자체가 검토 대상이 되는 경우가 있습니다.</p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="5-3-prefix-prompt_cache_key">5. 개선 3단계 — <code>prefix</code> + <code>prompt_cache_key</code> 농도 조절</h2>
 <blockquote>
 <p>⚠️ <strong>적용 범위 — GPT-5.6 이상 모델 계열 전용</strong></p>
@@ -911,21 +905,19 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </table>
 <div class="codehilite"><pre><span></span><code>필요한 키 개수 ≈ (해당 prefix의 총 RPM) ÷ 15
 </code></pre></div>
-
 <p>예) 동일 시스템 프롬프트로 <strong>150 RPM</strong> → <strong>약 10개 키</strong>. 버스트를 감안해 <strong>12~15개</strong> 여유를 두는 편이 안전합니다.</p>
 <h3 id="53">5.3 샤딩 구현</h3>
 <p><strong>원칙: 키 ↔ prefix 매핑을 안정적으로 고정하세요.</strong></p>
 <div class="codehilite"><pre><span></span><code><span class="c1"># ❌ 매 요청 랜덤 → 머신도 랜덤 → cold miss</span>
-<span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;prompt-v2:</span><span class="si">{</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"prompt-v2:</span><span class="si">{</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
 
 <span class="c1"># ❌ 요청마다 고유 → 캐시 공유 자체가 불가능</span>
-<span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;prompt-v2:</span><span class="si">{</span><span class="n">uuid4</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"prompt-v2:</span><span class="si">{</span><span class="n">uuid4</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
 
 <span class="c1"># ✅ 안정적 해시로 샤딩 — 같은 사용자는 항상 같은 샤드</span>
 <span class="n">shard</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">crc32</span><span class="p">(</span><span class="n">user_id</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span> <span class="o">%</span> <span class="mi">10</span>
-<span class="n">key</span>   <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;prompt-v2:shard-</span><span class="si">{</span><span class="n">shard</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="n">key</span>   <span class="o">=</span> <span class="sa">f</span><span class="s2">"prompt-v2:shard-</span><span class="si">{</span><span class="n">shard</span><span class="si">}</span><span class="s2">"</span>
 </code></pre></div>
-
 <table>
 <thead>
 <tr>
@@ -989,23 +981,22 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </tbody>
 </table>
 <div class="codehilite"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;your-gpt-5.6-deployment-name&gt;&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;prompt_cache_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;tenant:contoso:support-policy-v2&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;prompt_cache_options&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;explicit&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;ttl&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;30m&quot;</span><span class="w"> </span><span class="p">},</span>
-<span class="w">  </span><span class="nt">&quot;messages&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="nt">"model"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;your-gpt-5.6-deployment-name&gt;"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"prompt_cache_key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tenant:contoso:support-policy-v2"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"prompt_cache_options"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"mode"</span><span class="p">:</span><span class="w"> </span><span class="s2">"explicit"</span><span class="p">,</span><span class="w"> </span><span class="nt">"ttl"</span><span class="p">:</span><span class="w"> </span><span class="s2">"30m"</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">"messages"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;system&quot;</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
-<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;text&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;at least 1,024 tokens of reusable instructions&gt;&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;prompt_cache_breakpoint&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;explicit&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">      </span><span class="nt">"role"</span><span class="p">:</span><span class="w"> </span><span class="s2">"system"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"content"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">        </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"text"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"text"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;at least 1,024 tokens of reusable instructions&gt;"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"prompt_cache_breakpoint"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"mode"</span><span class="p">:</span><span class="w"> </span><span class="s2">"explicit"</span><span class="w"> </span><span class="p">}</span>
 <span class="w">      </span><span class="p">}]</span>
 <span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;variable user input&gt;&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">"role"</span><span class="p">:</span><span class="w"> </span><span class="s2">"user"</span><span class="p">,</span><span class="w"> </span><span class="nt">"content"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;variable user input&gt;"</span><span class="w"> </span><span class="p">}</span>
 <span class="w">  </span><span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div>
-
 <p><strong>주요 제한</strong></p>
 <ul>
 <li>요청당 <strong>신규 캐시 쓰기 최대 4개</strong> (<code>implicit</code>은 자동 breakpoint가 1개를 소모해 명시적 3개)</li>
@@ -1013,7 +1004,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li>캐시 읽기는 <strong>최근 50개 breakpoint</strong>까지 고려</li>
 <li>breakpoint까지의 prefix가 <strong>1,024 토큰 이상</strong>이어야 함</li>
 </ul>
-<hr />
+<hr/>
 <h2 id="6-locality">6. 배포 유형으로 locality를 확보하라</h2>
 <p>§3~§5를 다 했는데도 히트율이 낮다면, 문제는 애플리케이션이 아니라 <strong>트래픽이 도달하는 풀의 넓이</strong>일 수 있습니다.</p>
 <table>
@@ -1057,7 +1048,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <p>💡 <strong>PTU의 이중 이득</strong> — 캐시 읽기가 <strong>최대 100% 할인</strong>되어 비용이 줄 뿐 아니라, <strong>PTU 사용률 자체가 낮아져</strong> 같은 PTU로 더 많은 트래픽을 처리할 수 있습니다. 캐시 히트율 개선이 <strong>곧 용량 증설 효과</strong>입니다.</p>
 </blockquote>
 <div class="mermaid" data-idx="4"></div>
-<hr />
+<hr/>
 <h2 id="7-apim">7. 게이트웨이 계층 — APIM으로 한 겹 더</h2>
 <p>모델 계층에서 할 수 있는 것을 다 했다면, 그 앞단에 캐시를 한 겹 더 둘 수 있습니다.</p>
 <table>
@@ -1124,7 +1115,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <p>⚠️ semantic caching은 <strong>유사도 임계값 튜닝이 핵심</strong>입니다. 느슨하면 오답을, 빡빡하면 히트율 0을 얻습니다. 오프라인 평가셋으로 임계를 정하고 <strong>캐시 히트 응답을 샘플링 검수</strong>하는 절차를 함께 두세요.</p>
 <p>💡 APIM은 캐싱 외에 <strong>토큰 제한·백엔드 풀·서킷 브레이커</strong>도 제공합니다. 가용성 설계와 함께 도입하면 효과가 큽니다 — <a href="../04-aoai-high-availability/">04 고가용성 가이드</a> 참조.</p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="8">8. 비용 모델</h2>
 <h3 id="81">8.1 캐시 읽기 — 할인</h3>
 <table>
@@ -1178,7 +1169,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <blockquote>
 <p>💡 정확한 단가는 <a href="https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/">Azure OpenAI 가격 페이지</a>에서 확인하세요.</p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="9">9. 관측</h2>
 <h3 id="91">9.1 핵심 지표</h3>
 <table>
@@ -1261,16 +1252,15 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <h3 id="93-slo">9.3 SLO 베이스라인으로 연결하기</h3>
 <p>캐시는 <strong>TTFT SLO를 움직이는 가장 큰 단일 레버</strong>입니다. 다만 히트/미스에 따라 TTFT 분포가 이봉(bimodal)이 되므로 지표 설계에 주의가 필요합니다.</p>
 <div class="codehilite"><pre><span></span><code>SLI:  TTFT p95 (스트리밍 첫 토큰까지)
-SLO:  &quot;캐시 히트 요청의 TTFT p95 &lt; X ms&quot;
-      &quot;전체 요청의 TTFT p95 &lt; Y ms&quot;  (X &lt; Y)
-보조: &quot;캐시 히트율 ≥ Z%&quot;
+SLO:  "캐시 히트 요청의 TTFT p95 &lt; X ms"
+      "전체 요청의 TTFT p95 &lt; Y ms"  (X &lt; Y)
+보조: "캐시 히트율 ≥ Z%"
 </code></pre></div>
-
 <blockquote>
 <p>💡 <strong>평균 TTFT 하나로 SLO를 잡지 마세요.</strong> 두 봉우리의 평균은 어느 쪽도 대표하지 않습니다. 히트율을 별도 보조 지표로 두고 TTFT는 히트/미스를 분리해 보는 편이 진단 가능합니다.</p>
 <p>💡 고객의 SLO 베이스라인을 수집하는 단계라면 <strong>캐시 히트율을 함께 물어보세요.</strong> 제시된 TTFT 목표가 warm 기준인지 cold 기준인지에 따라 필요한 용량이 크게 달라집니다.</p>
 </blockquote>
-<hr />
+<hr/>
 <h2 id="10">10. 트러블슈팅 빠른 참조</h2>
 <table>
 <thead>
@@ -1333,7 +1323,7 @@ SLO:  &quot;캐시 히트 요청의 TTFT p95 &lt; X ms&quot;
 </tr>
 </tbody>
 </table>
-<hr />
+<hr/>
 <h2 id="_3">참고 자료</h2>
 <ul>
 <li>Prompt caching with Azure OpenAI in Microsoft Foundry Models: https://learn.microsoft.com/azure/foundry/openai/how-to/prompt-caching</li>
@@ -1345,11 +1335,989 @@ SLO:  &quot;캐시 히트 요청의 TTFT p95 &lt; X ms&quot;
 <li>AI gateway capabilities in Azure API Management (semantic caching): https://learn.microsoft.com/azure/api-management/genai-gateway-capabilities</li>
 <li>Azure OpenAI 가격: https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/</li>
 </ul>
-    <hr>
-    <p class="meta">최종 수정 2026-08-27 · Microsoft Scout</p>
-  </main>
+<hr/>
+<p class="meta">최종 수정 2026-08-27 · Microsoft Scout</p>
+</main>
+</div><div class="layout lang-en">
+<nav class="sidebar">
+<h2>Table of Contents</h2>
+<div class="toc">
+<ul>
+<li><a href="#en-0-tldr">0. TL;DR</a><ul>
+<li><a href="#en-3">Three Steps to Improve Cache Hit Rate</a></li>
+<li><a href="#en-_1">Parameters Available by Model Series</a></li>
+<li><a href="#en-_2">Minimum Checklist</a></li>
+</ul>
+</li>
+<li><a href="#en-1">1. What is prompt caching</a><ul>
+<li><a href="#en-11">1.1 Operating Principle</a></li>
+<li><a href="#en-12">1.2 Application Conditions</a></li>
+<li><a href="#en-13">1.3 What Gets Cached</a></li>
+<li><a href="#en-14">1.4 How to Check Hits</a></li>
+</ul>
+</li>
+<li><a href="#en-2">2. The reason why the hit rate feels low</a><ul>
+<li><a href="#en-21-gpu-local-global-standard-fan-out">2.1 Cache Fans Out to GPU-local and Global Standard</a></li>
+<li><a href="#en-22">2.2 Diagnostics — At Which Level Are Misses Perceived</a></li>
+</ul>
+</li>
+<li><a href="#en-3-1-1024">3. Improvement Stage 1 — Fix the first 1,024 tokens</a><ul>
+<li><a href="#en-31">3.1 Prompt Layout Principles</a></li>
+<li><a href="#en-32">3.2 Common Patterns That Break the Cache</a></li>
+<li><a href="#en-33-append-only">3.3 Conversation Context is Append-Only</a></li>
+</ul>
+</li>
+<li><a href="#en-4-2">4. Improvement Step 2 — Increase the Cache Retention Period</a><ul>
+<li><a href="#en-41-in-memory-vs-extended">4.1 in-memory vs extended</a></li>
+<li><a href="#en-42">4.2 How to Configure by Model</a></li>
+<li><a href="#en-43-gpt-56-ttl">4.3 GPT-5.6+ TTL — The Meaning is the Opposite</a></li>
+<li><a href="#en-44">4.4 Impact of Data Residency</a></li>
+</ul>
+</li>
+<li><a href="#en-5-3-prefix-prompt_cache_key">5. Improvement Step 3 — Adjusting the concentration of prefix + prompt_cache_key</a><ul>
+<li><a href="#en-51-prompt_cache_key">5.1 prompt_cache_key is Routing, Not Storage</a></li>
+<li><a href="#en-52">5.2 Both Extremes are Bad</a></li>
+<li><a href="#en-53">5.3 Sharding Implementation</a></li>
+<li><a href="#en-54">5.4 Two Things You Must Remember</a></li>
+<li><a href="#en-55-gpt-56-breakpoint">5.5 GPT-5.6+ — Explicit Cache Breakpoint</a></li>
+</ul>
+</li>
+<li><a href="#en-6-locality">6. Ensure locality through deployment type</a></li>
+<li><a href="#en-7-apim">7. Gateway layer — one more layer with APIM</a></li>
+<li><a href="#en-8">8. Cost Model</a><ul>
+<li><a href="#en-81">8.1 Cache read — discount</a></li>
+<li><a href="#en-82-gpt-56">8.2 Cache write — may be charged from GPT-5.6</a></li>
+</ul>
+</li>
+<li><a href="#en-9">9. Observation</a><ul>
+<li><a href="#en-91">9.1 Key metrics</a></li>
+<li><a href="#en-92">9.2 Interpretation rules</a></li>
+<li><a href="#en-93-slo">9.3 Connect to SLO baseline</a></li>
+</ul>
+</li>
+<li><a href="#en-10">10. Quick reference for troubleshooting</a></li>
+<li><a href="#en-_3">References</a></li>
+</ul>
 </div>
+</nav>
+<main>
+<div class="topbar">
+<span class="badge">Azure OpenAI · Cache Performance</span>
+<button class="toggle" id="en-themeToggle" type="button">Theme switch</button>
+</div>
+<h1 id="en-azure-openai-ttft">Azure OpenAI Cache Performance Optimization Guide — Reducing TTFT and Costs with Prompt Caching</h1>
+<blockquote>
+<p>🚧 <strong>WIP / Draft</strong> · This document is continuously being updated. Please verify numbers and parameters with the official documentation before deployment.</p>
+<p><strong>Audience</strong> · Application teams and platform teams in AOAI that need to reduce <strong>TTFT (Time to First Token)</strong> or <strong>input token cost</strong></p>
+<p><strong>Scope</strong> · Caching principles → Hit rate diagnosis → 3-step improvement → Deployment type &amp; gateway selection → Observability and SLOs</p>
+<p><strong>Related Guides</strong> · <a href="../01-oai-to-aoai-onboarding/">01 Onboarding</a> · <a href="../02-aoai-foundations/">02 Basic Concepts</a> · <a href="../03-aoai-deployment-monitoring/">03 Deployment &amp; Operations Monitoring</a> · <a href="../04-aoai-high-availability/">04 High Availability (HA)</a> · <a href="../05-aoai-model-router/">05 Model Router</a></p>
+</blockquote>
+<hr/>
+<h2 id="en-0-tldr">0. TL;DR</h2>
+<p>Prompt caching <strong>reuses the KV operation results of the same prompt prefix</strong> to reduce TTFT and input token costs. It is <strong>enabled by default</strong> on supported models, so the practical challenge is entirely about <strong>how to increase the hit rate</strong>. Since the cache exists <strong>locally</strong> on a specific inference machine, the hit rate is determined by ① how stable the prompt is ② how long the cache lives ③ how well requests are concentrated on the same machine.</p>
+<h3 id="en-3">Three Steps to Improve Cache Hit Rate</h3>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Action</th>
+<th>Problem Being Solved</th>
+<th>Applicable Models</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1</strong></td>
+<td><strong>Maintain the first 1,024 tokens exactly at the character level</strong></td>
+<td>Structural miss due to prompt instability</td>
+<td><strong>All models</strong></td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td><strong>Extend cache retention period</strong> (up to 24 hours)</td>
+<td>Issue of cache expiring during idle periods</td>
+<td>Extended Caching Support Model (§4.1)</td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td><strong>Concentration control of the combination of <code>prefix</code> + <code>prompt_cache_key</code></strong> (~15 RPM threshold)</td>
+<td>Misses due to routing distribution/overcrowding</td>
+<td><strong>Only GPT-5.6 and above</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>Step 3 is for GPT-5.6 and above only.</strong> <code>prompt_cache_key</code> is defined only for the GPT-5.6 and above model series in the documentation. If you are using an earlier model, skip Step 3 and proceed in the order <strong>§4 → §6 (Deployment Type) → §7 (APIM)</strong>.</p>
+<p>💡 <strong>Key sentence of Step 3</strong>
+Bunch together enough to be reused, but <strong>do not</strong> bunch together enough to overflow a single machine.
+<em>"concentrated enough for reuse, but not overloaded."</em></p>
+</blockquote>
+<h3 id="en-_1">Available Parameters by Model Series</h3>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>GPT-4o ~ 5.5</th>
+<th>GPT-5.6+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prompt Caching (Automatic)</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>prompt_cache_retention</code> (<code>24h</code>)</td>
+<td>✅ (Limited to supported models, §4.1)</td>
+<td>❌ deprecated</td>
+</tr>
+<tr>
+<td><code>prompt_cache_key</code></td>
+<td>❌ Not documented</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>prompt_cache_options</code></td>
+<td>❌ → <strong><code>400</code> Error</strong></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>prompt_cache_breakpoint</code></td>
+<td>❌ → <strong><code>400</code> Error</strong></td>
+<td>✅ (Excluding PTU-M)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-_2">Minimum Checklist</h3>
+<ul>
+<li>[ ] No <strong>variable values</strong> (timestamps, user ID, UUID) are present in the first 1,024 tokens (§3.2)</li>
+<li>[ ] Maintain conversation context as <strong>append-only</strong> (§3.3)</li>
+<li>[ ] Serialization order of tool definitions and output schema is <strong>fixed</strong> (§3.2)</li>
+<li>[ ] Explicitly set a <strong>retention policy</strong> appropriate for the model (§4)</li>
+<li>[ ] <em>(5.6+)</em> <code>prompt_cache_key</code> is sharded using a <strong>stable hash</strong> (§5.3)</li>
+<li>[ ] <em>(5.6+)</em> Traffic per key is <strong>~15 RPM or less</strong> (§5.2)</li>
+<li>[ ] <strong>Log <code>cached_tokens</code></strong> and aggregate by key (§9.1)</li>
+<li>[ ] When using GPT-5.6+, also monitor <strong><code>cache_write_tokens</code> (write billing)</strong> (§8.2)</li>
+<li>[ ] Deployment type was chosen from the perspective of <strong>locality</strong> (§6)</li>
+<li>[ ] Check TTFT <strong>p95 along with cache hit rate</strong> (§9.3)</li>
+</ul>
+<hr/>
+<h2 id="en-1">1. What is prompt caching</h2>
+<h3 id="en-11">1.1 Operating Principle</h3>
+<p>LLMs compute Key/Value tensors for every input token (prefill). If the beginning part of a prompt is exactly the same as a previous request, there is no reason to perform that computation again. Prompt caching temporarily stores the results of these KV operations and reuses them.</p>
+<div class="mermaid" data-idx="0"></div>
+<p><strong>Three properties to remember</strong></p>
+<ol>
+<li><strong>The output does not change</strong> — it only affects latency and cost.</li>
+<li><strong>It is prefix-based</strong> — it must be the same <strong>from the very beginning</strong>, not just somewhere in the middle.</li>
+<li><strong>The cache is local</strong> — it is attached to the machine processing the request, not a global storage. This property creates the routing problem discussed in §5.</li>
+</ol>
+<h3 id="en-12">1.2 Application Conditions</h3>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Minimum Length</strong></td>
+<td>Prompt of <strong>1,024 tokens or more</strong></td>
+</tr>
+<tr>
+<td><strong>Matching Requirement</strong></td>
+<td>The first <strong>1,024 tokens are identical at the character level</strong></td>
+</tr>
+<tr>
+<td><strong>Increment unit</strong></td>
+<td>GPT-5.5 and below — after 1,024, <strong>128-token increments</strong> / GPT-5.6+ — no rounding</td>
+</tr>
+<tr>
+<td><strong>Activation</strong></td>
+<td><strong>Enabled by default</strong> on supported models</td>
+</tr>
+<tr>
+<td><strong>Isolation</strong></td>
+<td><strong>No cache sharing between Azure subscriptions</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ If <strong>even one character differs</strong> in the first 1,024 tokens, the entire cache is missed (<code>cached_tokens = 0</code>). A "nearly identical" prompt is considered "completely different" from a caching perspective.</p>
+</blockquote>
+<h3 id="en-13">1.3 What is cached</h3>
+<table>
+<thead>
+<tr>
+<th>Target</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Messages</strong></td>
+<td>The full sequence of messages from system · developer · user · assistant</td>
+</tr>
+<tr>
+<td><strong>Images</strong></td>
+<td>Image of the user message (link / base64). The <code>detail</code> parameter must be the same across requests</td>
+</tr>
+<tr>
+<td><strong>Tool use</strong></td>
+<td>Array of messages + <strong>tool definitions</strong></td>
+</tr>
+<tr>
+<td><strong>Structured outputs</strong></td>
+<td>The output schema is <strong>prefixed before the system message</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 Tool definitions and output schemas are also subject to caching. For workloads with many tools like agents, <strong>just the tool definitions can exceed 1,024 tokens</strong> which is highly beneficial, whereas if the tool list changes with each request, <strong>the cache is completely invalidated.</strong></p>
+</blockquote>
+<h3 id="en-14">1.4 How to Check for a Hit</h3>
+<p>Check in the <code>usage</code> section of the response body.</p>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"usage"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"prompt_tokens"</span><span class="p">:</span><span class="w"> </span><span class="mi">1566</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"completion_tokens"</span><span class="p">:</span><span class="w"> </span><span class="mi">1518</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"prompt_tokens_details"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"cached_tokens"</span><span class="p">:</span><span class="w"> </span><span class="mi">1408</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"cache_write_tokens"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+<th>Exposure Conditions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cached_tokens</code></td>
+<td><strong>Cache Read</strong> — Number of input tokens reused</td>
+<td>All supported models</td>
+</tr>
+<tr>
+<td><code>cache_write_tokens</code></td>
+<td><strong>Cache Write</strong> — Number of newly recorded tokens</td>
+<td>GPT-5.6+ <strong>Standard Pay-as-you-go</strong> only</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span><code>Cache hit rate = cached_tokens / prompt_tokens
+</code></pre></div>
+<blockquote>
+<p>⚠️ The hit rate is not per request Boolean but a <strong>token ratio</strong>. Do not count as "hit/miss"; aggregate as a token-weighted average.</p>
+</blockquote>
+<hr/>
+<h2 id="en-2">2. Reasons the Hit Rate Feels Low</h2>
+<p>The causes are largely either <strong>cache lifespan</strong> or <strong>routing locality</strong>.</p>
+<h3 id="en-21-gpu-local-global-standard-fan-out">2.1 The Cache is GPU-local, Global Standard Fans Out</h3>
+<p>The cache is local to the GPU. This property is also evident in the explanation of how scaled caching works.</p>
+<blockquote>
+<p>"Extended prompt caching works by <strong>offloading the key/value tensors to GPU-local storage</strong> when memory is full…"</p>
+</blockquote>
+<p>Here, the <strong>Global Standard</strong> deployment distributes requests across a wide pool for capacity availability. From the perspective of cache locality, this distribution is disadvantageous — the more the requests spread, the lower the probability that they reach "the machine where my cache is."</p>
+<div class="mermaid" data-idx="1"></div>
+<blockquote>
+<p>⚠️ The above explanation is an <strong>estimate</strong> derived from documented behavior. Since it is not a confirmed causality, use the diagnostics in §2.2 to determine the actual cause.</p>
+</blockquote>
+<h3 id="en-22">2.2 Diagnosis — At which layer do misses manifest</h3>
+<p>Asking <strong>where the customer experiences cache misses</strong> determines the prescription.</p>
+<div class="mermaid" data-idx="2"></div>
+<p><strong>If experienced at the session level</strong></p>
+<p>Most model providers, including Foundry, use <strong>prefix-hash based routing</strong>. It is normal behavior for requests from the same session to go to the same GPU node and be processed in batches. Yet, if misses are experienced during the session, it is more likely a problem with <strong>cache lifetime</strong> rather than routing. In this case, <strong>experience can likely be greatly improved with just extended caching (§4)</strong>.</p>
+<p><strong>When Dropping Out in Distributed Requests</strong></p>
+<p>If the hit rate is widely low across session boundaries, the discussion moves on to <strong>deployment type</strong>. The direction is to concentrate traffic on a Regional endpoint or PTU to secure locality (§6), and the next is the <strong>APIM layer</strong> (§7).</p>
+<hr/>
+<h2 id="en-3-1-1024">3. Improvement Step 1 — Fix the First 1,024 Tokens</h2>
+<p>This is the cheapest and most effective step. It is common for the hit rate to jump from 0% to the 70s with just a few lines of code.</p>
+<h3 id="en-31">3.1 Prompt Layout Principles</h3>
+<p><strong>Fixed content at the front, variable content at the back.</strong></p>
+<div class="codehilite"><pre><span></span><code>┌─────────────────────────────────────┐
+│ ① Tool Definition / Output Schema            │  ← Fixed
+│ ② System Prompt (Guidelines, Policy)       │  ← Fixed      Cache Target Prefix
+│ ③ Reference documents / few-shot examples          │  ← semi-fixed
+├─────────────────────────────────────┤  ← Up to here, more than 1,024 tokens
+│ ④ Conversation History                          │  ← append-only
+│ ⑤ This user input                    │  ← Variable
+└─────────────────────────────────────┘
+</code></pre></div>
+<blockquote>
+<p>💡 If the prefix is less than 1,024 tokens, caching won’t work at all. If the instructions are short, it may be beneficial to place <strong>few-shot examples or a glossary at the front</strong> to exceed the threshold.</p>
+</blockquote>
+<h3 id="en-32">3.2 Common Patterns That Break the Cache</h3>
+<table>
+<thead>
+<tr>
+<th>Anti-pattern</th>
+<th>Why it breaks</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Current time in the system prompt</td>
+<td>Each request string differs</td>
+<td>Move to the back, or truncate the time unit</td>
+</tr>
+<tr>
+<td>User name / Session ID at the front</td>
+<td>Prefix differs for each user</td>
+<td>Move to the back</td>
+</tr>
+<tr>
+<td>Dynamically generate a list of tools</td>
+<td>Order changes each time</td>
+<td>Fix the order, always provide the entire list</td>
+</tr>
+<tr>
+<td>Serialize JSON schema exactly in dict order</td>
+<td>Key order changes at every runtime</td>
+<td><code>sort_keys=True</code></td>
+</tr>
+<tr>
+<td>Transform the prompt <strong>into A/B each time</strong></td>
+<td>Separate cache for each variant</td>
+<td>Fix the variant as a decimal</td>
+</tr>
+<tr>
+<td><strong>Summarize/delete</strong> the conversation history from the middle</td>
+<td>The prefix itself changes</td>
+<td>See §3.3</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span><code><span class="c1"># ❌ Cache never applies</span>
+<span class="n">system</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">You are a counselor. Current time: </span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="si">}</span><span class="s2">. User: </span><span class="si">{</span><span class="n">user_name</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="n">POLICY</span>
 
+<span class="c1">✅ # Fixed prefix + variable information backward</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">POLICY</span>                       <span class="c1"># 1,024 tokens or more, always the same</span>
+<span class="n">user</span>   <span class="o">=</span> <span class="sa">f</span><span class="s2">[Visual] </span><span class="si">{</span><span class="n">now_hour</span><span class="si">}</span><span class="s2">] [User </span><span class="si">{</span><span class="n">user_name</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="si">{</span><span class="n">question</span><span class="si">}</span><span class="s2">"</span>
+</code></pre></div>
+<h3 id="en-33-append-only">3.3 Conversation context is append-only</h3>
+<p>To maintain cache during multi-turn interactions, <strong>previous turns must remain as they are</strong>.</p>
+<div class="codehilite"><pre><span></span><code>Turn 1:  [S][U1]                    → prefix [S] cache
+Turn 2:  [S][U1][A1][U2]            → prefix [S][U1][A1] hit ✅
+Turn 3:  [S][Summary(U1,A1)][U3]       → Change prefix → Overall miss ❌
+</code></pre></div>
+<p>If compression is necessary, <strong>do not summarize every turn</strong>; when the threshold is reached, <strong>cut it off at once and establish a new prefix</strong>. Reducing compression frequency is advantageous for hit rate.</p>
+<blockquote>
+<p>💡 The GPT-5.6+ Responses API has a server-side compression (<code>context_management</code> + <code>compact_threshold</code>) option. The timing of compression coincides with cache boundaries, making it more cache-friendly than summary logic implemented manually.</p>
+</blockquote>
+<hr/>
+<h2 id="en-4-2">4. Improvement Stage 2 — Extend Cache Retention Time</h2>
+<p><strong>One-line parameter</strong> means almost no cost to try. It is especially effective for workloads with gaps between requests.</p>
+<h3 id="en-41-in-memory-vs-extended">4.1 in-memory vs extended</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>In-memory</strong> (default)</th>
+<th><strong>Extended</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Max retention</td>
+<td><strong>1 hour</strong> after last use</td>
+<td><strong>Up to 24 hours</strong></td>
+</tr>
+<tr>
+<td>Idle removal</td>
+<td>Usually <strong>5~10 minutes</strong></td>
+<td>Attempt to keep longer</td>
+</tr>
+<tr>
+<td>Storage Method</td>
+<td>GPU Memory</td>
+<td>Offload to <strong>GPU-local storage</strong> when memory is insufficient</td>
+</tr>
+<tr>
+<td>Supported Range</td>
+<td>All models GPT-4o and above</td>
+<td>Limited to the list below</td>
+</tr>
+<tr>
+<td>Price</td>
+<td><strong>Both policies are the same</strong></td>
+<td><strong>Both policies are the same</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 <strong>There is no additional cost even if you extend the retention period.</strong> If the model is supported, there is almost no reason not to enable it.</p>
+</blockquote>
+<p><strong>Models Supporting Extended Caching</strong></p>
+<p><code>gpt-5.5</code> · <code>gpt-5.4</code> · <code>gpt-5.3-codex</code> · <code>gpt-5.2</code> · <code>gpt-5.1-codex-max</code> · <code>gpt-5.1</code> · <code>gpt-5.1-codex</code> · <code>gpt-5.1-codex-mini</code> · <code>gpt-5.1-chat</code> · <code>gpt-5</code> · <code>gpt-5-codex</code> · <code>gpt-4.1</code></p>
+<h3 id="en-42">4.2 How to Configure by Model</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Settings</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gpt-5.4</code> and earlier</td>
+<td><code>"prompt_cache_retention": "24h"</code></td>
+<td><code>in_memory</code></td>
+</tr>
+<tr>
+<td><code>gpt-5.5</code></td>
+<td>(No configuration needed)</td>
+<td><strong>Extended caching enabled by default</strong></td>
+</tr>
+<tr>
+<td><code>gpt-5.6</code> and later</td>
+<td><code>prompt_cache_options.ttl</code> (§4.3)</td>
+<td><code>30m</code></td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"model"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;your-gpt-5.4-deployment-name&gt;"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"input"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Your prompt goes here..."</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"prompt_cache_retention"</span><span class="p">:</span><span class="w"> </span><span class="s2">"24h"</span>
+<span class="p">}</span>
+</code></pre></div>
+<blockquote>
+<p>⚠️ The allowed values are only <code>in_memory</code> and <code>24h</code>. Arbitrary durations cannot be set.</p>
+</blockquote>
+<h3 id="en-43-gpt-56-ttl">4.3 <code>ttl</code> for GPT-5.6 and later — the meaning is reversed</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Meaning</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>prompt_cache_retention</code> (~5.5)</td>
+<td><strong>Select maximum retention policy</strong></td>
+<td><code>in_memory</code> / <code>24h</code></td>
+</tr>
+<tr>
+<td><code>prompt_cache_options.ttl</code> (5.6+)</td>
+<td><strong>Guarantee minimum lifespan</strong></td>
+<td><code>30m</code> (the only value, default)</td>
+</tr>
+</tbody>
+</table>
+<p><code>ttl: "30m"</code> does not mean "kept for only 30 minutes," but rather <strong>"guaranteed for at least 30 minutes and may be kept longer"</strong>. It is <strong>not a value for choosing storage policy or maximum retention period.</strong></p>
+<blockquote>
+<p>⚠️ Sending <code>prompt_cache_options</code> / <code>prompt_cache_breakpoint</code> to models prior to GPT-5.6 will result in a <strong><code>400</code> error</strong>. Branch request schemas according to the model family.</p>
+</blockquote>
+<h3 id="en-44">4.4 Impact on Data Residency</h3>
+<table>
+<thead>
+<tr>
+<th>Policy</th>
+<th>Data Boundary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>In-memory</strong></td>
+<td>Compatible with all data residency regions</td>
+</tr>
+<tr>
+<td><strong>Extended</strong></td>
+<td><strong>Temporarily stored</strong> on GPU machines. Data Zone is kept <strong>within the data zone boundary</strong>, Regional is kept <strong>within the region boundary</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 This is a point that must be addressed for regulated industry clients. While it does not cross boundaries, the fact that <strong>"temporary storage occurs"</strong> itself can be a subject of review.</p>
+</blockquote>
+<hr/>
+<h2 id="en-5-3-prefix-prompt_cache_key">5. Three-Step Improvement — Adjusting the Concentration of <code>prefix</code> + <code>prompt_cache_key</code></h2>
+<blockquote>
+<p>⚠️ <strong>Scope of Application — Only for GPT-5.6 and above model series</strong></p>
+<p><code>prompt_cache_key</code> is defined in the documentation only for <strong>GPT-5.6 and above</strong>. If you are using an earlier model (GPT-4o ~ 5.5), skip this chapter and proceed in the order of <strong>§4 Extending Retention Period</strong> → <strong>§6 Deployment Types</strong> → <strong>§7 APIM</strong>.</p>
+<p>The <code>400</code> error targets specified in the document are <code>prompt_cache_options</code> and <code>prompt_cache_breakpoint</code>, and <code>prompt_cache_key</code> is not on that list. Therefore, it may be <strong>ignored without error</strong> if sent to a previous model, but there is <strong>no guarantee that it will have any effect.</strong> Since this behavior has not been validated, do not rely on it.</p>
+</blockquote>
+<p>This is an area where the property of <strong>"cache is machine-local"</strong> is clearly evident.</p>
+<h3 id="en-51-prompt_cache_key">5.1 <code>prompt_cache_key</code> is routing, not storage</h3>
+<p><code>prompt_cache_key</code> is a <strong>hint to "send requests with the same key to the same machine"</strong>. It does not store the cache but decides <strong>where to send it</strong>.</p>
+<blockquote>
+<p>If requests with the same <strong>prefix + <code>prompt_cache_key</code></strong> combination exceed <strong>about 15 per minute</strong>, some requests will <strong>overflow and be routed to additional machines</strong>, and those requests may miss the cache.</p>
+</blockquote>
+<div class="mermaid" data-idx="3"></div>
+<h3 id="en-52">5.2 Both extremes are bad</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Too few keys</th>
+<th>Too many keys</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Routing</td>
+<td>Concentrated on one machine</td>
+<td>Distributed across multiple machines</td>
+</tr>
+<tr>
+<td>Failure mode</td>
+<td><strong>Exceeding 15 RPM → overflow → miss</strong></td>
+<td>Cache expires before reuse → <strong>cold miss</strong></td>
+</tr>
+<tr>
+<td>Metaphor</td>
+<td>Line overflows at one counter and gets pushed to the side</td>
+<td>A different counter each time — no one remembers</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span><code>Required number of keys ≈ (Total RPM of the given prefix) ÷ 15
+</code></pre></div>
+<p>Example) With the same system prompt <strong>150 RPM</strong> → <strong>about 10 keys</strong>. Considering bursts, it is safer to leave a margin of <strong>12~15</strong>.</p>
+<h3 id="en-53">5.3 Sharding Implementation</h3>
+<p><strong>Principle: Stabilize the key ↔ prefix mapping reliably.</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># ❌ Every request random → Machine also random → cold miss</span>
+<span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"prompt-v2:</span><span class="si">{</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+
+<span class="c1"># ❌ Unique per request → Sharing cache itself is impossible</span>
+<span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"prompt-v2:</span><span class="si">{</span><span class="n">uuid4</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
+
+<span class="c1"># ✅ Sharding with a stable hash — the same user always goes to the same shard</span>
+<span class="n">shard</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">crc32</span><span class="p">(</span><span class="n">user_id</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span> <span class="o">%</span> <span class="mi">10</span>
+<span class="n">key</span>   <span class="o">=</span> <span class="sa">f</span><span class="s2">"prompt-v2:shard-</span><span class="si">{</span><span class="n">shard</span><span class="si">}</span><span class="s2">"</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Sharding Criteria</th>
+<th>Advantages</th>
+<th>Warning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>session_id</code></td>
+<td>Continuous requests in a session to the same machine → maximum hit rate</td>
+<td>If the number of sessions is small, it becomes skewed</td>
+</tr>
+<tr>
+<td><code>user_id</code></td>
+<td>Stable and natural distribution</td>
+<td>Heavy users monopolize one shard</td>
+</tr>
+<tr>
+<td><code>tenant_id</code></td>
+<td>Multi-tenant isolation and consistency</td>
+<td>Traffic variance per tenant</td>
+</tr>
+<tr>
+<td>Round-robin counter <code>% N</code></td>
+<td>Ensures even distribution</td>
+<td>No session continuity</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 <strong>Include the prefix version in the key.</strong> If you modify the prompt, increase <code>prompt-v2</code> → <code>prompt-v3</code> so that it doesn't mix with old caches; this makes debugging and rollback easier.</p>
+</blockquote>
+<h3 id="en-54">5.4 Two Things You Must Remember</h3>
+<blockquote>
+<p>⚠️ <strong>Even if the key is the same, it's useless if the prefix is different.</strong> <code>prompt_cache_key</code> is just a routing hint, and the actual hit occurs only if the first 1,024 tokens are identical. Both conditions are <strong>AND</strong>.</p>
+<p>💡 <strong>Overflow does not mean permanent loss.</strong> Machines that receive excess traffic will soon create their own caches, so in sustained traffic, multiple machines will each become warm. However, during this process, <strong>cache write costs</strong> (§8.2) and initial TTFT decrease occur.</p>
+</blockquote>
+<h3 id="en-55-gpt-56-breakpoint">5.5 GPT-5.6+ — Explicit Cache Breakpoint</h3>
+<p>In GPT-5.6 and above, you can <strong>directly indicate</strong> the end of a reusable prefix. Supported for both Responses and Chat Completions API.</p>
+<blockquote>
+<p>⚠️ <strong>Only standard pay-as-you-go deployment is supported.</strong> PTU-M supports prompt caching but does not support breakpoints and does not expose <code>cache_write_tokens</code>.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>implicit</code> (default)</td>
+<td><strong>Automatic breakpoint on the latest message</strong> + use explicit breakpoints as well</td>
+</tr>
+<tr>
+<td><code>explicit</code></td>
+<td>Use <strong>only the explicitly specified breakpoints</strong>. If none exist, caching is not used and <strong>there is no write cost</strong></td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"model"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;your-gpt-5.6-deployment-name&gt;"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"prompt_cache_key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"tenant:contoso:support-policy-v2"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"prompt_cache_options"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"mode"</span><span class="p">:</span><span class="w"> </span><span class="s2">"explicit"</span><span class="p">,</span><span class="w"> </span><span class="nt">"ttl"</span><span class="p">:</span><span class="w"> </span><span class="s2">"30m"</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">"messages"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"role"</span><span class="p">:</span><span class="w"> </span><span class="s2">"system"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"content"</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">        </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"text"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"text"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;at least 1,024 tokens of reusable instructions&gt;"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"prompt_cache_breakpoint"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"mode"</span><span class="p">:</span><span class="w"> </span><span class="s2">"explicit"</span><span class="w"> </span><span class="p">}</span>
+<span class="w">      </span><span class="p">}]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">"role"</span><span class="p">:</span><span class="w"> </span><span class="s2">"user"</span><span class="p">,</span><span class="w"> </span><span class="nt">"content"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;variable user input&gt;"</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+<p><strong>Main limitations</strong></p>
+<ul>
+<li>Maximum of <strong>4 new cache writes per request</strong> (<code>implicit</code> consumes 1 for the automatic breakpoint, leaving 3 explicit)</li>
+<li>The breakpoint from the previous turn is <strong>read-only</strong> — it can match but will not be recorded again</li>
+<li>Cache reads consider up to the <strong>most recent 50 breakpoints</strong></li>
+<li>The prefix up to the breakpoint must be <strong>at least 1,024 tokens</strong></li>
+</ul>
+<hr/>
+<h2 id="en-6-locality">6. Ensure locality through deployment type</h2>
+<p>If you have done §§3–5 and the hit rate is still low, the problem may not be the application but the <strong>breadth of the pool the traffic reaches</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Deployment type</th>
+<th>Capacity availability</th>
+<th>Cache locality (estimated)</th>
+<th>Remarks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Global Standard</strong></td>
+<td>Best</td>
+<td>Low — fan-out to a wide pool</td>
+<td>Most common default choice</td>
+</tr>
+<tr>
+<td><strong>Data Zone Standard</strong></td>
+<td>Middle</td>
+<td>Middle</td>
+<td>Within a data zone boundary</td>
+</tr>
+<tr>
+<td><strong>Regional Standard</strong></td>
+<td>Low</td>
+<td>High — Concentrated within the region</td>
+<td>Capacity securing difficulty ↑</td>
+</tr>
+<tr>
+<td><strong>Provisioned (PTU)</strong></td>
+<td>Guaranteed as reserved</td>
+<td><strong>Highest</strong> — Dedicated capacity</td>
+<td>Cache read <strong>up to 100% discount</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>The locality column is an estimate.</strong> Cache hit characteristics by deployment type are not officially documented. Be sure to validate with A/B testing using customer traffic.</p>
+<p>💡 <strong>Dual benefits of PTU</strong> — Cache reads get <strong>up to 100% discount</strong>, reducing costs, and <strong>PTU utilization itself decreases</strong>, allowing more traffic to be handled with the same PTU. Improving cache hit rate <strong>directly impacts capacity expansion</strong>.</p>
+</blockquote>
+<div class="mermaid" data-idx="4"></div>
+<hr/>
+<h2 id="en-7-apim">7. Gateway Layer — One More Layer with APIM</h2>
+<p>If you have done everything you can at the model layer, you can place one more layer of cache in the preceding stage.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>Prompt caching</strong> (Model layer)</th>
+<th><strong>Semantic caching</strong> (APIM layer)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Matching method</strong></td>
+<td>prefix <strong>exact match</strong></td>
+<td><strong>Vector similarity</strong> of the prompt</td>
+</tr>
+<tr>
+<td><strong>Caching target</strong></td>
+<td>Input token operations (KV)</td>
+<td><strong>Entire output response</strong></td>
+</tr>
+<tr>
+<td><strong>Response change</strong></td>
+<td>None — model generates normally</td>
+<td>Exists — <strong>Return the same as the previous response</strong></td>
+</tr>
+<tr>
+<td><strong>Cost Savings Effect</strong></td>
+<td>Input token cost + TTFT</td>
+<td><strong>Request does not reach the model</strong></td>
+</tr>
+<tr>
+<td><strong>Risk</strong></td>
+<td>None</td>
+<td>Possible <strong>wrong answer</strong> for similar but different questions</td>
+</tr>
+</tbody>
+</table>
+<p>The two caches are not in competition but have a <strong>serial relationship</strong>.</p>
+<div class="mermaid" data-idx="5"></div>
+<table>
+<thead>
+<tr>
+<th>Workloads suitable for semantic caching</th>
+<th>Workloads to avoid</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FAQ · Customer Support Bot</td>
+<td>Personalized responses</td>
+</tr>
+<tr>
+<td>Internal document Q&amp;A</td>
+<td>Queries where up-to-dateness is important (inventory, market prices)</td>
+</tr>
+<tr>
+<td>Catalog·Product Description Generation</td>
+<td>Domains requiring high accuracy (medical, legal, finance)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ Semantic caching is <strong>all about tuning the similarity threshold</strong>. If it's too loose, you get wrong answers; if it's too strict, you get a hit rate of 0. Set the threshold using an offline evaluation set and include a procedure to <strong>sample and verify cache hit responses</strong>.</p>
+<p>💡 APIM also offers <strong>token limits, backend pool, and circuit breaker</strong> in addition to caching. It's very effective when implemented together with availability design — see <a href="../04-aoai-high-availability/">04 High Availability Guide</a>.</p>
+</blockquote>
+<hr/>
+<h2 id="en-8">8. Cost Model</h2>
+<h3 id="en-81">8.1 Cache Reads — Discounts</h3>
+<table>
+<thead>
+<tr>
+<th>Deployment type</th>
+<th>Cache Read Price</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Standard</strong></td>
+<td><strong>Discount</strong> compared to input tokens</td>
+</tr>
+<tr>
+<td><strong>Provisioned (PTU)</strong></td>
+<td><strong>Up to 100% discount</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The prompt cache price is <strong>the same for in-memory and extended retention policies</strong>.</p>
+<h3 id="en-82-gpt-56">8.2 Cache Write — May Be Charged Starting from GPT-5.6</h3>
+<table>
+<thead>
+<tr>
+<th>Model Series</th>
+<th>Cache Write Cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Before GPT-5.6</td>
+<td><strong>Free</strong></td>
+</tr>
+<tr>
+<td>GPT-5.6 and After</td>
+<td><strong>May be charged</strong> (Separate from discounted reads)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ This change alters the strategy. Before 5.6, "just making it cached was beneficial," but <strong>from 5.6 onward, if writes exceed reads, it might be disadvantageous</strong>.</p>
+</blockquote>
+<p><strong>5.6+ Optimization Principles</strong></p>
+<ol>
+<li>Keep reusable content <strong>exactly the same per request</strong> — favor reading over writing</li>
+<li><code>cached_tokens</code> volume post-<code>cache_write_tokens</code> should be <strong>comparatively monitored</strong></li>
+<li>For one-time long prompts with low reuse potential, use <code>explicit</code> mode + no breakpoint to <strong>avoid writing</strong></li>
+<li>Considering that new writes per request are <strong>limited to 4</strong>, conserve breakpoints and batch them</li>
+</ol>
+<blockquote>
+<p>💡 Check the exact pricing on the <a href="https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/">Azure OpenAI pricing page</a>.</p>
+</blockquote>
+<hr/>
+<h2 id="en-9">9. Observation</h2>
+<h3 id="en-91">9.1 Key Metrics</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Formula</th>
+<th>Target Direction</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Cache Hit Rate</strong></td>
+<td><code>cached_tokens / prompt_tokens</code></td>
+<td>↑</td>
+</tr>
+<tr>
+<td><strong>Read/Write Ratio</strong></td>
+<td><code>Σ cached_tokens / Σ cache_write_tokens</code></td>
+<td>↑ (Should be significantly greater than 1)</td>
+</tr>
+<tr>
+<td><strong>TTFT p95 / p99</strong></td>
+<td>Client Measurement</td>
+<td>↓</td>
+</tr>
+<tr>
+<td><strong>RPM per Key</strong></td>
+<td>Number of requests per <code>prompt_cache_key</code></td>
+<td>Keep below ~15</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong><code>cached_tokens</code> are only available in the response body.</strong> Since AOAI diagnostic logs do not include the response body, the hit rate must be <strong>extracted directly from the application or APIM policy and exported as a custom metric</strong>.</p>
+</blockquote>
+<p><strong>Dimensions to leave together</strong> — <code>prompt_cache_key</code> · <code>prefix_version</code> · <code>deployment_name</code> / <code>region</code> · <code>model</code> · <code>session_id</code></p>
+<h3 id="en-92">9.2 Interpretation Rules</h3>
+<table>
+<thead>
+<tr>
+<th>Observation</th>
+<th>Diagnosis</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Low hit rate + High RPM per key</td>
+<td><strong>overflow</strong></td>
+<td>Increase the number of keys (§5.2)</td>
+</tr>
+<tr>
+<td>Low hit rate + Low RPM per key</td>
+<td><strong>Cold / excessive dispersion</strong></td>
+<td>Reduce the number of keys (§5.2)</td>
+</tr>
+<tr>
+<td>Only the first request of the session misses, afterward hits</td>
+<td><strong>Normal operation</strong></td>
+<td>No action needed</td>
+</tr>
+<tr>
+<td>Suddenly missed in the middle of the session</td>
+<td><strong>Cache expired</strong></td>
+<td>Extended retention (§4)</td>
+</tr>
+<tr>
+<td>All segments <code>cached_tokens = 0</code></td>
+<td><strong>Unstable prefix or less than 1,024</strong></td>
+<td>Recheck §3 · §1.2</td>
+</tr>
+<tr>
+<td>Write &gt;&gt; Read (5.6+)</td>
+<td><strong>Cost backfire</strong></td>
+<td>Prefix stabilization or avoiding caching (§8.2)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="en-93-slo">9.3 Connect to SLO Baseline</h3>
+<p>Cache is the <strong>single largest lever for moving the TTFT SLO</strong>. However, depending on hits/misses, the TTFT distribution becomes bimodal, so careful metric design is necessary.</p>
+<div class="codehilite"><pre><span></span><code>SLI: TTFT p95 (time to first token for streaming)
+SLO: "TTFT p95 of cache hit requests &lt; X ms"
+      "TTFT p95 of the entire request &lt; Y ms" (X &lt; Y)
+Note: "Cache hit rate ≥ Z%"
+</code></pre></div>
+<blockquote>
+<p>💡 <strong>Don't set an SLO based on the average TTFT alone.</strong> The average of two peaks represents neither. It's possible to diagnose better by using the hit rate as a separate auxiliary metric and looking at TTFT for hits and misses separately.</p>
+<p>💡 If you are in the stage of collecting a customer's SLO baseline, <strong>ask about the cache hit rate as well.</strong> The required capacity can vary greatly depending on whether the presented TTFT target is based on warm or cold conditions.</p>
+</blockquote>
+<hr/>
+<h2 id="en-10">10. Quick Reference for Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>Symptoms</th>
+<th>Check First</th>
+<th>Related Section</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cached_tokens</code> is always 0</td>
+<td>Is the prompt 1,024 tokens or more?</td>
+<td>§1.2</td>
+</tr>
+<tr>
+<td><code>cached_tokens</code> is always 0</td>
+<td>Are timestamps or IDs mixed in the front part?</td>
+<td>§3.2</td>
+</tr>
+<tr>
+<td>Hit rate fluctuates</td>
+<td>Does RPM per key exceed 15?</td>
+<td>§5.1</td>
+</tr>
+<tr>
+<td><code>prompt_cache_key</code> does not work</td>
+<td><strong>Is it a model below GPT-5.6</strong> (unsupported)</td>
+<td>§5 Introduction</td>
+</tr>
+<tr>
+<td>Slows down in the middle of a session</td>
+<td>Is this the first request after being idle for 5–10 minutes?</td>
+<td>§4</td>
+</tr>
+<tr>
+<td><code>400</code> error occurs</td>
+<td>Did you send <code>prompt_cache_options</code> to a model before 5.6?</td>
+<td>§4.3</td>
+</tr>
+<tr>
+<td>Breakpoint is ignored</td>
+<td>Is it a PTU-M deployment? (unsupported)</td>
+<td>§5.5</td>
+</tr>
+<tr>
+<td>Costs actually increase (5.6+)</td>
+<td>Check the write/read ratio</td>
+<td>§8.2</td>
+</tr>
+<tr>
+<td>Requests including images miss</td>
+<td>Is the <code>detail</code> parameter the same across requests?</td>
+<td>§1.3</td>
+</tr>
+<tr>
+<td>Tool usage request is missed</td>
+<td>Is the tool definition order fixed?</td>
+<td>§1.3 · §3.2</td>
+</tr>
+</tbody>
+</table>
+<hr/>
+<h2 id="en-_3">References</h2>
+<ul>
+<li>Prompt caching with Azure OpenAI in Microsoft Foundry Models: https://learn.microsoft.com/azure/foundry/openai/how-to/prompt-caching</li>
+<li>Provisioned throughput (PTU) concept: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput</li>
+<li>Model router — Routing and prompt caching: https://learn.microsoft.com/azure/foundry/openai/concepts/model-router</li>
+<li>Azure OpenAI Responses API (<code>context_management</code>, server-side compression): https://learn.microsoft.com/azure/foundry/openai/how-to/responses</li>
+<li>Azure OpenAI v1 API lifecycle: https://learn.microsoft.com/azure/foundry/openai/api-version-lifecycle</li>
+<li>Claude models in Microsoft Foundry (automatic prompt caching): https://learn.microsoft.com/azure/foundry/foundry-models/concepts/claude-models</li>
+<li>AI gateway capabilities in Azure API Management (semantic caching): https://learn.microsoft.com/azure/api-management/genai-gateway-capabilities</li>
+<li>Azure OpenAI Pricing: https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/</li>
+</ul>
+<hr/>
+<p class="meta">Last updated 2026-08-27 · Microsoft Scout</p>
+</main>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 <script>
 (function () {
