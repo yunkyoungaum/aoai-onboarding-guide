@@ -15,6 +15,7 @@
 | 03 | Azure OpenAI 배포 & 운영 모니터링 가이드 | 모니터링, PTU, KQL, Alert, APIM | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/03-aoai-deployment-monitoring/) |
 | 04 | Azure OpenAI 고가용성(HA) 아키텍처 가이드 | HA, Failover, Spillover, 멀티 리전 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/04-aoai-high-availability/) |
 | 05 | Azure OpenAI Model Router 가이드 *(draft · WIP)* | 모델 라우팅, 비용 최적화, 배포, 거버넌스 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/05-aoai-model-router/) |
+| 05-1 | Azure OpenAI Decision-1 게이트웨이 가이드 *(draft · WIP)* | Decision-1, 게이트웨이, 라우팅, 정책 게이트, 비용 최적화 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/05-1-aoai-decision-gateway/) |
 | 06 | Azure OpenAI 캐시 성능 최적화 가이드 *(draft · WIP)* | 프롬프트 캐싱, TTFT, 비용 최적화, PTU, APIM | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/06-aoai-cache-performance/) |
 
 ### 읽는 순서 추천
@@ -23,7 +24,7 @@
 처음이라면        01 온보딩 → 02 기본 개념
 운영 준비 중이면   02 기본 개념 → 03 모니터링
 가용성 설계 중이면 04 고가용성
-비용 최적화라면    05 Model Router
+비용 최적화라면    05 Model Router → 05-1 Decision-1 게이트웨이
 성능·비용 튜닝이면 06 캐시 성능 최적화
 ```
 
@@ -55,6 +56,8 @@
 │   ├── 05-aoai-model-router/           # draft / WIP
 │   │   ├── index.html
 │   │   └── source.md
+│   ├── 05-1-aoai-decision-gateway/     # draft / WIP (05의 하위 문서, 번호를 밀지 않고 추가)
+│   │   └── index.html
 │   ├── 06-aoai-cache-performance/      # draft / WIP
 │   │   ├── index.html
 │   │   └── source.md
@@ -71,6 +74,7 @@
 2026-08-07에 기본 개념 가이드를 02로 추가하면서 이후 번호를 한 칸씩 밀었습니다.
 2026-08-31에 Model Router 가이드를 05로 추가하면서 캐시 성능 가이드를 06으로 옮겼습니다.
 이전에 공유된 링크가 깨지지 않도록 **구 경로에 리다이렉트 스텁**을 남겨두었습니다.
+2026-11-03에 Decision-1 게이트웨이 가이드를 Model Router(05)의 하위 문서 `05-1`로 추가했습니다. 기존 번호는 바꾸지 않았습니다.
 
 | 이전 | 현재 |
 |---|---|

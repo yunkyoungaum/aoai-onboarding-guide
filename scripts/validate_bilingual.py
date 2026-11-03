@@ -15,6 +15,7 @@ GUIDES = {
     "03": ROOT / "guides/03-aoai-deployment-monitoring/index.html",
     "04": ROOT / "guides/04-aoai-high-availability/index.html",
     "05": ROOT / "guides/05-aoai-model-router/index.html",
+    "05-1": ROOT / "guides/05-1-aoai-decision-gateway/index.html",
     "06": ROOT / "guides/06-aoai-cache-performance/index.html",
 }
 HANGUL = re.compile(r"[가-힣]")
