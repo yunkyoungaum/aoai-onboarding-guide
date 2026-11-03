@@ -428,7 +428,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </div>
 <h1 id="azure-openai-ttft">Azure OpenAI 캐시 성능 최적화 가이드 — 프롬프트 캐싱으로 TTFT와 비용 줄이기</h1>
 <blockquote>
-<p>🚧 <strong>WIP / Draft</strong>  ·  계속 갱신 중인 문서입니다. 수치와 파라미터는 배포 전 공식 문서로 재확인하세요.</p>
+<p><strong>상태</strong> &nbsp;·&nbsp; 최종 점검 2026-11-03. 캐싱 수치·파라미터는 Microsoft Learn의 prompt caching 문서로 대조했고, 문서에 없는 내용은 '추정'·'경험칙'으로 표시했습니다. 수치와 파라미터는 배포 전 공식 문서로 재확인하세요.</p>
 <p><strong>대상</strong>  ·  AOAI에서 <strong>TTFT(첫 토큰 지연)</strong> 또는 <strong>입력 토큰 비용</strong>을 줄여야 하는 애플리케이션 팀, 플랫폼 팀</p>
 <p><strong>범위</strong>  ·  캐싱 원리 → 히트율 진단 → 3단계 개선 → 배포 유형·게이트웨이 선택 → 관측과 SLO</p>
 <p><strong>관련 가이드</strong>  ·  <a href="../01-oai-to-aoai-onboarding/">01 온보딩</a> · <a href="../02-aoai-foundations/">02 기본 개념</a> · <a href="../03-aoai-deployment-monitoring/">03 배포 &amp; 운영 모니터링</a> · <a href="../04-aoai-high-availability/">04 고가용성(HA)</a> · <a href="../05-aoai-model-router/">05 Model Router</a></p>
@@ -654,12 +654,12 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <p><strong>고객이 캐시 미스를 어디서 느끼는가</strong>를 물으면 처방이 갈립니다.</p>
 <div class="mermaid" data-idx="2"></div>
 <p><strong>세션 레벨에서 체감하는 경우</strong></p>
-<p>Foundry를 포함한 대부분의 모델 제공자는 <strong>prefix-hash 기반 라우팅</strong>을 씁니다. 같은 세션의 요청은 같은 GPU 노드로 떨어져 배치로 처리되는 것이 정상 동작입니다. 그런데도 세션 도중 미스를 느낀다면 라우팅이 아니라 <strong>캐시가 살아있는 시간</strong>이 문제일 가능성이 큽니다. 이 경우 <strong>확장 캐싱(§4)만으로도 체감이 크게 개선</strong>될 가능성이 높습니다.</p>
+<p>일반적으로 <strong>prefix 기반 라우팅</strong>이 쓰이는 것으로 알려져 있으나 공식 문서에 명시되어 있지는 않습니다. 같은 세션의 요청은 같은 GPU 노드로 떨어져 배치로 처리되는 것이 일반적인 동작으로 알려져 있습니다. 그런데도 세션 도중 미스를 느낀다면 라우팅이 아니라 <strong>캐시가 살아있는 시간</strong>이 문제일 가능성이 큽니다. 이 경우 <strong>확장 캐싱(§4)만으로도 체감이 크게 개선</strong>될 가능성이 높습니다.</p>
 <p><strong>분산 요청에서 드롭아웃되는 경우</strong></p>
 <p>세션 경계를 넘어 광범위하게 히트율이 낮다면 논의는 <strong>배포 유형</strong>으로 넘어갑니다. Regional 엔드포인트나 PTU로 트래픽을 집중시켜 locality를 확보하는 방향이고(§6), 그 다음이 <strong>APIM 계층</strong>입니다(§7).</p>
 <hr/>
 <h2 id="3-1-1024">3. 개선 1단계 — 앞 1,024 토큰을 고정하라</h2>
-<p>가장 싸고 효과가 큰 단계입니다. 코드 몇 줄로 히트율이 0%에서 70%대로 뛰는 경우가 흔합니다.</p>
+<p>가장 싸고 효과가 큰 단계입니다. 프롬프트 구조를 고치는 것만으로 히트율이 크게 오르는 사례가 있습니다.</p>
 <h3 id="31">3.1 프롬프트 레이아웃 원칙</h3>
 <p><strong>고정 콘텐츠는 앞, 가변 콘텐츠는 뒤.</strong></p>
 <div class="codehilite"><pre><span></span><code>┌─────────────────────────────────────┐
@@ -731,7 +731,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </code></pre></div>
 <p>압축이 필요하다면 <strong>매 턴 요약하지 말고</strong>, 임계 도달 시 <strong>한 번에 잘라내고 새 prefix를 확립</strong>하세요. 압축 빈도를 낮추는 것이 히트율에 유리합니다.</p>
 <blockquote>
-<p>💡 GPT-5.6+ Responses API에는 서버 측 압축(<code>context_management</code> + <code>compact_threshold</code>) 옵션이 있습니다. 압축 시점이 캐시 경계와 맞물리므로 직접 구현한 요약 로직보다 캐시 친화적입니다.</p>
+<p>💡 Responses API는 서버 측 압축(<code>context_management</code> + <code>compact_threshold</code>)을 지원합니다(지원 모델은 Responses 문서 확인). 캐시 친화성은 직접 측정해 검증하세요.</p>
 </blockquote>
 <hr/>
 <h2 id="4-2">4. 개선 2단계 — 캐시 보존 기간을 늘려라</h2>
@@ -905,7 +905,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </table>
 <div class="codehilite"><pre><span></span><code>필요한 키 개수 ≈ (해당 prefix의 총 RPM) ÷ 15
 </code></pre></div>
-<p>예) 동일 시스템 프롬프트로 <strong>150 RPM</strong> → <strong>약 10개 키</strong>. 버스트를 감안해 <strong>12~15개</strong> 여유를 두는 편이 안전합니다.</p>
+<p>예) 동일 시스템 프롬프트로 <strong>150 RPM</strong> → <strong>약 10개 키</strong>. 버스트를 감안해 <strong>12~15개</strong> 정도 여유를 두는 것이 경험칙입니다(공식 수치는 아님).</p>
 <h3 id="53">5.3 샤딩 구현</h3>
 <p><strong>원칙: 키 ↔ prefix 매핑을 안정적으로 고정하세요.</strong></p>
 <div class="codehilite"><pre><span></span><code><span class="c1"># ❌ 매 요청 랜덤 → 머신도 랜덤 → cold miss</span>
@@ -955,7 +955,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <h3 id="54">5.4 반드시 기억할 두 가지</h3>
 <blockquote>
 <p>⚠️ <strong>키가 같아도 prefix가 다르면 소용없습니다.</strong> <code>prompt_cache_key</code>는 라우팅 힌트일 뿐이고, 앞 1,024 토큰이 동일해야 실제 히트가 납니다. 두 조건은 <strong>AND</strong>입니다.</p>
-<p>💡 <strong>overflow가 영구적 손실은 아닙니다.</strong> 넘쳐 간 머신도 곧 자기 캐시를 만들기 때문에 지속적인 트래픽에서는 여러 머신이 각각 warm 상태가 됩니다. 다만 그 과정에서 <strong>cache write 비용</strong>(§8.2)과 초기 TTFT 저하가 발생합니다.</p>
+<p>💡 <strong>overflow가 영구적 손실은 아닙니다.</strong> 넘쳐 간 머신도 자기 캐시를 만들 수 있어, 지속적인 트래픽에서는 여러 머신이 각각 warm 상태가 될 것으로 보입니다(추정). 다만 그 과정에서 <strong>cache write 비용</strong>(§8.2)과 초기 TTFT 저하가 발생합니다.</p>
 </blockquote>
 <h3 id="55-gpt-56-breakpoint">5.5 GPT-5.6+ — 명시적 캐시 breakpoint</h3>
 <p>GPT-5.6 이상에서는 재사용 prefix의 끝을 <strong>직접 표시</strong>할 수 있습니다. Responses / Chat Completions API 모두 지원합니다.</p>
@@ -1204,7 +1204,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </tbody>
 </table>
 <blockquote>
-<p>⚠️ <strong><code>cached_tokens</code>는 응답 본문에만 있습니다.</strong> AOAI 진단 로그에는 응답 본문이 포함되지 않으므로, 히트율은 <strong>애플리케이션 또는 APIM 정책에서 직접 추출해 커스텀 메트릭으로</strong> 내보내야 합니다.</p>
+<p>⚠️ <strong><code>cached_tokens</code>는 응답 본문의 <code>usage</code>에 있습니다.</strong> 진단 로그에 응답 본문이 포함되는지는 공식 문서에서 확인하지 못했으므로, 히트율은 <strong>애플리케이션 또는 APIM 정책에서 직접 추출해 커스텀 메트릭으로</strong> 내보내는 방식을 권장합니다.</p>
 </blockquote>
 <p><strong>함께 남길 차원(dimension)</strong> — <code>prompt_cache_key</code> · <code>prefix_version</code> · <code>deployment_name</code> / <code>region</code> · <code>model</code> · <code>session_id</code></p>
 <h3 id="92">9.2 해석 규칙</h3>
@@ -1250,7 +1250,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </tbody>
 </table>
 <h3 id="93-slo">9.3 SLO 베이스라인으로 연결하기</h3>
-<p>캐시는 <strong>TTFT SLO를 움직이는 가장 큰 단일 레버</strong>입니다. 다만 히트/미스에 따라 TTFT 분포가 이봉(bimodal)이 되므로 지표 설계에 주의가 필요합니다.</p>
+<p>캐시는 <strong>TTFT에 큰 영향을 주는 요소 중 하나</strong>입니다. 다만 히트/미스에 따라 TTFT 분포가 이봉(bimodal)이 되므로 지표 설계에 주의가 필요합니다.</p>
 <div class="codehilite"><pre><span></span><code>SLI:  TTFT p95 (스트리밍 첫 토큰까지)
 SLO:  "캐시 히트 요청의 TTFT p95 &lt; X ms"
       "전체 요청의 TTFT p95 &lt; Y ms"  (X &lt; Y)
@@ -1288,7 +1288,7 @@ SLO:  "캐시 히트 요청의 TTFT p95 &lt; X ms"
 </tr>
 <tr>
 <td><code>prompt_cache_key</code>가 효과 없음</td>
-<td><strong>GPT-5.6 미만 모델인가</strong> (미지원)</td>
+<td><strong>GPT-5.6 미만 모델인가</strong> (문서상 5.6 이상에서만 안내되며, 이전 모델의 효과는 문서화되지 않음)</td>
 <td>§5 도입부</td>
 </tr>
 <tr>
@@ -1357,7 +1357,7 @@ SLO:  "캐시 히트 요청의 TTFT p95 &lt; X ms"
 </ul>
 </li>
 <li><a href="#en-2">2. The reason why the hit rate feels low</a><ul>
-<li><a href="#en-21-gpu-local-global-standard-fan-out">2.1 Cache Fans Out to GPU-local and Global Standard</a></li>
+<li><a href="#en-21-gpu-local-global-standard-fan-out">2.1 The Cache Is GPU-local; Global Standard Fans Out</a></li>
 <li><a href="#en-22">2.2 Diagnostics — At Which Level Are Misses Perceived</a></li>
 </ul>
 </li>
@@ -1370,7 +1370,7 @@ SLO:  "캐시 히트 요청의 TTFT p95 &lt; X ms"
 <li><a href="#en-4-2">4. Improvement Step 2 — Increase the Cache Retention Period</a><ul>
 <li><a href="#en-41-in-memory-vs-extended">4.1 in-memory vs extended</a></li>
 <li><a href="#en-42">4.2 How to Configure by Model</a></li>
-<li><a href="#en-43-gpt-56-ttl">4.3 GPT-5.6+ TTL — The Meaning is the Opposite</a></li>
+<li><a href="#en-43-gpt-56-ttl">4.3 TTL on GPT-5.6 and Later Means the Opposite</a></li>
 <li><a href="#en-44">4.4 Impact of Data Residency</a></li>
 </ul>
 </li>
@@ -1407,7 +1407,7 @@ SLO:  "캐시 히트 요청의 TTFT p95 &lt; X ms"
 </div>
 <h1 id="en-azure-openai-ttft">Azure OpenAI Cache Performance Optimization Guide — Reducing TTFT and Costs with Prompt Caching</h1>
 <blockquote>
-<p>🚧 <strong>WIP / Draft</strong> · This document is continuously being updated. Please verify numbers and parameters with the official documentation before deployment.</p>
+<p><strong>Status</strong> &nbsp;·&nbsp; Last checked 2026-11-03. Caching figures and parameters were checked against the Microsoft Learn prompt caching documentation, and anything not in the docs is marked as an inference or a rule of thumb. Verify numbers and parameters in the official documentation before deployment.</p>
 <p><strong>Audience</strong> · Application teams and platform teams in AOAI that need to reduce <strong>TTFT (Time to First Token)</strong> or <strong>input token cost</strong></p>
 <p><strong>Scope</strong> · Caching principles → Hit rate diagnosis → 3-step improvement → Deployment type &amp; gateway selection → Observability and SLOs</p>
 <p><strong>Related Guides</strong> · <a href="../01-oai-to-aoai-onboarding/">01 Onboarding</a> · <a href="../02-aoai-foundations/">02 Basic Concepts</a> · <a href="../03-aoai-deployment-monitoring/">03 Deployment &amp; Operations Monitoring</a> · <a href="../04-aoai-high-availability/">04 High Availability (HA)</a> · <a href="../05-aoai-model-router/">05 Model Router</a></p>
@@ -1449,7 +1449,7 @@ SLO:  "캐시 히트 요청의 TTFT p95 &lt; X ms"
 <blockquote>
 <p>⚠️ <strong>Step 3 is for GPT-5.6 and above only.</strong> <code>prompt_cache_key</code> is defined only for the GPT-5.6 and above model series in the documentation. If you are using an earlier model, skip Step 3 and proceed in the order <strong>§4 → §6 (Deployment Type) → §7 (APIM)</strong>.</p>
 <p>💡 <strong>Key sentence of Step 3</strong>
-Bunch together enough to be reused, but <strong>do not</strong> bunch together enough to overflow a single machine.
+Concentrate requests enough for reuse, but <strong>not so much</strong> that a single machine overflows.
 <em>"concentrated enough for reuse, but not overloaded."</em></p>
 </blockquote>
 <h3 id="en-_1">Available Parameters by Model Series</h3>
@@ -1619,8 +1619,8 @@ Bunch together enough to be reused, but <strong>do not</strong> bunch together e
 <hr/>
 <h2 id="en-2">2. Reasons the Hit Rate Feels Low</h2>
 <p>The causes are largely either <strong>cache lifespan</strong> or <strong>routing locality</strong>.</p>
-<h3 id="en-21-gpu-local-global-standard-fan-out">2.1 The Cache is GPU-local, Global Standard Fans Out</h3>
-<p>The cache is local to the GPU. This property is also evident in the explanation of how scaled caching works.</p>
+<h3 id="en-21-gpu-local-global-standard-fan-out">2.1 The Cache Is GPU-local; Global Standard Fans Out</h3>
+<p>The cache is local to the GPU. This property is also evident in the explanation of how extended caching works.</p>
 <blockquote>
 <p>"Extended prompt caching works by <strong>offloading the key/value tensors to GPU-local storage</strong> when memory is full…"</p>
 </blockquote>
@@ -1633,12 +1633,12 @@ Bunch together enough to be reused, but <strong>do not</strong> bunch together e
 <p>Asking <strong>where the customer experiences cache misses</strong> determines the prescription.</p>
 <div class="mermaid" data-idx="2"></div>
 <p><strong>If experienced at the session level</strong></p>
-<p>Most model providers, including Foundry, use <strong>prefix-hash based routing</strong>. It is normal behavior for requests from the same session to go to the same GPU node and be processed in batches. Yet, if misses are experienced during the session, it is more likely a problem with <strong>cache lifetime</strong> rather than routing. In this case, <strong>experience can likely be greatly improved with just extended caching (§4)</strong>.</p>
+<p>Prefix-based routing is commonly used, but it is not stated in the official documentation. It is generally understood that requests from the same session land on the same GPU node and are processed together. Yet, if misses are experienced during the session, it is more likely a problem with <strong>cache lifetime</strong> rather than routing. In this case, <strong>experience can likely be greatly improved with just extended caching (§4)</strong>.</p>
 <p><strong>When Dropping Out in Distributed Requests</strong></p>
 <p>If the hit rate is widely low across session boundaries, the discussion moves on to <strong>deployment type</strong>. The direction is to concentrate traffic on a Regional endpoint or PTU to secure locality (§6), and the next is the <strong>APIM layer</strong> (§7).</p>
 <hr/>
 <h2 id="en-3-1-1024">3. Improvement Step 1 — Fix the First 1,024 Tokens</h2>
-<p>This is the cheapest and most effective step. It is common for the hit rate to jump from 0% to the 70s with just a few lines of code.</p>
+<p>This is the cheapest and most effective step. Restructuring the prompt alone can raise the hit rate substantially in some cases.</p>
 <h3 id="en-31">3.1 Prompt Layout Principles</h3>
 <p><strong>Fixed content at the front, variable content at the back.</strong></p>
 <div class="codehilite"><pre><span></span><code>┌─────────────────────────────────────┐
@@ -1710,7 +1710,7 @@ Turn 3:  [S][Summary(U1,A1)][U3]       → Change prefix → Overall miss ❌
 </code></pre></div>
 <p>If compression is necessary, <strong>do not summarize every turn</strong>; when the threshold is reached, <strong>cut it off at once and establish a new prefix</strong>. Reducing compression frequency is advantageous for hit rate.</p>
 <blockquote>
-<p>💡 The GPT-5.6+ Responses API has a server-side compression (<code>context_management</code> + <code>compact_threshold</code>) option. The timing of compression coincides with cache boundaries, making it more cache-friendly than summary logic implemented manually.</p>
+<p>💡 The Responses API supports server-side compaction (<code>context_management</code> + <code>compact_threshold</code>; see the Responses documentation for supported models). Measure its cache-friendliness yourself.</p>
 </blockquote>
 <hr/>
 <h2 id="en-4-2">4. Improvement Stage 2 — Extend Cache Retention Time</h2>
@@ -1884,7 +1884,7 @@ Turn 3:  [S][Summary(U1,A1)][U3]       → Change prefix → Overall miss ❌
 </table>
 <div class="codehilite"><pre><span></span><code>Required number of keys ≈ (Total RPM of the given prefix) ÷ 15
 </code></pre></div>
-<p>Example) With the same system prompt <strong>150 RPM</strong> → <strong>about 10 keys</strong>. Considering bursts, it is safer to leave a margin of <strong>12~15</strong>.</p>
+<p>Example) With the same system prompt <strong>150 RPM</strong> → <strong>about 10 keys</strong>. Allowing a margin of <strong>12–15</strong> keys for bursts is a rule of thumb, not an official figure.</p>
 <h3 id="en-53">5.3 Sharding Implementation</h3>
 <p><strong>Principle: Stabilize the key ↔ prefix mapping reliably.</strong></p>
 <div class="codehilite"><pre><span></span><code><span class="c1"># ❌ Every request random → Machine also random → cold miss</span>
@@ -1934,7 +1934,7 @@ Turn 3:  [S][Summary(U1,A1)][U3]       → Change prefix → Overall miss ❌
 <h3 id="en-54">5.4 Two Things You Must Remember</h3>
 <blockquote>
 <p>⚠️ <strong>Even if the key is the same, it's useless if the prefix is different.</strong> <code>prompt_cache_key</code> is just a routing hint, and the actual hit occurs only if the first 1,024 tokens are identical. Both conditions are <strong>AND</strong>.</p>
-<p>💡 <strong>Overflow does not mean permanent loss.</strong> Machines that receive excess traffic will soon create their own caches, so in sustained traffic, multiple machines will each become warm. However, during this process, <strong>cache write costs</strong> (§8.2) and initial TTFT decrease occur.</p>
+<p>💡 <strong>Overflow is not a permanent loss.</strong> Machines that receive the overflow can build their own caches too, so under sustained traffic several machines are likely to become warm (an inference). The process still incurs <strong>cache write costs</strong> (§8.2) and an initial TTFT penalty.</p>
 </blockquote>
 <h3 id="en-55-gpt-56-breakpoint">5.5 GPT-5.6+ — Explicit Cache Breakpoint</h3>
 <p>In GPT-5.6 and above, you can <strong>directly indicate</strong> the end of a reusable prefix. Supported for both Responses and Chat Completions API.</p>
@@ -2183,7 +2183,7 @@ Turn 3:  [S][Summary(U1,A1)][U3]       → Change prefix → Overall miss ❌
 </tbody>
 </table>
 <blockquote>
-<p>⚠️ <strong><code>cached_tokens</code> are only available in the response body.</strong> Since AOAI diagnostic logs do not include the response body, the hit rate must be <strong>extracted directly from the application or APIM policy and exported as a custom metric</strong>.</p>
+<p>⚠️ <strong><code>cached_tokens</code> is in the <code>usage</code> of the response body.</strong> I could not confirm from the official documentation whether diagnostic logs include the response body, so extracting the hit rate <strong>from the application or an APIM policy and exporting it as a custom metric</strong> is recommended.</p>
 </blockquote>
 <p><strong>Dimensions to leave together</strong> — <code>prompt_cache_key</code> · <code>prefix_version</code> · <code>deployment_name</code> / <code>region</code> · <code>model</code> · <code>session_id</code></p>
 <h3 id="en-92">9.2 Interpretation Rules</h3>
@@ -2229,7 +2229,7 @@ Turn 3:  [S][Summary(U1,A1)][U3]       → Change prefix → Overall miss ❌
 </tbody>
 </table>
 <h3 id="en-93-slo">9.3 Connect to SLO Baseline</h3>
-<p>Cache is the <strong>single largest lever for moving the TTFT SLO</strong>. However, depending on hits/misses, the TTFT distribution becomes bimodal, so careful metric design is necessary.</p>
+<p>Caching is <strong>one of the major factors affecting TTFT</strong>. However, depending on hits/misses, the TTFT distribution becomes bimodal, so careful metric design is necessary.</p>
 <div class="codehilite"><pre><span></span><code>SLI: TTFT p95 (time to first token for streaming)
 SLO: "TTFT p95 of cache hit requests &lt; X ms"
       "TTFT p95 of the entire request &lt; Y ms" (X &lt; Y)
@@ -2267,7 +2267,7 @@ Note: "Cache hit rate ≥ Z%"
 </tr>
 <tr>
 <td><code>prompt_cache_key</code> does not work</td>
-<td><strong>Is it a model below GPT-5.6</strong> (unsupported)</td>
+<td><strong>Is it a model below GPT-5.6</strong> (documented only for GPT-5.6 and later; the effect on earlier models is undocumented)</td>
 <td>§5 Introduction</td>
 </tr>
 <tr>

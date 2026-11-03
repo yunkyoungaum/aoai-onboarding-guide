@@ -425,7 +425,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </div>
 <h1 id="azure-openai-model-router">Azure OpenAI Model Router 가이드 — 요청별 모델 자동 선택으로 비용과 지연 줄이기</h1>
 <blockquote>
-<p>🚧 <strong>WIP / Draft</strong>  ·  계속 갱신 중인 문서입니다. 모델 목록·리전·가격은 배포 전 공식 문서로 재확인하세요.</p>
+<p><strong>상태</strong> &nbsp;·&nbsp; 최종 점검 2026-11-03. 모델 목록·리전·쿼터는 Microsoft Learn의 model router 문서로 대조했습니다. 모델 목록·리전·가격은 자주 바뀌므로 배포 전 공식 문서로 재확인하세요.</p>
 <p><strong>대상</strong>  ·  여러 모델 사이에서 품질과 비용을 저울질하며 라우팅 로직을 직접 짜고 있는 애플리케이션·플랫폼 팀</p>
 <p><strong>범위</strong>  ·  개념 → 라우팅 모드 → 포털 배포 → 호출·검증 → 운영·거버넌스 → 관측과 비용</p>
 <p><strong>관련 가이드</strong>  ·  <a href="../01-oai-to-aoai-onboarding/">01 온보딩</a> · <a href="../02-aoai-foundations/">02 기본 개념</a> · <a href="../03-aoai-deployment-monitoring/">03 배포 &amp; 운영 모니터링</a> · <a href="../04-aoai-high-availability/">04 고가용성(HA)</a> · <a href="../06-aoai-cache-performance/">06 캐시 성능 최적화</a></p>
@@ -447,7 +447,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </tr>
 <tr>
 <td>추가 요금이 있나?</td>
-<td>없음. <strong>선택된 하부 모델의 토큰 요금 합산</strong>으로 과금</td>
+<td>비용은 <strong>선택된 하부 모델들이 발생시킨 비용의 합</strong>으로 집계됩니다. 라우터 자체 요금의 세부 사항은 가격 페이지에서 확인하세요</td>
 </tr>
 <tr>
 <td>어떤 모델이 응답했는지 알 수 있나?</td>
@@ -617,15 +617,19 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <tbody>
 <tr>
 <td>OpenAI</td>
-<td><code>gpt-5.6-sol</code> / <code>-terra</code> / <code>-luna</code>, <code>gpt-5.5</code>, <code>gpt-5.4</code> · <code>-mini</code> · <code>-nano</code>, <code>gpt-5.2</code>, <code>gpt-5</code> · <code>-mini</code> · <code>-nano</code>, <code>o4-mini</code>, <code>gpt-4.1</code> · <code>-mini</code> · <code>-nano</code>, <code>gpt-4o</code> · <code>-mini</code>, <code>gpt-oss-120b</code></td>
+<td><code>gpt-6-astra</code>, <code>gpt-5.6-sol</code> / <code>-terra</code> / <code>-luna</code>, <code>gpt-5.5</code>, <code>gpt-5.4</code> · <code>-mini</code> · <code>-nano</code>, <code>gpt-5.2</code>, <code>gpt-5</code> · <code>-mini</code> · <code>-nano</code>, <code>o4-mini</code>, <code>gpt-4.1</code> · <code>-mini</code> · <code>-nano</code>, <code>gpt-4o</code> · <code>-mini</code>, <code>gpt-oss-120b</code></td>
 </tr>
 <tr>
 <td>Anthropic</td>
-<td><code>claude-opus-4-8</code> / <code>4-7</code> / <code>4-6</code>, <code>claude-sonnet-4-5</code>, <code>claude-haiku-4-5</code></td>
+<td><code>claude-fable-5-1</code>, <code>claude-opus-5</code>, <code>claude-sonnet-5</code>, <code>claude-opus-4-8</code> / <code>4-7</code> / <code>4-6</code>, <code>claude-sonnet-4-5</code>, <code>claude-haiku-4-5</code></td>
 </tr>
 <tr>
 <td>xAI</td>
-<td><code>grok-4</code>, <code>grok-4-1-fast-reasoning</code></td>
+<td><code>grok-4.6</code>, <code>grok-4</code>, <code>grok-4-1-fast-reasoning</code></td>
+</tr>
+<tr>
+<td>Fireworks</td>
+<td><code>FW-GLM-5.3</code>, <code>FW-GLM-5.3-Flash</code>, <code>FW-Kimi-K3</code></td>
 </tr>
 <tr>
 <td>DeepSeek</td>
@@ -641,7 +645,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <p>⚠️ <strong>Claude 모델만 예외입니다.</strong> 라우팅 풀에 포함하려면 <strong>같은 Foundry 계정에 동일한 SKU로 먼저 배포</strong>해야 합니다. 배포하지 않고 <code>routing.models</code>에 넣으면 <code>InvalidResourceProperties</code> 오류가 납니다.</p>
 </blockquote>
 <h3 id="33">3.3 리전</h3>
-<p><strong>Global Standard</strong>는 Korea Central을 포함해 28개 리전에서 지원되며, 그중 대부분이 <strong>Data Zone Standard</strong>도 지원합니다. 다만 <strong>각 리전에서 라우팅 가능한 모델은 그 리전에 존재하는 하부 모델로 한정</strong>됩니다 — 리전마다 실효 라우팅 풀이 다를 수 있습니다.</p>
+<p><strong>Global Standard</strong>는 Korea Central을 포함해 32개 리전에서 지원되며, 그중 23개 리전은 <strong>Data Zone Standard</strong>도 지원합니다. 다만 <strong>각 리전에서 라우팅 가능한 모델은 그 리전에 존재하는 하부 모델로 한정</strong>됩니다 — 리전마다 실효 라우팅 풀이 다를 수 있습니다.</p>
 <hr/>
 <h2 id="4-ui">4. 배포 — 포털(UI) 절차</h2>
 <h3 id="41">4.1 사전 준비</h3>
@@ -767,6 +771,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 </ul>
 <h3 id="62">6.2 프롬프트 캐싱</h3>
 <p>하부 모델이 캐싱을 지원하면 <strong>자동으로 적용</strong>되며 별도 설정이 없습니다. 다만 캐시 효과는 <strong>같은 모델이 연속 요청을 처리할 때만</strong> 발생하므로, 라우팅 결정이 흔들리면 캐시 이득이 끊깁니다.</p>
+<p>Chat Completions에서는 <strong>세션 어피니티(미리보기)</strong> 로 관련 요청을 같은 모델에 우선 라우팅해 캐시 재사용 기회를 높일 수 있습니다. 캐시 적중을 보장하지는 않습니다.</p>
 <blockquote>
 <p>캐시 히트율을 본격적으로 올리려면 <a href="../06-aoai-cache-performance/">06 캐시 성능 최적화 가이드</a>를 참고하세요. 안정적인 캐시가 중요한 워크로드라면 <strong>model subset을 좁혀 라우팅 변동을 줄이는 것</strong>이 한 가지 레버가 됩니다.</p>
 </blockquote>
@@ -781,7 +786,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 <li>필요하면 <strong>하부 모델별로 split</strong> — 어떤 모델이 트래픽을 얼마나 가져가는지, 즉 <strong>라우팅 분포</strong>가 보입니다 (§2)</li>
 </ol>
 <h3 id="72">7.2 비용</h3>
-<p>Model router의 비용은 <strong>하부 모델들이 발생시킨 비용의 합</strong>입니다. 라우터 자체의 추가 과금은 없으며, <strong>가격 페이지에 명시된 각 모델의 단가</strong>로 청구됩니다.</p>
+<p>Model router의 비용은 <strong>하부 모델들이 발생시킨 비용의 합</strong>으로 모니터링됩니다. 라우터 요금의 세부 사항은 <strong>가격 페이지</strong>에서 확인하세요.</p>
 <p>Azure Portal → <strong>Cost analysis</strong></p>
 <ol>
 <li>Azure 리소스로 필터</li>
@@ -939,7 +944,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 </tr>
 <tr>
 <td><strong>쿼터</strong></td>
-<td>RPM/TPM 한도가 <strong>구독 사용 티어(Tier 1~6)</strong> 에 따라 스케일됨. Global Standard가 Data Zone Standard보다 넉넉함</td>
+<td>RPM/TPM 한도가 <strong>구독 사용 티어(Free, Tier 1~6)</strong> 에 따라 스케일되며 구독 단위로 관리됨. 예: Tier 1은 Global Standard 1,000 RPM / 1M TPM, Data Zone Standard 300 RPM / 300K TPM</td>
 <td><a href="https://learn.microsoft.com/azure/foundry/openai/quotas-limits">Quota tiers</a> 확인 후 상향 요청 · 지수 백오프 재시도</td>
 </tr>
 </tbody>
@@ -1088,14 +1093,14 @@ response = openai_client.responses.create(model=deployment, input="...")
 </div>
 <h1 id="en-azure-openai-model-router">Azure OpenAI Model Router Guide — Reducing Costs and Latency by Automatically Selecting Models per Request</h1>
 <blockquote>
-<p>🚧 <strong>WIP / Draft</strong> · This document is continuously being updated. Confirm model lists, regions, and pricing with the official documentation before deployment.</p>
+<p><strong>Status</strong> &nbsp;·&nbsp; Last checked 2026-11-03. Model lists, regions, and quotas were checked against the Microsoft Learn model router documentation. Model lists, regions, and pricing change often, so confirm them in the official documentation before deployment.</p>
 <p><strong>Audience</strong> · Application and platform teams that are building routing logic themselves while weighing quality and cost across multiple models</p>
 <p><strong>Scope</strong> · Concepts → Routing Modes → Portal Deployment → Invocation &amp; Validation → Operations &amp; Governance → Observability &amp; Cost</p>
 <p><strong>Related Guides</strong>  ·  <a href="../01-oai-to-aoai-onboarding/">01 Onboarding</a> · <a href="../02-aoai-foundations/">02 Fundamentals</a> · <a href="../03-aoai-deployment-monitoring/">03 Deployment &amp; Operational Monitoring</a> · <a href="../04-aoai-high-availability/">04 High Availability (HA)</a> · <a href="../06-aoai-cache-performance/">06 Cache Performance Optimization</a></p>
 </blockquote>
 <hr/>
 <h2 id="en-0-tldr">0. TL;DR</h2>
-<p><strong>The model router is a trained model itself that analyzes prompts in real time and routes them to the most appropriate model.</strong> It can be treated like a single deployment, sending simple requests to smaller, cheaper models and difficult requests to larger or inference models, <strong>reducing cost and latency while maintaining quality</strong>.</p>
+<p><strong>The model router is a trained model itself that analyzes prompts in real time and routes them to the most appropriate model.</strong> It can be treated like a single deployment, sending simple requests to smaller, cheaper models and difficult requests to larger or reasoning models, <strong>reducing cost and latency while maintaining quality</strong>.</p>
 <table>
 <thead>
 <tr>
@@ -1105,12 +1110,12 @@ response = openai_client.responses.create(model=deployment, input="...")
 </thead>
 <tbody>
 <tr>
-<td>Do the sub-models need to be deployed separately?</td>
+<td>Do the underlying models need to be deployed separately?</td>
 <td><strong>No.</strong> Only <strong>Claude (Anthropic)</strong> is an exception and requires pre-deployment</td>
 </tr>
 <tr>
 <td>Are there additional fees?</td>
-<td>None. Charged based on <strong>the sum of token fees for the selected sub-model</strong></td>
+<td>Cost is tracked as <strong>the sum of the costs incurred by the selected underlying models</strong>. Check the pricing page for router-specific charges</td>
 </tr>
 <tr>
 <td>Can I know which model responded?</td>
@@ -1280,15 +1285,19 @@ response = openai_client.responses.create(model=deployment, input="...")
 <tbody>
 <tr>
 <td>OpenAI</td>
-<td><code>gpt-5.6-sol</code> / <code>-terra</code> / <code>-luna</code>, <code>gpt-5.5</code>, <code>gpt-5.4</code> · <code>-mini</code> · <code>-nano</code>, <code>gpt-5.2</code>, <code>gpt-5</code> · <code>-mini</code> · <code>-nano</code>, <code>o4-mini</code>, <code>gpt-4.1</code> · <code>-mini</code> · <code>-nano</code>, <code>gpt-4o</code> · <code>-mini</code>, <code>gpt-oss-120b</code></td>
+<td><code>gpt-6-astra</code>, <code>gpt-5.6-sol</code> / <code>-terra</code> / <code>-luna</code>, <code>gpt-5.5</code>, <code>gpt-5.4</code> · <code>-mini</code> · <code>-nano</code>, <code>gpt-5.2</code>, <code>gpt-5</code> · <code>-mini</code> · <code>-nano</code>, <code>o4-mini</code>, <code>gpt-4.1</code> · <code>-mini</code> · <code>-nano</code>, <code>gpt-4o</code> · <code>-mini</code>, <code>gpt-oss-120b</code></td>
 </tr>
 <tr>
 <td>Anthropic</td>
-<td><code>claude-opus-4-8</code> / <code>4-7</code> / <code>4-6</code>, <code>claude-sonnet-4-5</code>, <code>claude-haiku-4-5</code></td>
+<td><code>claude-fable-5-1</code>, <code>claude-opus-5</code>, <code>claude-sonnet-5</code>, <code>claude-opus-4-8</code> / <code>4-7</code> / <code>4-6</code>, <code>claude-sonnet-4-5</code>, <code>claude-haiku-4-5</code></td>
 </tr>
 <tr>
 <td>xAI</td>
-<td><code>grok-4</code>, <code>grok-4-1-fast-reasoning</code></td>
+<td><code>grok-4.6</code>, <code>grok-4</code>, <code>grok-4-1-fast-reasoning</code></td>
+</tr>
+<tr>
+<td>Fireworks</td>
+<td><code>FW-GLM-5.3</code>, <code>FW-GLM-5.3-Flash</code>, <code>FW-Kimi-K3</code></td>
 </tr>
 <tr>
 <td>DeepSeek</td>
@@ -1301,10 +1310,10 @@ response = openai_client.responses.create(model=deployment, input="...")
 </tbody>
 </table>
 <blockquote>
-<p>⚠️ <strong>Only the Claude model is an exception.</strong> To include it in the routing pool, you must <strong>deploy it first with the same SKU under the same Foundry account</strong>. If you add it to <code>routing.models</code> without deploying, you will get an <code>InvalidResourceProperties</code> error.</p>
+<p>⚠️ <strong>Claude models are the only exception.</strong> To include it in the routing pool, you must <strong>deploy it first with the same SKU under the same Foundry account</strong>. If you add it to <code>routing.models</code> without deploying, you will get an <code>InvalidResourceProperties</code> error.</p>
 </blockquote>
 <h3 id="en-33">3.3 Regions</h3>
-<p><strong>Global Standard</strong> is supported in 28 regions, including Korea Central, and most of these also support <strong>Data Zone Standard</strong>. However, <strong>the routable models in each region are limited to the sub-models that exist in that region</strong> — the effective routing pool may vary by region.</p>
+<p><strong>Global Standard</strong> is supported in 32 regions, including Korea Central, and 23 of them also support <strong>Data Zone Standard</strong>. However, <strong>the routable models in each region are limited to the underlying models that exist in that region</strong> — the effective routing pool may vary by region.</p>
 <hr/>
 <h2 id="en-4-ui">4. Deployment — Portal (UI) Procedure</h2>
 <h3 id="en-41">4.1 Preparation</h3>
@@ -1329,11 +1338,11 @@ response = openai_client.responses.create(model=deployment, input="...")
 <li><strong>Deploy</strong></li>
 </ol>
 <blockquote>
-<p>⚠️ Content filter and tokens per minute (TPM) limits apply to the <strong>model router deployment unit</strong>. Do not set them separately for each sub-model. There is no need to deploy sub-models separately (except Claude).</p>
+<p>⚠️ Content filter and tokens per minute (TPM) limits apply to the <strong>model router deployment unit</strong>. Do not set them separately for each underlying model. There is no need to deploy underlying models separately (except Claude).</p>
 </blockquote>
 <h3 id="en-43-custom-settings">4.3 Custom Deployment (Custom settings)</h3>
 <p><strong>① Routing mode dropdown</strong> — Choose among <code>Balanced</code> / <code>Quality</code> / <code>Cost</code> (§2)</p>
-<p><strong>② Route to a subset of models</strong> — Directly select the sub-models to use for routing</p>
+<p><strong>② Route to a subset of models</strong> — Directly select the underlying models to use for routing</p>
 <ul>
 <li>At least 1 required. <strong>Select 2 or more to enable failover</strong> (§6.1)</li>
 <li>If nothing is selected, the default model set for that mode is used</li>
@@ -1389,7 +1398,7 @@ response = client.chat.completions.create(
 response = openai_client.responses.create(model=deployment, input="...")
 </code></pre>
 <h3 id="en-52">5.2 Checking Which Model Responded</h3>
-<p>The response JSON follows the standard chat completions schema, and the <strong><code>model</code> field shows the actual selected sub-model</strong>.</p>
+<p>The response JSON follows the standard chat completions schema, and the <strong><code>model</code> field shows the actual selected underlying model</strong>.</p>
 <pre><code class="language-json">{
   "model": "gpt-5-mini-2025-08-07",
   "usage": {
@@ -1416,7 +1425,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 </tr>
 <tr>
 <td><code>reasoning_effort</code></td>
-<td>From version <code>2025-11-18</code> <strong>supported</strong> — If an inference model is selected, it is passed as is.</td>
+<td>From version <code>2025-11-18</code> <strong>supported</strong> — If a reasoning model is selected, it is passed through as is.</td>
 </tr>
 </tbody>
 </table>
@@ -1440,11 +1449,11 @@ response = openai_client.responses.create(model=deployment, input="...")
 <h3 id="en-71">7.1 Performance</h3>
 <p>Azure Portal → Resources → <strong>Monitoring &gt; Metrics</strong></p>
 <ol>
-<li>Filter by <strong>model router deployment name</strong> (sub-models are not separate deployments, so they don't have separate deployment names)</li>
-<li>If needed, <strong>split by sub-model</strong> — you can see how much traffic each model receives, i.e., the <strong>routing distribution</strong> (§2)</li>
+<li>Filter by <strong>model router deployment name</strong> (underlying models are not separate deployments, so they don't have separate deployment names)</li>
+<li>If needed, <strong>split by underlying model</strong> — you can see how much traffic each model receives, i.e., the <strong>routing distribution</strong> (§2)</li>
 </ol>
 <h3 id="en-72">7.2 Cost</h3>
-<p>The cost of the model router is <strong>the sum of the costs generated by the underlying models</strong>. There is no additional charge for the router itself, and billing is done at <strong>the unit price of each model as stated on the pricing page</strong>.</p>
+<p>The cost of the model router is monitored as <strong>the sum of the costs incurred by the underlying models</strong>. Check the <strong>pricing page</strong> for router-specific charges.</p>
 <p>Azure Portal → <strong>Cost analysis</strong></p>
 <ol>
 <li>Filter by Azure resources</li>
@@ -1572,8 +1581,8 @@ response = openai_client.responses.create(model=deployment, input="...")
 </tr>
 <tr>
 <td><strong>Parameter Compatibility</strong></td>
-<td>Ignore <code>temperature</code> and the like when selecting an inference model</td>
-<td>If deterministic output is needed, exclude the inference model from the subset</td>
+<td><code>temperature</code> and similar parameters are ignored when a reasoning model is selected</td>
+<td>If deterministic output is needed, exclude reasoning models from the subset</td>
 </tr>
 <tr>
 <td><strong>Non-fixed response model</strong></td>
@@ -1602,7 +1611,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 </tr>
 <tr>
 <td><strong>Quota</strong></td>
-<td>RPM/TPM limits scale according to <strong>subscription usage tier (Tier 1~6)</strong>. Global Standard is more generous than Data Zone Standard</td>
+<td>RPM/TPM limits scale with the <strong>subscription usage tier (Free, Tier 1–6)</strong> and are managed at subscription level. For example, Tier 1: Global Standard 1,000 RPM / 1M TPM, Data Zone Standard 300 RPM / 300K TPM</td>
 <td>Check <a href="https://learn.microsoft.com/azure/foundry/openai/quotas-limits">Quota tiers</a> and request an increase · retry with exponential backoff</td>
 </tr>
 </tbody>
@@ -1676,7 +1685,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 <li>Prompt Caching: https://learn.microsoft.com/azure/foundry/openai/how-to/prompt-caching</li>
 <li>Quotas and Limits: https://learn.microsoft.com/azure/foundry/openai/quotas-limits</li>
 <li>Azure OpenAI Pricing: https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/</li>
-<li>Comparison of Sub-Model Context Windows: https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure</li>
+<li>Comparison of Underlying Model Context Windows: https://learn.microsoft.com/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure</li>
 <li>Python Sample: https://github.com/microsoft-foundry/foundry-samples/tree/main/samples/python/foundry-models/model-router</li>
 <li>Evaluation Automation Toolkit: https://github.com/microsoft-foundry/Model-Router-Auto-Evaluation</li>
 <li>Routing Distribution Experiment Tool: https://github.com/guygregory/ModelRouter-Distribution</li>

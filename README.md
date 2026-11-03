@@ -14,9 +14,9 @@
 | 02 | Azure OpenAI 기본 개념 *(draft)* | 리소스·배포·쿼터·용량·PTU 신청·예약 구매 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/02-aoai-foundations/) |
 | 03 | Azure OpenAI 배포 & 운영 모니터링 가이드 | 모니터링, PTU, KQL, Alert, APIM | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/03-aoai-deployment-monitoring/) |
 | 04 | Azure OpenAI 고가용성(HA) 아키텍처 가이드 | HA, Failover, Spillover, 멀티 리전 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/04-aoai-high-availability/) |
-| 05 | Azure OpenAI Model Router 가이드 *(draft · WIP)* | 모델 라우팅, 비용 최적화, 배포, 거버넌스 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/05-aoai-model-router/) |
+| 05 | Azure OpenAI Model Router 가이드 | 모델 라우팅, 비용 최적화, 배포, 거버넌스 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/05-aoai-model-router/) |
 | 05-1 | Azure OpenAI Decision-1 게이트웨이 가이드 | Decision-1, 게이트웨이, 라우팅, 정책 게이트, 비용 최적화 | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/05-1-aoai-decision-gateway/) |
-| 06 | Azure OpenAI 캐시 성능 최적화 가이드 *(draft · WIP)* | 프롬프트 캐싱, TTFT, 비용 최적화, PTU, APIM | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/06-aoai-cache-performance/) |
+| 06 | Azure OpenAI 캐시 성능 최적화 가이드 | 프롬프트 캐싱, TTFT, 비용 최적화, PTU, APIM | [보기](https://yunkyoungaum.github.io/aoai-onboarding-guide/guides/06-aoai-cache-performance/) |
 
 ### 읽는 순서 추천
 
@@ -53,12 +53,12 @@
 │   ├── 04-aoai-high-availability/
 │   │   ├── index.html
 │   │   └── source.md
-│   ├── 05-aoai-model-router/           # draft / WIP
+│   ├── 05-aoai-model-router/
 │   │   ├── index.html
 │   │   └── source.md
 │   ├── 05-1-aoai-decision-gateway/     # 05의 하위 문서 (번호를 밀지 않고 추가)
 │   │   └── index.html
-│   ├── 06-aoai-cache-performance/      # draft / WIP
+│   ├── 06-aoai-cache-performance/
 │   │   ├── index.html
 │   │   └── source.md
 │   ├── 02-aoai-deployment-monitoring/   # 리다이렉트 스텁 (구 번호 → 03)

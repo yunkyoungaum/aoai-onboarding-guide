@@ -82,13 +82,13 @@ window.GUIDES = [
     title: "Azure OpenAI Model Router 가이드 — 요청별 모델 자동 선택으로 비용과 지연 줄이기",
     titleEn: "Azure OpenAI Model Router — reduce cost and latency with automatic model selection",
     summary:
-      "프롬프트를 실시간 분석해 최적 모델로 라우팅하는 model router의 개념부터 라우팅 모드(Balanced·Cost·Quality), 포털 배포 절차, 모델 서브셋과 페일오버, 성능·비용 관측과 제약까지 정리했습니다. (작성 중)",
+      "프롬프트를 실시간 분석해 최적 모델로 라우팅하는 model router의 개념부터 라우팅 모드(Balanced·Cost·Quality), 포털 배포 절차, 모델 서브셋과 페일오버, 성능·비용 관측과 제약까지 정리했습니다.",
     summaryEn:
-      "Covers model router concepts, Balanced/Cost/Quality modes, portal deployment, model subsets, failover, performance and cost observability, and constraints. (Work in progress)",
+      "Covers model router concepts, Balanced/Cost/Quality modes, portal deployment, model subsets, failover, performance and cost observability, and constraints.",
     tags: ["Model Router", "비용 최적화", "라우팅", "Foundry", "거버넌스"],
     tagsEn: ["Model Router", "Cost optimization", "Routing", "Foundry", "Governance"],
-    updated: "2026-08-31",
-    status: "draft",
+    updated: "2026-11-03",
+    status: "published",
     source: "source.md"
   },
   {
@@ -111,13 +111,13 @@ window.GUIDES = [
     title: "Azure OpenAI 캐시 성능 최적화 가이드 — 프롬프트 캐싱으로 TTFT와 비용 줄이기",
     titleEn: "Azure OpenAI cache performance guide — reduce TTFT and cost with prompt caching",
     summary:
-      "프롬프트 캐싱 동작 원리부터 히트율 진단, 앞 1,024 토큰 고정 · 보존 기간 연장 · prompt_cache_key 농도 조절 3단계 개선, 배포 유형과 APIM 계층 선택, 비용 모델과 SLO 연결까지 다룹니다. (작성 중)",
+      "프롬프트 캐싱 동작 원리부터 히트율 진단, 앞 1,024 토큰 고정 · 보존 기간 연장 · prompt_cache_key 농도 조절 3단계 개선, 배포 유형과 APIM 계층 선택, 비용 모델과 SLO 연결까지 다룹니다.",
     summaryEn:
-      "Covers prompt caching, hit-rate diagnosis, three improvement steps, deployment and APIM tier choices, and connecting the cost model to SLOs. (Work in progress)",
+      "Covers prompt caching, hit-rate diagnosis, three improvement steps, deployment and APIM tier choices, and connecting the cost model to SLOs.",
     tags: ["프롬프트 캐싱", "TTFT", "비용 최적화", "PTU", "APIM"],
     tagsEn: ["Prompt caching", "TTFT", "Cost optimization", "PTU", "APIM"],
-    updated: "2026-08-27",
-    status: "draft",
+    updated: "2026-11-03",
+    status: "published",
     source: "source.md"
   }
 ];

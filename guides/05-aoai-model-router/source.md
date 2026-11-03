@@ -1,6 +1,6 @@
 # Azure OpenAI Model Router 가이드 — 요청별 모델 자동 선택으로 비용과 지연 줄이기
 
-> 🚧 **WIP / Draft** &nbsp;·&nbsp; 계속 갱신 중인 문서입니다. 모델 목록·리전·가격은 배포 전 공식 문서로 재확인하세요.
+> **상태** &nbsp;·&nbsp; 최종 점검 2026-11-03. 모델 목록·리전·쿼터는 Microsoft Learn의 model router 문서로 대조했습니다. 모델 목록·리전·가격은 자주 바뀌므로 배포 전 공식 문서로 재확인하세요.
 >
 > **대상** &nbsp;·&nbsp; 여러 모델 사이에서 품질과 비용을 저울질하며 라우팅 로직을 직접 짜고 있는 애플리케이션·플랫폼 팀
 >
@@ -17,7 +17,7 @@
 | 질문 | 답 |
 |---|---|
 | 하부 모델을 따로 배포해야 하나? | **아니요.** 단 **Claude(Anthropic)** 만 예외로 사전 배포 필요 |
-| 추가 요금이 있나? | 없음. **선택된 하부 모델의 토큰 요금 합산**으로 과금 |
+| 추가 요금이 있나? | 비용은 **선택된 하부 모델들이 발생시킨 비용의 합**으로 집계됩니다. 라우터 자체 요금의 세부 사항은 가격 페이지에서 확인하세요 |
 | 어떤 모델이 응답했는지 알 수 있나? | 응답 JSON의 **`model` 필드**와 Playground에 표시됨 |
 | 라우팅 대상을 제한할 수 있나? | **Model subset**으로 가능 (컴플라이언스·비용·컨텍스트 제어) |
 | 최신 버전은? | **`2025-11-18`** — 버전 번호 변경 없이 신규 모델이 계속 추가됨 |
@@ -104,9 +104,10 @@ Model router는 **LLM이 아니라, 빠른 추론에 최적화된 경량 ML 모�
 
 | 제공자 | 모델 |
 |---|---|
-| OpenAI | `gpt-5.6-sol` / `-terra` / `-luna`, `gpt-5.5`, `gpt-5.4` · `-mini` · `-nano`, `gpt-5.2`, `gpt-5` · `-mini` · `-nano`, `o4-mini`, `gpt-4.1` · `-mini` · `-nano`, `gpt-4o` · `-mini`, `gpt-oss-120b` |
-| Anthropic | `claude-opus-4-8` / `4-7` / `4-6`, `claude-sonnet-4-5`, `claude-haiku-4-5` |
-| xAI | `grok-4`, `grok-4-1-fast-reasoning` |
+| OpenAI | `gpt-6-astra`, `gpt-5.6-sol` / `-terra` / `-luna`, `gpt-5.5`, `gpt-5.4` · `-mini` · `-nano`, `gpt-5.2`, `gpt-5` · `-mini` · `-nano`, `o4-mini`, `gpt-4.1` · `-mini` · `-nano`, `gpt-4o` · `-mini`, `gpt-oss-120b` |
+| Anthropic | `claude-fable-5-1`, `claude-opus-5`, `claude-sonnet-5`, `claude-opus-4-8` / `4-7` / `4-6`, `claude-sonnet-4-5`, `claude-haiku-4-5` |
+| xAI | `grok-4.6`, `grok-4`, `grok-4-1-fast-reasoning` |
+| Fireworks | `FW-GLM-5.3`, `FW-GLM-5.3-Flash`, `FW-Kimi-K3` |
 | DeepSeek | `DeepSeek-V3.2` |
 | Meta | `Llama-4-Maverick-17B-128E-Instruct-FP8` |
 
@@ -114,7 +115,7 @@ Model router는 **LLM이 아니라, 빠른 추론에 최적화된 경량 ML 모�
 
 ### 3.3 리전
 
-**Global Standard**는 Korea Central을 포함해 28개 리전에서 지원되며, 그중 대부분이 **Data Zone Standard**도 지원합니다. 다만 **각 리전에서 라우팅 가능한 모델은 그 리전에 존재하는 하부 모델로 한정**됩니다 — 리전마다 실효 라우팅 풀이 다를 수 있습니다.
+**Global Standard**는 Korea Central을 포함해 32개 리전에서 지원되며, 그중 23개 리전은 **Data Zone Standard**도 지원합니다. 다만 **각 리전에서 라우팅 가능한 모델은 그 리전에 존재하는 하부 모델로 한정**됩니다 — 리전마다 실효 라우팅 풀이 다를 수 있습니다.
 
 ---
 
@@ -254,6 +255,8 @@ Playground(**Models + endpoints** → 배포 선택)에서도 응답마다 선�
 
 하부 모델이 캐싱을 지원하면 **자동으로 적용**되며 별도 설정이 없습니다. 다만 캐시 효과는 **같은 모델이 연속 요청을 처리할 때만** 발생하므로, 라우팅 결정이 흔들리면 캐시 이득이 끊깁니다.
 
+Chat Completions에서는 **세션 어피니티(미리보기)** 로 관련 요청을 같은 모델에 우선 라우팅해 캐시 재사용 기회를 높일 수 있습니다. 캐시 적중을 보장하지는 않습니다.
+
 > 캐시 히트율을 본격적으로 올리려면 [06 캐시 성능 최적화 가이드](../06-aoai-cache-performance/)를 참고하세요. 안정적인 캐시가 중요한 워크로드라면 **model subset을 좁혀 라우팅 변동을 줄이는 것**이 한 가지 레버가 됩니다.
 
 ### 6.3 Azure Policy 거버넌스
@@ -273,7 +276,7 @@ Azure Portal → 리소스 → **Monitoring > Metrics**
 
 ### 7.2 비용
 
-Model router의 비용은 **하부 모델들이 발생시킨 비용의 합**입니다. 라우터 자체의 추가 과금은 없으며, **가격 페이지에 명시된 각 모델의 단가**로 청구됩니다.
+Model router의 비용은 **하부 모델들이 발생시킨 비용의 합**으로 모니터링됩니다. 라우터 요금의 세부 사항은 **가격 페이지**에서 확인하세요.
 
 Azure Portal → **Cost analysis**
 
@@ -340,7 +343,7 @@ Azure Portal → **Cost analysis**
 | **Auto-update** | 하부 모델 세트가 바뀌며 성능·비용 변동 | 변동을 원치 않으면 auto-update 끄고 subset 고정 |
 | **Claude 사전 배포** | 미배포 시 `InvalidResourceProperties` | 같은 계정·SKU로 먼저 배포 |
 | **설정 반영 지연** | mode·subset 변경에 최대 5분 | 배포 직후 곧바로 검증하지 말 것 |
-| **쿼터** | RPM/TPM 한도가 **구독 사용 티어(Tier 1~6)** 에 따라 스케일됨. Global Standard가 Data Zone Standard보다 넉넉함 | [Quota tiers](https://learn.microsoft.com/azure/foundry/openai/quotas-limits) 확인 후 상향 요청 · 지수 백오프 재시도 |
+| **쿼터** | RPM/TPM 한도가 **구독 사용 티어(Free, Tier 1~6)** 에 따라 스케일되며 구독 단위로 관리됨. 예: Tier 1은 Global Standard 1,000 RPM / 1M TPM, Data Zone Standard 300 RPM / 300K TPM | [Quota tiers](https://learn.microsoft.com/azure/foundry/openai/quotas-limits) 확인 후 상향 요청 · 지수 백오프 재시도 |
 
 ### 8.1 트러블슈팅 빠른 참조
 
