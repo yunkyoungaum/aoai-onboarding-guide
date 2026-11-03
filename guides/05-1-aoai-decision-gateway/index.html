@@ -256,7 +256,7 @@ blockquote p { margin: .35rem 0; }
 </div>
 <h1 id="azure-openai-decision-gateway">Azure OpenAI Decision-1 게이트웨이 가이드 — LLM 호출 전 판단으로 모델·도구를 고르고 비용과 지연 줄이기</h1>
 <blockquote>
-<p>🚧 <strong>WIP / Draft</strong>  ·  계속 갱신 중인 문서입니다. 가격·모델 목록·기능은 도입 전 공식 문서로 재확인하세요.</p>
+<p><strong>상태</strong>  ·  최종 점검 2026-11-03. 가격은 Azure 소매 가격 API, 사양은 Microsoft Learn·TypeSafe 문서로 대조했습니다. 가격·모델 목록·기능은 바뀔 수 있으니 도입 전 공식 문서로 재확인하세요.</p>
 <p><strong>대상</strong>  ·  LLM 비용·지연·오동작 면적을 줄이는 앞단(게이트웨이) 구조를 설계하는 애플리케이션·플랫폼 팀</p>
 <p><strong>범위</strong>  ·  왜 필요한가 → 전체 아키텍처 → 판단·적용·실행·검증 흐름 → 적용 워크로드 → 요청·응답 설계 → 모델 비교 → 운영 체크리스트</p>
 <p><strong>관련 가이드</strong>  ·  <a href="../05-aoai-model-router/">05 Model Router</a> · <a href="../06-aoai-cache-performance/">06 캐시 성능 최적화</a> · <a href="../03-aoai-deployment-monitoring/">03 배포 &amp; 운영 모니터링</a> · <a href="../04-aoai-high-availability/">04 고가용성(HA)</a></p>
@@ -393,6 +393,7 @@ Content-Type: application/json
     }
   }
 }</code></pre>
+<p>인증은 Microsoft Entra ID(권장) Bearer 토큰 또는 <code>api-key</code> 헤더를 씁니다. 위 예시는 지면상 인증 헤더를 생략했습니다.</p>
 <p>응답은 질문 이름별 결과를 돌려줍니다. 아래는 TypeSafe System One 문서의 응답 형식을 기준으로 한 <strong>예시</strong>이며, Decision-1의 실제 필드 구성은 Learn 문서와 배포 결과로 확인하세요.</p>
 <pre><code>{
   "model": "microsoft-decision-1",
@@ -447,7 +448,7 @@ Content-Type: application/json
 <tr><td>질문 유형</td><td><code>noul</code> · <code>choice</code> · <code>score</code></td><td><code>noul</code> · <code>choice</code> · <code>score</code> (+ <code>box</code>)</td><td>해당 없음 (자유 생성, JSON 스키마 출력 가능)</td></tr>
 <tr><td>입력</td><td>텍스트·JSON. 이미지 미지원</td><td>텍스트(문자열·JSON·배열). 이미지 모드는 헤더 + assets가 필요하며 vision-language 모델이 필요하고, 현재 모델 표(Jev 1.14/1.13)는 텍스트 입력만 표기</td><td>모델에 따라 다름</td></tr>
 <tr><td>확률/신뢰도</td><td>선택지별 확률 → 임계치 게이트</td><td><code>choice</code>는 confidence + 선택지별 probabilities, <code>noul</code>은 확률</td><td>기본 제공 없음 (logprobs 또는 모델 자체 보고 해석 필요)</td></tr>
-<tr><td>가격(공개 문서)</td><td>입력 $0.042 / 1M 토큰 (Azure Foundry Models 가격 페이지 기준, 도입 전 재확인)</td><td>입력 $0.042 / 1M 토큰, 출력 무료 (TypeSafe 문서)</td><td>모델별 상이</td></tr>
+<tr><td>가격(공개 문서)</td><td>$0.042 / 1M 토큰. Azure 소매 가격 API 기준 <code>Microsoft Decision 1 1M Tokens</code> 단일 미터이며 입출력 구분 표기는 없음 (2026-10-01 시행, 조회된 37개 리전 모두 동일 단가)</td><td>입력 $0.042 / 1M 토큰, 출력 무료 (TypeSafe 문서). Decision-1과 숫자는 같지만 과금 기준이 다름</td><td>모델별 상이</td></tr>
 <tr><td>언어·컨텍스트</td><td>확인한 문서에 언어별 성능·컨텍스트 길이 표기 없음 → 사전 검증</td><td>영어가 최적, 한국어 등 CJK는 처리되나 편차 가능 → 사전 검증. 기본 64k/요청 (롱컨텍스트 헤더 시 262k)</td><td>모델별 상이</td></tr>
 </tbody>
 </table>
@@ -532,6 +533,7 @@ Authorization: Bearer &lt;API_KEY&gt;
 <ul>
 <li><a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/how-to/use-foundry-models-microsoft-decision">Deploy and use Microsoft-Decision-1 in Microsoft Foundry (Microsoft Learn)</a></li>
 <li><a href="https://azure.microsoft.com/en-us/pricing/details/ai-foundry-models/microsoft/">Azure Foundry Models pricing (MAI)</a></li>
+<li><a href="https://prices.azure.com/api/retail/prices?api-version=2023-01-01-preview&amp;$filter=contains(productName,'Decision')">Azure Retail Prices API — Microsoft Decision Models</a></li>
 <li><a href="https://docs.typesafe.ai/models">TypeSafe — Models (Jev)</a></li>
 <li><a href="https://docs.typesafe.ai/api/system-one">TypeSafe — System One API</a></li>
 <li><a href="https://github.com/bskim/Microsoft-Decision-workshop/">Microsoft-Decision-workshop (라우팅·도구 선택 패턴 참고 구현)</a></li>
@@ -584,7 +586,7 @@ Authorization: Bearer &lt;API_KEY&gt;
 </div>
 <h1 id="en-azure-openai-decision-gateway">Azure OpenAI Decision-1 Gateway Guide — Judge Before the LLM Call to Pick Models and Tools and Cut Cost and Latency</h1>
 <blockquote>
-<p>🚧 <strong>WIP / Draft</strong>  ·  This document is still evolving. Re-check pricing, model lists, and features against the official docs before adopting.</p>
+<p><strong>Status</strong>  ·  Last checked 2026-11-03. Pricing was checked against the Azure retail prices API and specifications against Microsoft Learn and TypeSafe docs. Prices, model lists, and features can change, so re-check the official docs before adopting.</p>
 <p><strong>Audience</strong>  ·  Application and platform teams designing a front gateway that reduces LLM cost, latency, and execution risk</p>
 <p><strong>Scope</strong>  ·  Why → architecture → decide/apply/execute/verify flow → workloads → request and response design → model comparison → operations checklist</p>
 <p><strong>Related guides</strong>  ·  <a href="../05-aoai-model-router/">05 Model Router</a> · <a href="../06-aoai-cache-performance/">06 Cache performance</a> · <a href="../03-aoai-deployment-monitoring/">03 Deployment &amp; monitoring</a> · <a href="../04-aoai-high-availability/">04 High availability</a></p>
@@ -721,6 +723,7 @@ Content-Type: application/json
     }
   }
 }</code></pre>
+<p>Authenticate with a Microsoft Entra ID bearer token (recommended) or an <code>api-key</code> header. The example above omits the auth header for brevity.</p>
 <p>The response returns results per question name. The sample below follows the TypeSafe System One response format as an <strong>illustration</strong>; confirm Decision-1's actual fields in the Learn article and your own deployment.</p>
 <pre><code>{
   "model": "microsoft-decision-1",
@@ -775,7 +778,7 @@ Content-Type: application/json
 <tr><td>Question types</td><td><code>noul</code>, <code>choice</code>, <code>score</code></td><td><code>noul</code>, <code>choice</code>, <code>score</code> (+ <code>box</code>)</td><td>Not applicable (free-form generation, JSON schema output available)</td></tr>
 <tr><td>Input</td><td>Text and JSON. No image input</td><td>Text (string, JSON, array). Image mode needs a header plus assets and a vision-language model, while the current model table (Jev 1.14/1.13) lists text input only</td><td>Varies by model</td></tr>
 <tr><td>Probability / confidence</td><td>Per-option probability for threshold gates</td><td><code>choice</code> returns confidence plus per-option probabilities; <code>noul</code> returns a probability</td><td>Not provided by default (needs logprobs or self-reported confidence)</td></tr>
-<tr><td>Pricing (public docs)</td><td>Input $0.042 per 1M tokens (per the Azure Foundry Models pricing page; re-check before adopting)</td><td>Input $0.042 per 1M tokens, output free (TypeSafe docs)</td><td>Varies by model</td></tr>
+<tr><td>Pricing (public docs)</td><td>$0.042 per 1M tokens. Per the Azure retail prices API, a single <code>Microsoft Decision 1 1M Tokens</code> meter with no input/output split (effective 2026-10-01; all 37 regions returned the same price)</td><td>Input $0.042 per 1M tokens, output free (TypeSafe docs). The number matches Decision-1, but the billing basis differs</td><td>Varies by model</td></tr>
 <tr><td>Language and context</td><td>No per-language performance or context length stated in the docs checked, so validate in advance</td><td>English is best; CJK such as Korean is handled but can vary, so validate in advance. 64k per request by default (262k with the long-context header)</td><td>Varies by model</td></tr>
 </tbody>
 </table>
@@ -860,6 +863,7 @@ Authorization: Bearer &lt;API_KEY&gt;
 <ul>
 <li><a href="https://learn.microsoft.com/en-us/azure/foundry/foundry-models/how-to/use-foundry-models-microsoft-decision">Deploy and use Microsoft-Decision-1 in Microsoft Foundry (Microsoft Learn)</a></li>
 <li><a href="https://azure.microsoft.com/en-us/pricing/details/ai-foundry-models/microsoft/">Azure Foundry Models pricing (MAI)</a></li>
+<li><a href="https://prices.azure.com/api/retail/prices?api-version=2023-01-01-preview&amp;$filter=contains(productName,'Decision')">Azure Retail Prices API — Microsoft Decision Models</a></li>
 <li><a href="https://docs.typesafe.ai/models">TypeSafe — Models (Jev)</a></li>
 <li><a href="https://docs.typesafe.ai/api/system-one">TypeSafe — System One API</a></li>
 <li><a href="https://github.com/bskim/Microsoft-Decision-workshop/">Microsoft-Decision-workshop (reference implementation of routing and tool-selection patterns)</a></li>

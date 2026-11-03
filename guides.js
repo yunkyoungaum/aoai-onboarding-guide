@@ -97,13 +97,13 @@ window.GUIDES = [
     title: "Azure OpenAI Decision-1 게이트웨이 가이드 — LLM 호출 전 판단으로 모델·도구를 고르고 비용과 지연 줄이기",
     titleEn: "Azure OpenAI Decision-1 gateway guide — judge before the LLM call to pick models and tools and cut cost and latency",
     summary:
-      "Decision-1이 의도·리스크·난이도·도구를 먼저 한 번에 판단하고, 정책 게이트와 라우팅 테이블을 거쳐 모델 등급과 도구를 정한 뒤 LLM을 호출하는 구조를 워크로드별로 정리했습니다. Model Router가 모델 선택에 집중한다면 이 가이드는 도구 선택과 정책 검증까지 다루며, Jev·OpenAI API와의 API·가격 비교도 포함합니다. (작성 중)",
+      "Decision-1이 의도·리스크·난이도·도구를 먼저 한 번에 판단하고,       정책 게이트와 라우팅 테이블을 거쳐 모델 등급과 도구를 정한 뒤 LLM을 호출하는 구조를 워크로드별로 정리했습니다. Model Router가 모델 선택에 집중한다면 이 가이드는 도구 선택과 정책 검증까지 다루며, Jev·OpenAI API와의 API·가격 비교도 포함합니다.",
     summaryEn:
-      "Covers a gateway where Decision-1 first judges intent, risk, complexity, and tools in one call, then a policy gate and route table pick the model tier and tools before the LLM is called, organized by workload. Where Model Router focuses on model selection, this guide also covers tool selection and policy checks, with an API and pricing comparison against Jev and the OpenAI API. (Work in progress)",
+            "Covers a gateway where Decision-1 first judges intent, risk, complexity, and tools in one call, then a policy gate and route table pick the model tier and tools before the LLM is called, organized by workload. Where Model Router focuses on model selection, this guide also covers tool selection and policy checks, with an API and pricing comparison against Jev and the OpenAI API.",
     tags: ["Decision-1", "게이트웨이", "라우팅", "정책 게이트", "비용 최적화", "Foundry"],
     tagsEn: ["Decision-1", "Gateway", "Routing", "Policy gate", "Cost optimization", "Foundry"],
     updated: "2026-11-03",
-    status: "draft"
+          status: "published"
   },
   {
     no: "06",
