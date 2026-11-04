@@ -84,8 +84,6 @@ Model router는 **LLM이 아니라, 빠른 추론에 최적화된 경량 ML 모�
 | Cost | 대부분 **작고 저렴한 모델**로, 꼭 필요할 때만 상위 모델로 에스컬레이션 |
 | Quality | **프론티어·고성능 모델**이 대부분의 트래픽 처리 |
 
-> 💡 도입 전에 자기 프롬프트 코퍼스로 분포를 미리 보고 싶다면 [ModelRouter-Distribution](https://github.com/guygregory/ModelRouter-Distribution) 실험 도구를 쓸 수 있습니다.
-
 ---
 
 ## 3. 지원 모델과 리전
