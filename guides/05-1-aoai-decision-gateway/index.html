@@ -234,9 +234,12 @@ blockquote p { margin: .35rem 0; }
 </ul>
 </li>
 <li><a href="#sec-4">4. 적용 워크로드 (우선순위 순)</a></li>
-<li><a href="#sec-5">5. 요청·응답과 정책 설계</a><ul>
-<li><a href="#sec-5-1">5.1 한 번에 여러 질문</a></li>
-<li><a href="#sec-5-2">5.2 정책 게이트와 라우팅 테이블</a></li>
+<li><a href="#sec-5">5. Decision-1 호출·응답·정책 설계</a><ul>
+<li><a href="#sec-5-1">5.1 요청 만들기</a></li>
+<li><a href="#sec-5-2">5.2 응답 읽기</a></li>
+<li><a href="#sec-5-3">5.3 정책 게이트와 라우팅 테이블</a></li>
+<li><a href="#sec-5-4">5.4 최소 구현 예시</a></li>
+<li><a href="#sec-5-5">5.5 호출 오류와 재시도</a></li>
 </ul>
 </li>
 <li><a href="#sec-6">6. 모델 비교: Decision-1 · Jev · OpenAI API</a><ul>
@@ -350,80 +353,89 @@ blockquote p { margin: .35rem 0; }
 <tr><td>5. 하이브리드 운영</td><td>위 판단 라벨 전체 + 실행 로그</td><td>selected/executed route·fallback율·지연·비용을 추적해 정책 튜닝 속도와 비용 예측 정확도 향상</td><td>지표 정의와 알림 기준</td></tr>
 </tbody>
 </table>
-<h2 id="sec-5">5. 요청·응답과 정책 설계</h2>
-<h3 id="sec-5-1">5.1 한 번에 여러 질문</h3>
-<p>같은 <code>state</code>를 보는 질문은 한 요청에 담을 수 있습니다. 요청 수가 줄고 판단 맥락이 일관됩니다. 요청의 <code>model</code>에는 모델 이름이 아니라 <strong>배포 이름</strong>을 넣습니다.</p>
+<h2 id="sec-5">5. Decision-1 호출·응답·정책 설계</h2>
+<p>이 장은 <strong>Microsoft-Decision-1</strong>의 Microsoft Learn 문서와, Decision-1을 실제 배포에 호출해 검증한 <a href="https://github.com/bskim/Microsoft-Decision-workshop/">Microsoft-Decision-workshop</a> 코드(2026-10-12 검증)를 근거로 합니다. 문서와 코드에서 확인되지 않은 응답 필드는 쓰지 않았고, 확인하지 못한 부분은 그렇게 표시했습니다.</p>
+<h3 id="sec-5-1">5.1 요청 만들기</h3>
+<p>엔드포인트는 Foundry 리소스의 <code>/providers/microsoft/v1/systemone</code>입니다. 요청의 <code>model</code>에는 모델 이름이 아니라 <strong>배포 이름</strong>을 넣고, 판단할 내용은 <code>state</code>(텍스트 또는 JSON)에, 판단 항목은 <code>questions</code>에 타입이 있는 질문으로 담습니다. 같은 <code>state</code>를 보는 질문은 한 요청에 함께 담을 수 있어 호출 수가 줄고 판단 맥락이 일관됩니다.</p>
+<table>
+<thead>
+<tr><th>질문 유형</th><th>필드</th><th>결과 (Learn 문서 기준)</th></tr>
+</thead>
+<tbody>
+<tr><td><code>choice</code></td><td><code>instructions</code>, <code>criteria</code>(옵션 이름 → 설명)</td><td>선택된 옵션 1개와 옵션별 확률</td></tr>
+<tr><td><code>noul</code></td><td><code>instructions</code>, <code>criteria</code>(선택, <code>true</code>/<code>false</code> 조건)</td><td>0~1 확률</td></tr>
+<tr><td><code>score</code></td><td><code>instructions</code>, <code>criteria</code>(낮음→높음 순 레벨 배열)</td><td>순서 척도의 값과 레벨별 확률 (확률 가중 평균이라 레벨 사이 값 가능)</td></tr>
+</tbody>
+</table>
+<p>게이트웨이에서는 <strong><code>choice</code>를 기본으로</strong> 쓰는 것을 권장합니다. 응답에서 선택된 옵션과 옵션별 확률을 읽는 방식이 문서와 워크샵 코드로 모두 확인된 유일한 형태이기 때문입니다. 난이도처럼 순서가 있는 판단도 <code>low</code>/<code>high</code> 같은 옵션 두 개로 표현하면 이 형태로 처리할 수 있습니다.</p>
 <pre><code>POST &lt;your-foundry-resource-endpoint&gt;/providers/microsoft/v1/systemone
 Content-Type: application/json
+Authorization: Bearer &lt;entra-access-token&gt;
 
 {
   "model": "&lt;deployment-name&gt;",
-  "state": {
-    "message": "Please delete the stale rows in the orders table.",
-    "user_role": "support_agent"
-  },
+  "state": "Please delete the stale rows in the orders table.",
   "questions": {
-    "intent": {
-      "type": "choice",
-      "instructions": "What does the user want?",
-      "criteria": {
-        "answer": "Explain or look something up",
-        "change": "Modify files or data",
-        "operate": "Run commands or deploy"
-      }
-    },
     "complexity": {
-      "type": "score",
+      "type": "choice",
       "instructions": "How hard is this request to complete correctly?",
-      "criteria": ["Simple", "Moderate", "Hard"]
-    },
-    "touches_production": {
-      "type": "noul",
-      "instructions": "Does this request modify or delete production data?"
+      "criteria": {
+        "low": "Lookup, tagging, short rewrite, or a single simple step",
+        "high": "Multi-step analysis, planning, or reasoning across sources"
+      }
     },
     "tool_loadout": {
       "type": "choice",
-      "instructions": "Which is the minimum tool set needed?",
+      "instructions": "Select the minimum tool set needed. Select answer_only when no tool is needed.",
       "criteria": {
         "answer_only": "No tools needed",
         "inspect": "Read-only tools",
         "edit": "Read and edit tools",
         "shell": "Read, edit, and shell tools"
       }
+    },
+    "touches_production": {
+      "type": "noul",
+      "instructions": "Does this request modify or delete production data?"
     }
   }
 }</code></pre>
-<p>인증은 Microsoft Entra ID(권장) Bearer 토큰 또는 <code>api-key</code> 헤더를 씁니다. 위 예시는 지면상 인증 헤더를 생략했습니다.</p>
-<p>응답은 질문 이름별 결과를 돌려줍니다. 아래는 TypeSafe System One 문서의 응답 형식을 기준으로 한 <strong>예시</strong>이며, Decision-1의 실제 필드 구성은 Learn 문서와 배포 결과로 확인하세요.</p>
+<blockquote>
+<p><strong>인증</strong> — Microsoft Entra ID Bearer 토큰(권장, 스코프 <code>https://cognitiveservices.azure.com/.default</code>) 또는 <code>api-key</code> 헤더를 씁니다.</p>
+<p><strong>옵션 설계</strong> — 옵션 설명은 서로 겹치지 않게 쓰고, 해당 없음을 위한 <strong>기권 옵션</strong>(<code>answer_only</code>, <code>none</code>, <code>cannot_tell</code> 등)을 두세요. 워크샵의 도구 선택은 "관련 도구가 없으면 <code>none</code>"을 옵션으로 둡니다.</p>
+</blockquote>
+<h3 id="sec-5-2">5.2 응답 읽기</h3>
+<p>응답의 <code>answers</code>는 요청에서 붙인 <strong>질문 이름</strong>을 키로 씁니다. <code>choice</code> 질문은 <code>type</code>, 선택된 옵션 <code>choice</code>, 옵션별 확률 <code>probabilities</code>를 돌려줍니다. 이 필드들은 워크샵 코드가 실제 배포 응답에서 읽는 값입니다. 응답에는 배포된 모델 이름과 토큰 사용량도 함께 들어 있습니다.</p>
 <pre><code>{
   "model": "microsoft-decision-1",
   "answers": {
-    "intent": {
-      "type": "choice", "choice": "change", "confidence": 0.84,
-      "probabilities": { "answer": 0.05, "change": 0.84, "operate": 0.11 }
+    "complexity": {
+      "type": "choice",
+      "choice": "low",
+      "probabilities": { "low": 0.97, "high": 0.03 }
     },
-    "complexity": { "type": "score", "score": 1.6 },
-    "touches_production": { "type": "noul", "noul": 0.91 },
     "tool_loadout": {
-      "type": "choice", "choice": "edit", "confidence": 0.78,
+      "type": "choice",
+      "choice": "edit",
       "probabilities": { "answer_only": 0.02, "inspect": 0.15, "edit": 0.78, "shell": 0.05 }
-    }
-  },
-  "usage": { "input_tokens": 210, "output_tokens": 24 }
+    },
+    "touches_production": { "type": "noul" }
+  }
 }</code></pre>
-<h3 id="sec-5-2">5.2 정책 게이트와 라우팅 테이블</h3>
-<p>판단 라벨을 코드 또는 설정으로 정책에 옮깁니다. 아래 값은 <strong>예시</strong>이며, 임계치는 평가 세트에서 오분류·미분류 비용을 따져 정합니다.</p>
+<p>위 예시의 확률 값은 형태를 보여 주기 위한 <strong>임의의 숫자</strong>입니다. 선택된 옵션의 확률은 <code>probabilities[choice]</code>로 읽습니다.</p>
+<blockquote>
+<p><strong>확인하지 못한 부분</strong> — <code>noul</code>과 <code>score</code> 응답의 정확한 필드 이름, 그리고 토큰 사용량 객체의 키 이름은 Learn 문서와 워크샵 코드 어디에도 나오지 않아 위 예시에서도 <code>noul</code>은 <code>type</code>만 표시했습니다. 이 필드로 게이트를 만들려면 <strong>먼저 자신의 배포에 호출해 실제 응답을 확인</strong>하세요.</p>
+</blockquote>
+<h3 id="sec-5-3">5.3 정책 게이트와 라우팅 테이블</h3>
+<p>판단 결과를 정책으로 옮깁니다. 게이트는 <strong>선택된 옵션의 확률</strong>이 임계치 미만이거나 기권 옵션이 선택되면 요청을 멈추고, 통과한 요청만 라우팅 테이블로 모델 등급과 도구를 정합니다. Learn 문서는 낮은 상위 확률을 사람이나 다른 모델에 넘기는 신호로 쓰라고 안내합니다. 아래 값은 <strong>예시</strong>이며, 워크샵은 라우팅·도구 선택에 <code>0.60</code>을 썼습니다. 임계치는 평가 세트에서 오분류·미분류 비용을 따져 정하세요.</p>
 <pre><code>{
   "gate": {
-    "min_top_probability": 0.7,
-    "block_if": { "touches_production": "&gt;= 0.8" },
-    "on_fail": "clarify_or_human_review"
+    "min_top_probability": 0.60,
+    "on_low_probability": "clarify_or_human_review",
+    "on_none": "answer_without_tools"
   },
   "route_table": {
-    "model_tier": [
-      { "when": "complexity &lt; 1.0", "use": "efficient" },
-      { "when": "complexity &gt;= 1.0", "use": "reasoning" }
-    ],
+    "model_tier": { "low": "efficient", "high": "reasoning" },
     "tool_loadout": {
       "answer_only": [],
       "inspect": ["read_file", "search"],
@@ -433,9 +445,88 @@ Content-Type: application/json
   },
   "escalation": { "max_upgrades": 1 }
 }</code></pre>
-<blockquote>
-<p><code>score</code>의 반환값은 레벨 인덱스의 확률 가중 평균이라 레벨 사이 값이 나올 수 있습니다. 절대 보정값이 아니라 상대 순위·임계치 용도로 쓰세요.</p>
-</blockquote>
+<p>선택(selected)과 실행(executed)을 <strong>분리해 기록</strong>하세요. 워크샵 코드도 선택된 경로와 실제 실행된 경로(예: 확률 미달 시 <code>fallback</code>)를 따로 남겨서, 게이트가 막은 요청을 나중에 분석할 수 있습니다.</p>
+<h3 id="sec-5-4">5.4 최소 구현 예시</h3>
+<p>아래는 위 설계를 한 함수로 옮긴 <strong>축약 예시</strong>입니다. 요청 형태와 <code>choice</code> 응답 파싱은 Learn 문서와 워크샵 클라이언트(<code>decision_client.py</code>)와 같은 방식이며, 임계치와 라우팅 테이블 값은 예시입니다. 반환값의 <code>tools</code>와 모델 등급으로 LLM을 <strong>1회</strong> 호출하는 부분은 각자의 코드로 연결합니다.</p>
+<pre><code>import json
+import os
+import urllib.error
+import urllib.request
+
+from azure.identity import DefaultAzureCredential
+
+ENDPOINT = os.environ["AZURE_ENDPOINT"].rstrip("/")
+DEPLOYMENT = os.environ["DEPLOYMENT_NAME"]
+SCOPE = "https://cognitiveservices.azure.com/.default"
+MIN_PROBABILITY = 0.60  # example: tune on a labeled evaluation set
+
+QUESTIONS = {
+    "complexity": {
+        "type": "choice",
+        "instructions": "How hard is this request to complete correctly?",
+        "criteria": {"low": "Simple, single step", "high": "Multi-step reasoning"},
+    },
+    "tool_loadout": {
+        "type": "choice",
+        "instructions": "Select the minimum tool set needed.",
+        "criteria": {
+            "answer_only": "No tools needed",
+            "inspect": "Read-only tools",
+            "edit": "Read and edit tools",
+        },
+    },
+}
+MODEL_TIER = {"low": "efficient", "high": "reasoning"}
+TOOLS = {"answer_only": [], "inspect": ["read_file"], "edit": ["read_file", "edit_file"]}
+
+
+def decide(request: str) -&gt; dict:
+    token = DefaultAzureCredential().get_token(SCOPE).token
+    body = json.dumps({"model": DEPLOYMENT, "state": request, "questions": QUESTIONS}).encode()
+    req = urllib.request.Request(
+        f"{ENDPOINT}/providers/microsoft/v1/systemone",
+        data=body,
+        method="POST",
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            answers = json.loads(resp.read())["answers"]
+    except urllib.error.HTTPError as exc:
+        raise RuntimeError(f"Decision API returned HTTP {exc.code}") from exc
+
+    picked = {}
+    for name, question in QUESTIONS.items():
+        answer = answers[name]
+        choice = answer["choice"]
+        if choice not in question["criteria"]:
+            raise RuntimeError(f"unexpected choice {choice!r} for {name}")
+        picked[name] = (choice, float(answer["probabilities"][choice]))
+    return picked
+
+
+def route(request: str) -&gt; dict:
+    picked = decide(request)
+    # the gate runs before any lookup: one low-probability answer stops the request
+    if any(prob &lt; MIN_PROBABILITY for _, prob in picked.values()):
+        return {"selected": picked, "executed": "fallback", "action": "clarify_or_human_review"}
+    tier = MODEL_TIER[picked["complexity"][0]]
+    tools = TOOLS[picked["tool_loadout"][0]]
+    return {"selected": picked, "executed": tier, "tools": tools}  # call the LLM once with these</code></pre>
+<h3 id="sec-5-5">5.5 호출 오류와 재시도</h3>
+<table>
+<thead>
+<tr><th>HTTP 상태</th><th>가능한 원인</th><th>조치</th></tr>
+</thead>
+<tbody>
+<tr><td>400</td><td>질문 유형이나 요청 형태가 잘못됨</td><td><code>state</code>, <code>questions</code>, <code>type</code>, <code>criteria</code> 확인</td></tr>
+<tr><td>401 / 403</td><td>토큰 없음·만료, 또는 배포 접근 권한 없음</td><td>토큰 갱신, 역할 할당과 배포 접근 권한 확인</td></tr>
+<tr><td>404</td><td>엔드포인트나 API 경로가 틀림</td><td>배포 상세 페이지의 엔드포인트 확인</td></tr>
+<tr><td>422</td><td>배포 이름이나 질문 정의가 지원되지 않음</td><td><code>model</code> 값(배포 이름)과 각 질문 정의 확인</td></tr>
+<tr><td>429</td><td>배포 속도 제한 초과</td><td>지수 백오프로 재시도하거나 쿼터 상향 요청</td></tr>
+</tbody>
+</table>
+<p>게이트웨이는 호출 실패 시에도 안전한 경로로 떨어져야 합니다. Decision-1 호출이 실패하면 LLM으로 그대로 넘기지 말고, <strong>안전한 기본 경로</strong>(추론 경로 또는 안전 응답)로 보내거나 재시도 후 사람 검토로 넘기세요. 그리고 응답을 파싱할 때는 반환된 옵션이 요청에서 정의한 옵션 안에 있는지 항상 검증합니다.</p>
 <h2 id="sec-6">6. 모델 비교: Decision-1 · Jev · OpenAI API</h2>
 <p>Jev는 같은 System One 요청 형태를 쓰는 TypeSafe의 결정 모델입니다. 아래 표는 공개 문서 기준이며 가격·기능은 변동될 수 있습니다.</p>
 <table>
@@ -564,9 +655,12 @@ Authorization: Bearer &lt;API_KEY&gt;
 </ul>
 </li>
 <li><a href="#en-sec-4">4. Workloads (in priority order)</a></li>
-<li><a href="#en-sec-5">5. Request, response, and policy design</a><ul>
-<li><a href="#en-sec-5-1">5.1 Several questions in one request</a></li>
-<li><a href="#en-sec-5-2">5.2 Policy gate and route table</a></li>
+<li><a href="#en-sec-5">5. Decision-1 calls, responses, and policy design</a><ul>
+<li><a href="#en-sec-5-1">5.1 Building the request</a></li>
+<li><a href="#en-sec-5-2">5.2 Reading the response</a></li>
+<li><a href="#en-sec-5-3">5.3 Policy gate and route table</a></li>
+<li><a href="#en-sec-5-4">5.4 Minimal implementation</a></li>
+<li><a href="#en-sec-5-5">5.5 Call errors and retries</a></li>
 </ul>
 </li>
 <li><a href="#en-sec-6">6. Model comparison: Decision-1, Jev, and OpenAI API</a><ul>
@@ -680,80 +774,89 @@ Authorization: Bearer &lt;API_KEY&gt;
 <tr><td>5. Hybrid operations</td><td>All labels above plus execution logs</td><td>Track selected/executed route, fallback rate, latency, and cost to speed up policy tuning and improve cost forecasting</td><td>Metric definitions and alert thresholds</td></tr>
 </tbody>
 </table>
-<h2 id="en-sec-5">5. Request, response, and policy design</h2>
-<h3 id="en-sec-5-1">5.1 Several questions in one request</h3>
-<p>Questions about the same <code>state</code> can share one request, which reduces request count and keeps the decision context consistent. The request <code>model</code> is your <strong>deployment name</strong>, not the model name.</p>
+<h2 id="en-sec-5">5. Decision-1 calls, responses, and policy design</h2>
+<p>This chapter is grounded in the Microsoft Learn article for <strong>Microsoft-Decision-1</strong> and in the <a href="https://github.com/bskim/Microsoft-Decision-workshop/">Microsoft-Decision-workshop</a> code, which calls a live Decision-1 deployment (validated 2026-10-12). Response fields that neither source confirms are not used, and anything unconfirmed is labeled as such.</p>
+<h3 id="en-sec-5-1">5.1 Building the request</h3>
+<p>The endpoint is <code>/providers/microsoft/v1/systemone</code> on your Foundry resource. Set <code>model</code> to your <strong>deployment name</strong>, not the model name, put the content to judge in <code>state</code> (text or JSON), and describe each judgment as a typed entry in <code>questions</code>. Questions about the same <code>state</code> can share one request, which reduces calls and keeps the decision context consistent.</p>
+<table>
+<thead>
+<tr><th>Question type</th><th>Fields</th><th>Result (per the Learn article)</th></tr>
+</thead>
+<tbody>
+<tr><td><code>choice</code></td><td><code>instructions</code>, <code>criteria</code> (option name → description)</td><td>One selected option and a probability for each option</td></tr>
+<tr><td><code>noul</code></td><td><code>instructions</code>, optional <code>criteria</code> (<code>true</code>/<code>false</code> conditions)</td><td>A probability from 0 through 1</td></tr>
+<tr><td><code>score</code></td><td><code>instructions</code>, <code>criteria</code> (levels listed lowest to highest)</td><td>A value on an ordered scale and a probability for each level (a probability-weighted average, so it can fall between levels)</td></tr>
+</tbody>
+</table>
+<p>For a gateway, prefer <strong><code>choice</code> questions</strong>: reading the selected option and its per-option probabilities is the only response shape confirmed by both the documentation and the workshop code. Ordered judgments such as complexity can be expressed as two options like <code>low</code>/<code>high</code>.</p>
 <pre><code>POST &lt;your-foundry-resource-endpoint&gt;/providers/microsoft/v1/systemone
 Content-Type: application/json
+Authorization: Bearer &lt;entra-access-token&gt;
 
 {
   "model": "&lt;deployment-name&gt;",
-  "state": {
-    "message": "Please delete the stale rows in the orders table.",
-    "user_role": "support_agent"
-  },
+  "state": "Please delete the stale rows in the orders table.",
   "questions": {
-    "intent": {
-      "type": "choice",
-      "instructions": "What does the user want?",
-      "criteria": {
-        "answer": "Explain or look something up",
-        "change": "Modify files or data",
-        "operate": "Run commands or deploy"
-      }
-    },
     "complexity": {
-      "type": "score",
+      "type": "choice",
       "instructions": "How hard is this request to complete correctly?",
-      "criteria": ["Simple", "Moderate", "Hard"]
-    },
-    "touches_production": {
-      "type": "noul",
-      "instructions": "Does this request modify or delete production data?"
+      "criteria": {
+        "low": "Lookup, tagging, short rewrite, or a single simple step",
+        "high": "Multi-step analysis, planning, or reasoning across sources"
+      }
     },
     "tool_loadout": {
       "type": "choice",
-      "instructions": "Which is the minimum tool set needed?",
+      "instructions": "Select the minimum tool set needed. Select answer_only when no tool is needed.",
       "criteria": {
         "answer_only": "No tools needed",
         "inspect": "Read-only tools",
         "edit": "Read and edit tools",
         "shell": "Read, edit, and shell tools"
       }
+    },
+    "touches_production": {
+      "type": "noul",
+      "instructions": "Does this request modify or delete production data?"
     }
   }
 }</code></pre>
-<p>Authenticate with a Microsoft Entra ID bearer token (recommended) or an <code>api-key</code> header. The example above omits the auth header for brevity.</p>
-<p>The response returns results per question name. The sample below follows the TypeSafe System One response format as an <strong>illustration</strong>; confirm Decision-1's actual fields in the Learn article and your own deployment.</p>
+<blockquote>
+<p><strong>Authentication</strong> — Use a Microsoft Entra ID bearer token (recommended; scope <code>https://cognitiveservices.azure.com/.default</code>) or an <code>api-key</code> header.</p>
+<p><strong>Option design</strong> — Keep option descriptions distinct and include an <strong>abstain option</strong> for non-applicable cases (<code>answer_only</code>, <code>none</code>, <code>cannot_tell</code>). The workshop's tool selector offers <code>none</code> for "no relevant tool".</p>
+</blockquote>
+<h3 id="en-sec-5-2">5.2 Reading the response</h3>
+<p>The <code>answers</code> object is keyed by the <strong>question names</strong> from your request. A <code>choice</code> question returns <code>type</code>, the selected option in <code>choice</code>, and per-option probabilities in <code>probabilities</code>. These are the fields the workshop code reads from live deployment responses. The response also includes the deployed model name and token usage.</p>
 <pre><code>{
   "model": "microsoft-decision-1",
   "answers": {
-    "intent": {
-      "type": "choice", "choice": "change", "confidence": 0.84,
-      "probabilities": { "answer": 0.05, "change": 0.84, "operate": 0.11 }
+    "complexity": {
+      "type": "choice",
+      "choice": "low",
+      "probabilities": { "low": 0.97, "high": 0.03 }
     },
-    "complexity": { "type": "score", "score": 1.6 },
-    "touches_production": { "type": "noul", "noul": 0.91 },
     "tool_loadout": {
-      "type": "choice", "choice": "edit", "confidence": 0.78,
+      "type": "choice",
+      "choice": "edit",
       "probabilities": { "answer_only": 0.02, "inspect": 0.15, "edit": 0.78, "shell": 0.05 }
-    }
-  },
-  "usage": { "input_tokens": 210, "output_tokens": 24 }
+    },
+    "touches_production": { "type": "noul" }
+  }
 }</code></pre>
-<h3 id="en-sec-5-2">5.2 Policy gate and route table</h3>
-<p>Move decision labels into policy as code or configuration. The values below are <strong>examples</strong>; set thresholds from your evaluation set by weighing the cost of false positives and false negatives.</p>
+<p>The probabilities above are <strong>arbitrary numbers</strong> that only show the shape. Read the selected option's probability as <code>probabilities[choice]</code>.</p>
+<blockquote>
+<p><strong>Not confirmed</strong> — The exact field names for <code>noul</code> and <code>score</code> responses, and the key names of the token usage object, appear in neither the Learn article nor the workshop code, so the example shows only <code>type</code> for the <code>noul</code> answer. Before building a gate on those fields, <strong>call your own deployment and inspect the real response</strong>.</p>
+</blockquote>
+<h3 id="en-sec-5-3">5.3 Policy gate and route table</h3>
+<p>Move the decision into policy. The gate stops a request when the <strong>selected option's probability</strong> is below the threshold or an abstain option is selected, and only passing requests go through the route table to a model tier and tools. The Learn article recommends using a low top probability as a signal to escalate to a person or another model. The values below are <strong>examples</strong>; the workshop used <code>0.60</code> for routing and tool selection. Set thresholds from your evaluation set by weighing the cost of false positives and false negatives.</p>
 <pre><code>{
   "gate": {
-    "min_top_probability": 0.7,
-    "block_if": { "touches_production": "&gt;= 0.8" },
-    "on_fail": "clarify_or_human_review"
+    "min_top_probability": 0.60,
+    "on_low_probability": "clarify_or_human_review",
+    "on_none": "answer_without_tools"
   },
   "route_table": {
-    "model_tier": [
-      { "when": "complexity &lt; 1.0", "use": "efficient" },
-      { "when": "complexity &gt;= 1.0", "use": "reasoning" }
-    ],
+    "model_tier": { "low": "efficient", "high": "reasoning" },
     "tool_loadout": {
       "answer_only": [],
       "inspect": ["read_file", "search"],
@@ -763,9 +866,88 @@ Content-Type: application/json
   },
   "escalation": { "max_upgrades": 1 }
 }</code></pre>
-<blockquote>
-<p>A <code>score</code> result is the probability-weighted average of level indexes, so it can fall between levels. Use it for relative ordering and thresholds rather than as a calibrated absolute rating.</p>
-</blockquote>
+<p><strong>Record selected and executed separately.</strong> The workshop code also keeps the selected route apart from the route actually executed (for example <code>fallback</code> when the probability is too low), so requests the gate blocked can be analyzed later.</p>
+<h3 id="en-sec-5-4">5.4 Minimal implementation</h3>
+<p>The code below turns the design above into one function as a <strong>condensed example</strong>. The request shape and <code>choice</code> parsing follow the Learn article and the workshop client (<code>decision_client.py</code>); the threshold and route table values are examples. Wire the returned model tier and <code>tools</code> into your own code to call the LLM <strong>once</strong>.</p>
+<pre><code>import json
+import os
+import urllib.error
+import urllib.request
+
+from azure.identity import DefaultAzureCredential
+
+ENDPOINT = os.environ["AZURE_ENDPOINT"].rstrip("/")
+DEPLOYMENT = os.environ["DEPLOYMENT_NAME"]
+SCOPE = "https://cognitiveservices.azure.com/.default"
+MIN_PROBABILITY = 0.60  # example: tune on a labeled evaluation set
+
+QUESTIONS = {
+    "complexity": {
+        "type": "choice",
+        "instructions": "How hard is this request to complete correctly?",
+        "criteria": {"low": "Simple, single step", "high": "Multi-step reasoning"},
+    },
+    "tool_loadout": {
+        "type": "choice",
+        "instructions": "Select the minimum tool set needed.",
+        "criteria": {
+            "answer_only": "No tools needed",
+            "inspect": "Read-only tools",
+            "edit": "Read and edit tools",
+        },
+    },
+}
+MODEL_TIER = {"low": "efficient", "high": "reasoning"}
+TOOLS = {"answer_only": [], "inspect": ["read_file"], "edit": ["read_file", "edit_file"]}
+
+
+def decide(request: str) -&gt; dict:
+    token = DefaultAzureCredential().get_token(SCOPE).token
+    body = json.dumps({"model": DEPLOYMENT, "state": request, "questions": QUESTIONS}).encode()
+    req = urllib.request.Request(
+        f"{ENDPOINT}/providers/microsoft/v1/systemone",
+        data=body,
+        method="POST",
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            answers = json.loads(resp.read())["answers"]
+    except urllib.error.HTTPError as exc:
+        raise RuntimeError(f"Decision API returned HTTP {exc.code}") from exc
+
+    picked = {}
+    for name, question in QUESTIONS.items():
+        answer = answers[name]
+        choice = answer["choice"]
+        if choice not in question["criteria"]:
+            raise RuntimeError(f"unexpected choice {choice!r} for {name}")
+        picked[name] = (choice, float(answer["probabilities"][choice]))
+    return picked
+
+
+def route(request: str) -&gt; dict:
+    picked = decide(request)
+    # the gate runs before any lookup: one low-probability answer stops the request
+    if any(prob &lt; MIN_PROBABILITY for _, prob in picked.values()):
+        return {"selected": picked, "executed": "fallback", "action": "clarify_or_human_review"}
+    tier = MODEL_TIER[picked["complexity"][0]]
+    tools = TOOLS[picked["tool_loadout"][0]]
+    return {"selected": picked, "executed": tier, "tools": tools}  # call the LLM once with these</code></pre>
+<h3 id="en-sec-5-5">5.5 Call errors and retries</h3>
+<table>
+<thead>
+<tr><th>HTTP status</th><th>Possible cause</th><th>Action</th></tr>
+</thead>
+<tbody>
+<tr><td>400</td><td>Invalid question type or request shape</td><td>Check <code>state</code>, <code>questions</code>, <code>type</code>, and <code>criteria</code></td></tr>
+<tr><td>401 / 403</td><td>Missing, invalid, or expired credential, or no access to the deployment</td><td>Refresh the token and verify the role assignment and deployment access</td></tr>
+<tr><td>404</td><td>Incorrect resource endpoint or API path</td><td>Verify the endpoint on the deployment details page</td></tr>
+<tr><td>422</td><td>Unsupported deployment name or question definition</td><td>Verify the <code>model</code> value and each question definition</td></tr>
+<tr><td>429</td><td>Deployment rate limit exceeded</td><td>Retry with exponential backoff or request more quota</td></tr>
+</tbody>
+</table>
+<p>The gateway should fail safe when a call fails. If the Decision-1 call fails, do not pass the request straight to an LLM; route it to a <strong>safe default path</strong> (the reasoning route or a safe response), or retry and then hand it to human review. When parsing, always verify that the returned option is one of the options your request defined.</p>
 <h2 id="en-sec-6">6. Model comparison: Decision-1, Jev, and OpenAI API</h2>
 <p>Jev is TypeSafe's decision model that uses the same System One request shape. The table follows public documentation; pricing and features can change.</p>
 <table>
