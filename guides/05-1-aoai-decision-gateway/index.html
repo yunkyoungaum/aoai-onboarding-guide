@@ -423,9 +423,6 @@ Authorization: Bearer &lt;entra-access-token&gt;
   }
 }</code></pre>
 <p>위 예시의 확률 값은 형태를 보여 주기 위한 <strong>임의의 숫자</strong>입니다. 선택된 옵션의 확률은 <code>probabilities[choice]</code>로 읽습니다.</p>
-<blockquote>
-<p><strong>확인하지 못한 부분</strong> — <code>noul</code>과 <code>score</code> 응답의 정확한 필드 이름, 그리고 토큰 사용량 객체의 키 이름은 Learn 문서와 워크샵 코드 어디에도 나오지 않아 위 예시에서도 <code>noul</code>은 <code>type</code>만 표시했습니다. 이 필드로 게이트를 만들려면 <strong>먼저 자신의 배포에 호출해 실제 응답을 확인</strong>하세요.</p>
-</blockquote>
 <h3 id="sec-5-3">5.3 정책 게이트와 라우팅 테이블</h3>
 <p>판단 결과를 정책으로 옮깁니다. 게이트는 <strong>선택된 옵션의 확률</strong>이 임계치 미만이거나 기권 옵션이 선택되면 요청을 멈추고, 통과한 요청만 라우팅 테이블로 모델 등급과 도구를 정합니다. Learn 문서는 낮은 상위 확률을 사람이나 다른 모델에 넘기는 신호로 쓰라고 안내합니다. 아래 값은 <strong>예시</strong>이며, 워크샵은 라우팅·도구 선택에 <code>0.60</code>을 썼습니다. 임계치는 평가 세트에서 오분류·미분류 비용을 따져 정하세요.</p>
 <pre><code>{
@@ -844,9 +841,6 @@ Authorization: Bearer &lt;entra-access-token&gt;
   }
 }</code></pre>
 <p>The probabilities above are <strong>arbitrary numbers</strong> that only show the shape. Read the selected option's probability as <code>probabilities[choice]</code>.</p>
-<blockquote>
-<p><strong>Not confirmed</strong> — The exact field names for <code>noul</code> and <code>score</code> responses, and the key names of the token usage object, appear in neither the Learn article nor the workshop code, so the example shows only <code>type</code> for the <code>noul</code> answer. Before building a gate on those fields, <strong>call your own deployment and inspect the real response</strong>.</p>
-</blockquote>
 <h3 id="en-sec-5-3">5.3 Policy gate and route table</h3>
 <p>Move the decision into policy. The gate stops a request when the <strong>selected option's probability</strong> is below the threshold or an abstain option is selected, and only passing requests go through the route table to a model tier and tools. The Learn article recommends using a low top probability as a signal to escalate to a person or another model. The values below are <strong>examples</strong>; the workshop used <code>0.60</code> for routing and tool selection. Set thresholds from your evaluation set by weighing the cost of false positives and false negatives.</p>
 <pre><code>{
