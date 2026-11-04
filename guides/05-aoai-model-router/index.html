@@ -1433,6 +1433,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 </ul>
 <h3 id="en-62">6.2 Prompt Caching</h3>
 <p>If the underlying model supports caching, it is <strong>applied automatically</strong> with no separate settings. However, the caching effect only occurs <strong>when the same model handles consecutive requests</strong>, so if routing decisions fluctuate, caching benefits are interrupted.</p>
+<p>For Chat Completions, <strong>session affinity (preview)</strong> asks the router to try the same model first for related requests, which improves the opportunity for cache reuse. It does not guarantee a cache hit.</p>
 <blockquote>
 <p>For significantly increasing cache hit rates, refer to <a href="../06-aoai-cache-performance/">06 Cache Performance Optimization Guide</a>. For workloads where stable caching is important, <strong>narrowing the model subset to reduce routing fluctuations</strong> can be an effective lever.</p>
 </blockquote>
