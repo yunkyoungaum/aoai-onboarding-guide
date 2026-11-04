@@ -1022,7 +1022,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 <li>라우팅 모드 비교 데모: https://github.com/leestott/router-demo-app</li>
 </ul>
 <hr/>
-<p class="meta">최종 수정 2026-08-31 · Microsoft Scout</p>
+<p class="meta">최종 수정 2026-11-04 · Microsoft Scout</p>
 </main>
 </div><div class="layout lang-en">
 <nav class="sidebar">
@@ -1030,7 +1030,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 <div class="toc">
 <ul>
 <li><a href="#en-0-tldr">0. TL;DR</a><ul>
-<li><a href="#en-_1">Minimum Introduction Order</a></li>
+<li><a href="#en-_1">Minimum Adoption Order</a></li>
 </ul>
 </li>
 <li><a href="#en-1-model-router">1. What is a Model Router</a><ul>
@@ -1038,7 +1038,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 <li><a href="#en-12">1.2 When to Use and When Not to Use</a></li>
 </ul>
 </li>
-<li><a href="#en-2">2. Routing Mode</a><ul>
+<li><a href="#en-2">2. Routing Modes</a><ul>
 <li><a href="#en-_2">Traffic Distribution by Mode</a></li>
 </ul>
 </li>
@@ -1048,17 +1048,17 @@ response = openai_client.responses.create(model=deployment, input="...")
 <li><a href="#en-33">3.3 Region</a></li>
 </ul>
 </li>
-<li><a href="#en-4-ui">4. Distribution — Portal (UI) Procedure</a><ul>
+<li><a href="#en-4-ui">4. Deployment — Portal (UI) Procedure</a><ul>
 <li><a href="#en-41">4.1 Preparation</a></li>
-<li><a href="#en-42-default-settings">4.2 Default Deployment (Default settings)</a></li>
-<li><a href="#en-43-custom-settings">4.3 Custom Deployment (Custom settings)</a></li>
+<li><a href="#en-42-default-settings">4.2 Default Deployment (Default Settings)</a></li>
+<li><a href="#en-43-custom-settings">4.3 Custom Deployment (Custom Settings)</a></li>
 <li><a href="#en-44-rest-api">4.4 REST API Deployment (for Automation)</a></li>
 </ul>
 </li>
-<li><a href="#en-5">5. Invocation and Verification</a><ul>
+<li><a href="#en-5">5. Calling and Verification</a><ul>
 <li><a href="#en-51">5.1 Calling from Code</a></li>
-<li><a href="#en-52">5.2 Check Which Model Responded</a></li>
-<li><a href="#en-53">5.3 Parameter Precautions</a></li>
+<li><a href="#en-52">5.2 Checking Which Model Responded</a></li>
+<li><a href="#en-53">5.3 Parameter Cautions</a></li>
 </ul>
 </li>
 <li><a href="#en-6">6. Operations — Failover · Caching · Governance</a><ul>
@@ -1067,10 +1067,10 @@ response = openai_client.responses.create(model=deployment, input="...")
 <li><a href="#en-63-azure-policy">6.3 Azure Policy Governance</a></li>
 </ul>
 </li>
-<li><a href="#en-7">7. Observation — Performance and Cost</a><ul>
+<li><a href="#en-7">7. Observability — Performance and Cost</a><ul>
 <li><a href="#en-71">7.1 Performance</a></li>
 <li><a href="#en-72">7.2 Cost</a></li>
-<li><a href="#en-73-3">7.3 Three Levers to Reduce Cost</a></li>
+<li><a href="#en-73-3">7.3 Three Levers to Reduce Costs</a></li>
 <li><a href="#en-74">7.4 Pre-Production Evaluation</a></li>
 </ul>
 </li>
@@ -1078,7 +1078,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 <li><a href="#en-81">8.1 Troubleshooting Quick Reference</a></li>
 </ul>
 </li>
-<li><a href="#en-9">9. Deployment Checklist</a></li>
+<li><a href="#en-9">9. Adoption Checklist</a></li>
 <li><a href="#en-_3">References</a></li>
 </ul>
 </div>
@@ -1128,9 +1128,9 @@ response = openai_client.responses.create(model=deployment, input="...")
 </tr>
 </tbody>
 </table>
-<h3 id="en-_1">Minimum Implementation Order</h3>
+<h3 id="en-_1">Minimum Adoption Order</h3>
 <ol>
-<li>Deploy <code>model-router</code> from Foundry portal (Default = Balanced + full model pool)</li>
+<li>Deploy <code>model-router</code> from the Foundry portal (Default = Balanced + full model pool)</li>
 <li>Test representative prompts in Playground to check <strong>which model is selected</strong></li>
 <li>Use the existing single model deployment as the baseline and perform <strong>quality, cost, and latency A/B comparison</strong></li>
 <li>Based on the results, adjust <strong>routing mode</strong> and <strong>model subset</strong> <strong>one at a time</strong> (§7.4)</li>
@@ -1144,11 +1144,11 @@ response = openai_client.responses.create(model=deployment, input="...")
 <ol>
 <li><strong>Understanding the prompt</strong> — Analyze the entire request, including <strong>system messages, user messages, tool definitions, and conversation history</strong>, to determine what is required and its difficulty level.</li>
 <li><strong>Model selection</strong> — Estimate the model that will produce the best results for this prompt from the pool, reflecting the configured routing mode.</li>
-<li><strong>Routing and response</strong> — Delivered to the selected model. <strong>Routing overhead is only a tiny fraction of LLM inference time</strong>.</li>
+<li><strong>Routing and response</strong> — The request is delivered to the selected model. <strong>Routing overhead is only a tiny fraction of LLM inference time</strong>.</li>
 </ol>
 <ul>
 <li>The prompt is <strong>not saved.</strong></li>
-<li>Only consider models that match the user's <strong>access privileges and deployment type</strong>, and comply with <strong>data zone boundaries</strong>.</li>
+<li>Only models that match the user's <strong>access permissions and deployment type</strong> and that comply with <strong>data zone boundaries</strong> are eligible.</li>
 <li>Since the model is selected per request, different models can respond even within the same application.</li>
 <li><strong>When the model subset changes, the router automatically recalibrates</strong> based on the remaining models.</li>
 </ul>
@@ -1180,7 +1180,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 </tbody>
 </table>
 <blockquote>
-<p>💡 The model router is a <strong>drop-in deployment</strong> as well as an <strong>optimization layer</strong>. It only reduces the time spent on model exploration (hill-climbing) and does not replace evaluation.</p>
+<p>💡 The model router is both a <strong>drop-in deployment</strong> and an <strong>optimization layer</strong>. It reduces the time spent on model exploration (hill-climbing) but does not replace evaluation.</p>
 </blockquote>
 <hr/>
 <h2 id="en-2">2. Routing Modes</h2>
@@ -1196,17 +1196,17 @@ response = openai_client.responses.create(model=deployment, input="...")
 <tbody>
 <tr>
 <td><strong>Balanced</strong> (Default)</td>
-<td>Selects the cheapest model within <strong>about 1–2% quality band</strong> compared to the highest quality model</td>
+<td>Selects the cheapest model within <strong>about a 1–2% quality band</strong> of the highest-quality model</td>
 <td>Universal</td>
 </tr>
 <tr>
 <td><strong>Cost</strong></td>
-<td>Allows up to <strong>about 5–6% quality band</strong> and prioritizes lowest cost</td>
+<td>Allows up to <strong>about a 5–6% quality band</strong> and prioritizes the lowest cost</td>
 <td>High-volume or budget-sensitive (classification, simple Q&amp;A)</td>
 </tr>
 <tr>
 <td><strong>Quality</strong></td>
-<td>Ignore costs and select the <strong>highest quality</strong> model for this prompt</td>
+<td>Ignores cost and selects the <strong>highest-quality</strong> model for this prompt</td>
 <td>Legal review, medical summarization, complex reasoning</td>
 </tr>
 </tbody>
@@ -1214,7 +1214,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 <blockquote>
 <p>⚠️ Changing the routing mode takes up to <strong>5 minutes</strong> to take effect.</p>
 </blockquote>
-<h3 id="en-_2">Traffic distribution by mode</h3>
+<h3 id="en-_2">Traffic Distribution by Mode</h3>
 <p>When you change the mode, the <strong>traffic distribution to underlying models changes as well.</strong> This can be observed in Azure Monitor (§7.1).</p>
 <table>
 <thead>
@@ -1304,7 +1304,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 </tbody>
 </table>
 <blockquote>
-<p>⚠️ <strong>Claude models are the only exception.</strong> To include it in the routing pool, you must <strong>deploy it first with the same SKU under the same Foundry account</strong>. If you add it to <code>routing.models</code> without deploying, you will get an <code>InvalidResourceProperties</code> error.</p>
+<p>⚠️ <strong>Claude models are the only exception.</strong> To include Claude in the routing pool, you must <strong>deploy it first with the same SKU under the same Foundry account</strong>. If you add it to <code>routing.models</code> without deploying, you will get an <code>InvalidResourceProperties</code> error.</p>
 </blockquote>
 <h3 id="en-33">3.3 Regions</h3>
 <p><strong>Global Standard</strong> is supported in 32 regions, including Korea Central, and 23 of them also support <strong>Data Zone Standard</strong>. However, <strong>the routable models in each region are limited to the underlying models that exist in that region</strong> — the effective routing pool may vary by region.</p>
@@ -1312,15 +1312,15 @@ response = openai_client.responses.create(model=deployment, input="...")
 <h2 id="en-4-ui">4. Deployment — Portal (UI) Procedure</h2>
 <h3 id="en-41">4.1 Preparation</h3>
 <ul>
-<li><a href="https://ai.azure.com">Microsoft Foundry Portal</a> login → Top right <strong>Turn ON New Foundry toggle</strong></li>
+<li><a href="https://ai.azure.com">Microsoft Foundry portal</a>: sign in, then <strong>turn on the New Foundry toggle</strong> (top right)</li>
 <li>Prepare Foundry resources (or projects)</li>
 <li>To include Claude in routing, <strong>deploy Claude first from the model catalog</strong></li>
 <li>If your organization controls model deployment with Azure Policy, the allowed publishers must include both <strong><code>Microsoft</code></strong> (publisher of the model router) and the publisher of the model to be included (e.g., <code>Anthropic</code>). Deployment will be blocked if this is not met.</li>
 </ul>
-<h3 id="en-42-default-settings">4.2 Default deployment (Default settings)</h3>
+<h3 id="en-42-default-settings">4.2 Default Deployment (Default Settings)</h3>
 <ol>
-<li>Left side <strong>Model catalog</strong> → Search <code>model-router</code> → Select → <strong>Deploy</strong></li>
-<li>Enter deployment information<ul>
+<li>In the left menu, open <strong>Model catalog</strong> → search for <code>model-router</code> → select it → <strong>Deploy</strong></li>
+<li>Enter the deployment details<ul>
 <li><strong>Deployment name</strong> — e.g.: <code>model-router-deployment</code></li>
 <li><strong>Deployment type</strong> — <code>Global Standard</code> or <code>Data Zone Standard</code></li>
 <li><strong>Model version</strong> — <code>2025-11-18</code></li>
@@ -1328,13 +1328,13 @@ response = openai_client.responses.create(model=deployment, input="...")
 <li><strong>Content filter / TPM</strong> — ⚠️ Set <strong>only once here</strong></li>
 </ul>
 </li>
-<li><strong>Default settings</strong> select → <strong>Balanced mode + full support model pool</strong></li>
+<li>Selecting <strong>Default settings</strong> gives you <strong>Balanced mode + the full supported model pool</strong></li>
 <li><strong>Deploy</strong></li>
 </ol>
 <blockquote>
 <p>⚠️ Content filter and tokens per minute (TPM) limits apply to the <strong>model router deployment unit</strong>. Do not set them separately for each underlying model. There is no need to deploy underlying models separately (except Claude).</p>
 </blockquote>
-<h3 id="en-43-custom-settings">4.3 Custom Deployment (Custom settings)</h3>
+<h3 id="en-43-custom-settings">4.3 Custom Deployment (Custom Settings)</h3>
 <p><strong>① Routing mode dropdown</strong> — Choose among <code>Balanced</code> / <code>Quality</code> / <code>Cost</code> (§2)</p>
 <p><strong>② Route to a subset of models</strong> — Directly select the underlying models to use for routing</p>
 <ul>
@@ -1344,7 +1344,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 <li>If long context is needed, select <strong>only large context models</strong> here (§8)</li>
 <li>Up to 5 minutes for changes to take effect</li>
 </ul>
-<h3 id="en-44-rest-api">4.4 REST API Deployment (for automation)</h3>
+<h3 id="en-44-rest-api">4.4 REST API Deployment (for Automation)</h3>
 <pre><code class="language-bash">export AZURE_AI_AUTH_TOKEN=$(az account get-access-token \
   --resource https://management.azure.com --query accessToken -o tsv)
 </code></pre>
@@ -1404,7 +1404,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 }
 </code></pre>
 <p>In the Playground (<strong>Models + endpoints</strong> → select deployment), the selected model is also displayed for each response.</p>
-<h3 id="en-53">5.3 Parameter Caution</h3>
+<h3 id="en-53">5.3 Parameter Cautions</h3>
 <table>
 <thead>
 <tr>
@@ -1415,11 +1415,11 @@ response = openai_client.responses.create(model=deployment, input="...")
 <tbody>
 <tr>
 <td><code>temperature</code>, <code>top_p</code>, <code>stop</code>, <code>presence_penalty</code>, <code>frequency_penalty</code>, <code>logit_bias</code>, <code>logprobs</code></td>
-<td>If an inference (o-series) model is selected, it is <strong>ignored</strong>. It is applied normally for other models.</td>
+<td>If a reasoning (o-series) model is selected, it is <strong>ignored</strong>. It is applied normally for other models.</td>
 </tr>
 <tr>
 <td><code>reasoning_effort</code></td>
-<td>From version <code>2025-11-18</code> <strong>supported</strong> — If a reasoning model is selected, it is passed through as is.</td>
+<td><strong>Supported</strong> from version <code>2025-11-18</code> — If a reasoning model is selected, it is passed through as is.</td>
 </tr>
 </tbody>
 </table>
@@ -1429,7 +1429,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 <p>If a temporary issue occurs with a specific model, it will be <strong>transparently rerouted to the next suitable model</strong>. This is enabled by default and requires no separate configuration.</p>
 <ul>
 <li>Even in custom deployments, the <strong>selected routing mode is applied during failover</strong>.</li>
-<li><strong>Model subset is the fallback set</strong>. Instead of letting prompts flow to unapproved models, <strong>if you select only one, failover disappears.</strong> → Select at least two.</li>
+<li><strong>The model subset is the fallback set</strong>. Selecting only one model keeps prompts from flowing to unapproved models, but <strong>it removes failover.</strong> → Select at least two.</li>
 </ul>
 <h3 id="en-62">6.2 Prompt Caching</h3>
 <p>If the underlying model supports caching, it is <strong>applied automatically</strong> with no separate settings. However, the caching effect only occurs <strong>when the same model handles consecutive requests</strong>, so if routing decisions fluctuate, caching benefits are interrupted.</p>
@@ -1452,9 +1452,9 @@ response = openai_client.responses.create(model=deployment, input="...")
 <p>Azure Portal → <strong>Cost analysis</strong></p>
 <ol>
 <li>Filter by Azure resources</li>
-<li><strong>Tag</strong> filter → Type <code>Deployment</code> → Select <strong>model router deployment name</strong> in Value</li>
+<li><strong>Tag</strong> filter → Type: <code>Deployment</code> → Value: <strong>model router deployment name</strong></li>
 </ol>
-<h3 id="en-73-3">7.3 Three levers to reduce costs</h3>
+<h3 id="en-73-3">7.3 Three Levers to Reduce Costs</h3>
 <table>
 <thead>
 <tr>
@@ -1481,7 +1481,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 </tr>
 </tbody>
 </table>
-<h3 id="en-74">7.4 Pre-production Evaluation</h3>
+<h3 id="en-74">7.4 Pre-Production Evaluation</h3>
 <p><strong>Treat the first deployment as a starting configuration, not the final setup</strong>. Before shifting production traffic, use the existing model deployment as a baseline and compare <strong>response quality · expected cost · latency</strong>.</p>
 <p>Tuning is done in a <strong>hill-climbing</strong> manner — measure baseline → <strong>change only one lever</strong> → re-measure → keep only if improved, otherwise rollback → next lever. The model router has two levers.</p>
 <table>
@@ -1503,7 +1503,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 </tbody>
 </table>
 <blockquote>
-<p>⚠️ <strong>Do not change both levers at the same time.</strong> Even if costs decrease, you won't know whether the cause is the mode or the subset, and you'll lose the basis for judgment in the next iteration. Using both levers <strong>together is fine</strong>, the problem is changing them "at once".</p>
+<p>⚠️ <strong>Do not change both levers at the same time.</strong> Even if costs decrease, you won't know whether the cause is the mode or the subset, and you'll lose the basis for judgment in the next iteration. Using both levers <strong>together is fine</strong>; the problem is changing them at the same time.</p>
 </blockquote>
 <p><strong>Principles for fair comparison</strong></p>
 <ul>
@@ -1524,7 +1524,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 <tbody>
 <tr>
 <td>Quality is below the required level</td>
-<td><strong>Quality mode</strong> or limit model subset</td>
+<td>Switch to <strong>Quality mode</strong> or limit the model subset</td>
 </tr>
 <tr>
 <td>Quality is fine but savings are minimal</td>
@@ -1554,7 +1554,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 <p>Controlled comparisons alone cannot fully replicate production conditions. Before full deployment, observe quality signals, actual cost, median and tail latency, errors and failover behavior, and selected model distribution through <strong>limited production testing</strong>. A <strong>hybrid approach that leaves requests requiring deterministic model selection to direct model deployment</strong> is also a valid conclusion.</p>
 <p>The selected configuration is not the end, but a <strong>new baseline</strong>. Repeat evaluation if the traffic mix, routing settings, support model, application behavior, or pricing changes.</p>
 <hr/>
-<h2 id="en-8">8. Constraints and Pitfalls</h2>
+<h2 id="en-8">8. Limitations and Pitfalls</h2>
 <table>
 <thead>
 <tr>
@@ -1580,7 +1580,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 <td>If deterministic output is needed, exclude reasoning models from the subset</td>
 </tr>
 <tr>
-<td><strong>Non-fixed response model</strong></td>
+<td><strong>Response model not fixed</strong></td>
 <td>A different model responds for each request</td>
 <td>If there are audit requirements, log the <code>model</code> field. If deterministic selection is essential, maintain direct deployment</td>
 </tr>
@@ -1596,7 +1596,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 </tr>
 <tr>
 <td><strong>Claude pre-deployment</strong></td>
-<td>If not deployed <code>InvalidResourceProperties</code></td>
+<td><code>InvalidResourceProperties</code> if not deployed</td>
 <td>Deploy first with the same account·SKU</td>
 </tr>
 <tr>
@@ -1611,7 +1611,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 </tr>
 </tbody>
 </table>
-<h3 id="en-81">8.1 Quick Reference for Troubleshooting</h3>
+<h3 id="en-81">8.1 Troubleshooting Quick Reference</h3>
 <table>
 <thead>
 <tr>
@@ -1654,7 +1654,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 </tbody>
 </table>
 <hr/>
-<h2 id="en-9">9. Introduction Checklist</h2>
+<h2 id="en-9">9. Adoption Checklist</h2>
 <ul>
 <li>☐ Verified that the request difficulty of the workload is actually <strong>mixed</strong></li>
 <li>☐ If planning to use Claude, completed <strong>pre-deployment</strong></li>
@@ -1687,7 +1687,7 @@ response = openai_client.responses.create(model=deployment, input="...")
 <li>Routing Mode Comparison Demo: https://github.com/leestott/router-demo-app</li>
 </ul>
 <hr/>
-<p class="meta">Last modified 2026-08-31 · Microsoft Scout</p>
+<p class="meta">Last modified 2026-11-04 · Microsoft Scout</p>
 </main>
 </div>
 <script>

@@ -346,7 +346,7 @@ blockquote p { margin: .35rem 0; }
 <tr><th>우선순위 · 워크로드</th><th>Decision-1이 판단하는 것</th><th>기대 효과</th><th>확인할 점</th></tr>
 </thead>
 <tbody>
-<tr><td>1. 난이도 기반 모델 라우팅</td><td><code>score</code>로 난이도 → 모델 등급</td><td>저난도는 효율 모델, 고난도만 추론 모델로 보내 단가와 지연 관리</td><td>난이도 임계치를 평가 세트로 검증</td></tr>
+<tr><td>1. 난이도 기반 모델 라우팅</td><td><code>choice</code>(<code>low</code>/<code>high</code>)로 난이도 → 모델 등급</td><td>저난도는 효율 모델, 고난도만 추론 모델로 보내 단가와 지연 관리</td><td>난이도 임계치를 평가 세트로 검증</td></tr>
 <tr><td>2. 대량 티켓 분류</td><td><code>choice</code>로 팀·의도 + 옵션별 확률</td><td>확률이 낮은 건만 LLM·상담원으로 보내 평균 응답시간과 토큰 감소</td><td>임계치와 오분류 비용, 기권 옵션(예: <code>cannot_tell</code>)</td></tr>
 <tr><td>3. 에이전트 액션 게이트</td><td><code>noul</code>·<code>choice</code>로 위험도·권한</td><td>승인된 액션만 실행해 롤백·재시도·장애 대응 비용 감소</td><td>선택과 실행 권한을 분리하고, 중대한 결정은 사람 검토</td></tr>
 <tr><td>4. 문서·요약 생성</td><td><code>choice</code>로 문서 유형·스타일·템플릿</td><td>생성은 OpenAI 등 LLM에 맡기고 앞단 분류·정책만 Decision이 담당</td><td>생성 품질은 별도 평가로 확인</td></tr>
@@ -759,7 +759,7 @@ Authorization: Bearer &lt;API_KEY&gt;
 <tr><th>Priority · workload</th><th>What Decision-1 judges</th><th>Expected benefit</th><th>What to verify</th></tr>
 </thead>
 <tbody>
-<tr><td>1. Complexity-based model routing</td><td>Complexity via <code>score</code> → model tier</td><td>Efficient model for simple tasks, reasoning model only for hard ones to manage unit cost and latency</td><td>Validate the complexity threshold on an evaluation set</td></tr>
+<tr><td>1. Complexity-based model routing</td><td>Complexity via <code>choice</code> (<code>low</code>/<code>high</code>) → model tier</td><td>Efficient model for simple tasks, reasoning model only for hard ones to manage unit cost and latency</td><td>Validate the complexity threshold on an evaluation set</td></tr>
 <tr><td>2. High-volume ticket triage</td><td>Team or intent via <code>choice</code> plus per-option probability</td><td>Only low-probability cases go to an LLM or an agent, reducing average latency and tokens</td><td>Threshold versus misrouting cost, plus an abstain option such as <code>cannot_tell</code></td></tr>
 <tr><td>3. Agent action gate</td><td>Risk and permission via <code>noul</code> and <code>choice</code></td><td>Run only approved actions to reduce rollback, retry, and incident-handling cost</td><td>Separate selection from execution rights; human review for consequential decisions</td></tr>
 <tr><td>4. Document and summary generation</td><td>Document type, style, or template via <code>choice</code></td><td>Leave generation to an LLM such as OpenAI; Decision handles only upfront classification and policy</td><td>Verify generation quality with a separate evaluation</td></tr>
