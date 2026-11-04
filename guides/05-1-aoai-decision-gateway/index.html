@@ -354,7 +354,7 @@ blockquote p { margin: .35rem 0; }
 </tbody>
 </table>
 <h2 id="sec-5">5. Decision-1 호출·응답·정책 설계</h2>
-<p>이 장은 <strong>Microsoft-Decision-1</strong>의 Microsoft Learn 문서와, Decision-1을 실제 배포에 호출해 검증한 <a href="https://github.com/bskim/Microsoft-Decision-workshop/">Microsoft-Decision-workshop</a> 코드(2026-10-12 검증)를 근거로 합니다. 문서와 코드에서 확인되지 않은 응답 필드는 쓰지 않았고, 확인하지 못한 부분은 그렇게 표시했습니다.</p>
+<p>이 장은 <strong>Microsoft-Decision-1</strong>의 Microsoft Learn 문서와, Decision-1을 실제 배포에 호출해 검증한 <a href="https://github.com/bskim/Microsoft-Decision-workshop/">Microsoft-Decision-workshop</a> 코드(2026-10-12 검증)를 근거로 합니다. 문서와 코드에서 확인되지 않은 응답 필드는 쓰지 않았습니다.</p>
 <h3 id="sec-5-1">5.1 요청 만들기</h3>
 <p>엔드포인트는 Foundry 리소스의 <code>/providers/microsoft/v1/systemone</code>입니다. 요청의 <code>model</code>에는 모델 이름이 아니라 <strong>배포 이름</strong>을 넣고, 판단할 내용은 <code>state</code>(텍스트 또는 JSON)에, 판단 항목은 <code>questions</code>에 타입이 있는 질문으로 담습니다. 같은 <code>state</code>를 보는 질문은 한 요청에 함께 담을 수 있어 호출 수가 줄고 판단 맥락이 일관됩니다.</p>
 <table>
@@ -393,10 +393,6 @@ Authorization: Bearer &lt;entra-access-token&gt;
         "edit": "Read and edit tools",
         "shell": "Read, edit, and shell tools"
       }
-    },
-    "touches_production": {
-      "type": "noul",
-      "instructions": "Does this request modify or delete production data?"
     }
   }
 }</code></pre>
@@ -418,8 +414,7 @@ Authorization: Bearer &lt;entra-access-token&gt;
       "type": "choice",
       "choice": "edit",
       "probabilities": { "answer_only": 0.02, "inspect": 0.15, "edit": 0.78, "shell": 0.05 }
-    },
-    "touches_production": { "type": "noul" }
+    }
   }
 }</code></pre>
 <p>위 예시의 확률 값은 형태를 보여 주기 위한 <strong>임의의 숫자</strong>입니다. 선택된 옵션의 확률은 <code>probabilities[choice]</code>로 읽습니다.</p>
@@ -772,7 +767,7 @@ Authorization: Bearer &lt;API_KEY&gt;
 </tbody>
 </table>
 <h2 id="en-sec-5">5. Decision-1 calls, responses, and policy design</h2>
-<p>This chapter is grounded in the Microsoft Learn article for <strong>Microsoft-Decision-1</strong> and in the <a href="https://github.com/bskim/Microsoft-Decision-workshop/">Microsoft-Decision-workshop</a> code, which calls a live Decision-1 deployment (validated 2026-10-12). Response fields that neither source confirms are not used, and anything unconfirmed is labeled as such.</p>
+<p>This chapter is grounded in the Microsoft Learn article for <strong>Microsoft-Decision-1</strong> and in the <a href="https://github.com/bskim/Microsoft-Decision-workshop/">Microsoft-Decision-workshop</a> code, which calls a live Decision-1 deployment (validated 2026-10-12). Response fields that neither source confirms are not used.</p>
 <h3 id="en-sec-5-1">5.1 Building the request</h3>
 <p>The endpoint is <code>/providers/microsoft/v1/systemone</code> on your Foundry resource. Set <code>model</code> to your <strong>deployment name</strong>, not the model name, put the content to judge in <code>state</code> (text or JSON), and describe each judgment as a typed entry in <code>questions</code>. Questions about the same <code>state</code> can share one request, which reduces calls and keeps the decision context consistent.</p>
 <table>
@@ -811,10 +806,6 @@ Authorization: Bearer &lt;entra-access-token&gt;
         "edit": "Read and edit tools",
         "shell": "Read, edit, and shell tools"
       }
-    },
-    "touches_production": {
-      "type": "noul",
-      "instructions": "Does this request modify or delete production data?"
     }
   }
 }</code></pre>
@@ -836,8 +827,7 @@ Authorization: Bearer &lt;entra-access-token&gt;
       "type": "choice",
       "choice": "edit",
       "probabilities": { "answer_only": 0.02, "inspect": 0.15, "edit": 0.78, "shell": 0.05 }
-    },
-    "touches_production": { "type": "noul" }
+    }
   }
 }</code></pre>
 <p>The probabilities above are <strong>arbitrary numbers</strong> that only show the shape. Read the selected option's probability as <code>probabilities[choice]</code>.</p>
