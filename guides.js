@@ -114,8 +114,8 @@ window.GUIDES = [
       "프롬프트 캐싱 동작 원리부터 히트율 진단, 앞 1,024 토큰 고정 · 보존 기간 연장 · prompt_cache_key 농도 조절 3단계 개선, 배포 유형과 APIM 계층 선택, 비용 모델과 SLO 연결까지 다룹니다.",
     summaryEn:
       "Covers prompt caching, hit-rate diagnosis, three improvement steps, deployment and APIM tier choices, and connecting the cost model to SLOs.",
-    tags: ["프롬프트 캐싱", "TTFT", "비용 최적화", "PTU", "APIM"],
-    tagsEn: ["Prompt caching", "TTFT", "Cost optimization", "PTU", "APIM"],
+    tags: ["프롬프트 캐싱", "Context Cache", "TTFT", "비용 최적화", "PTU", "APIM"],
+    tagsEn: ["Prompt caching", "Context Cache", "TTFT", "Cost optimization", "PTU", "APIM"],
     updated: "2026-11-03",
     status: "published",
     source: "source.md"

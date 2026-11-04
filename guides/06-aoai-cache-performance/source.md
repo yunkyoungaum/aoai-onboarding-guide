@@ -24,6 +24,8 @@
 
 > ⚠️ **3단계는 GPT-5.6 이상 전용입니다.** `prompt_cache_key`는 문서상 GPT-5.6 이상 모델 계열에만 정의되어 있습니다. 그 이전 모델을 쓴다면 3단계를 건너뛰고 **§4 → §6(배포 유형) → §7(APIM)** 순으로 진행하세요.
 
+> 🧪 **Preview 대안** — 자동 캐싱의 히트율을 직접 통제하기 어렵다면, 고객이 캐시 컨테이너·연결·TTL을 정하는 **Context Cache(Preview)** 가 있습니다. 전제 조건과 한계는 [§11](#11-context-cache-preview--고객이-직접-제어하는-명시적-캐시)에 있습니다.
+
 > 💡 **3단계의 핵심 문장**
 > 재사용될 만큼은 **뭉치되**, 한 머신이 넘칠 만큼 뭉치지는 **마세요**.
 > *"concentrated enough for reuse, but not overloaded."*
@@ -565,6 +567,129 @@ SLO:  "캐시 히트 요청의 TTFT p95 < X ms"
 
 ---
 
+## 11. Context Cache (Preview) — 고객이 직접 제어하는 명시적 캐시
+
+> ⚠️ **Preview 기능입니다.** 구독 단위 등록(승인형)이 필요하고, 지원 리전·모델·API 버전이 제한됩니다. 아래 내용은 [Azure/AzureContextCache](https://github.com/Azure/AzureContextCache) 저장소의 Quickstart를 근거로 하며, 이 저장소 밖의 공식 문서에서는 확인하지 못했습니다.
+
+지금까지 다룬 프롬프트 캐싱(§1~§10)은 **서비스가 자동으로 관리**합니다. 캐시를 어디에 두고 얼마나 둘지는 서비스가 정하고, 히트는 최선 노력(best-effort)입니다. **Context Cache**는 이 부분을 고객이 통제하는 **명시적(explicit) 캐싱**입니다.
+
+### 11.1 무엇이 다른가
+
+| | 자동 프롬프트 캐싱 (§1~§10) | Context Cache (Preview) |
+|---|---|---|
+| 관리 주체 | 서비스 | **고객** (이름 붙인 캐시 컨테이너) |
+| 캐시 위치 | 서비스 내부 | **고객 구독 안의 별도 리소스** (`Microsoft.Storage`) |
+| 보존 시간 | 서비스 정책 (§4) | **컨테이너의 `timeToLive`** 로 지정 |
+| 격리·리전·생명주기 | 서비스 정책 | 고객이 직접 관리 |
+| 연결 방식 | 별도 설정 없음 | 배포에 `properties.contextCacheContainerId` **속성 하나** |
+| 클라이언트 변경 | 없음 | **없음** (SDK 수정·추가 헤더 불필요) |
+
+저장소는 자동 캐싱을 *implicit (best-effort)*, Context Cache를 *explicit (contractual)* 로 구분합니다. 여기서 "계약적"은 **캐시 컨테이너·연결·TTL을 고객이 명시적으로 통제한다**는 뜻이며, 모든 요청의 히트를 수치로 보장한다는 의미는 아닙니다.
+
+### 11.2 구성 요소
+
+| 개념 | Azure 리소스 |
+|---|---|
+| 조직/팀 단위 캐시 **네임스페이스** | `Microsoft.Storage/contextCaches` |
+| 특정 모델용 캐시 **저장 단위** | `Microsoft.Storage/contextCaches/contextCacheContainers` |
+| 캐시를 쓰는 **배포** | `Microsoft.CognitiveServices/accounts/deployments` + `properties.contextCacheContainerId` |
+
+```bicep
+resource cacheAccount 'Microsoft.Storage/contextCaches@2026-01-01-preview' = {
+  name: '<cache-account-name>'
+  location: resourceGroup().location
+  properties: {
+    accountKind: 'Regional'
+  }
+}
+
+resource cacheContainer 'Microsoft.Storage/contextCaches/contextCacheContainers@2026-01-01-preview' = {
+  parent: cacheAccount
+  name: 'default-container'
+  properties: {
+    modelName: 'gpt-5.4'
+    provider: 'OpenAI'
+    timeToLive: 7
+  }
+}
+
+resource deployment 'Microsoft.CognitiveServices/accounts/deployments@2026-03-15-preview' = {
+  parent: aoaiAccount
+  name: 'context-cache-deployment'
+  sku: { name: 'Standard', capacity: 100 }
+  properties: {
+    model: { format: 'OpenAI', name: 'gpt-5.4', version: '2026-03-05-contextcache' }
+    contextCacheContainerId: cacheContainer.id   // the only link between deployment and cache
+  }
+}
+```
+
+### 11.3 시작하기 전에 (Preview 전제 조건)
+
+- **기능 등록 (구독당 1회)**: `Microsoft.Storage` 리소스 공급자와 `Microsoft.CognitiveServices`의 `OpenAI.ContextCacheAllowed` 기능을 등록합니다. 두 기능 모두 **승인형(gated)** 이라, 상태가 몇 분 넘게 `Pending`이면 저장소가 안내하는 주소(`azurecontextcacherp@microsoft.com`)로 승인을 요청합니다.
+- **지원 리전**: 저장소 기준 현재 `centralus`(출시 리전)와 `swedencentral`입니다. 다른 리전은 `LocationNotAvailableForResourceType` 오류가 납니다.
+- **모델·버전**: 저장소의 예시는 `gpt-5.4`와 **전용 버전 `2026-03-05-contextcache`** 입니다. 다른 모델의 지원 여부는 저장소에 나와 있지 않습니다.
+- **API**: Responses API, 버전 `2026-03-15-preview`를 씁니다.
+- **임시 우회**: private-preview 사전 검증 문제 때문에 배포 시 `--validation-level Template`가 필요합니다(저장소의 `scripts/deploy.ps1`은 자동으로 적용).
+
+```bash
+az provider register --namespace Microsoft.Storage
+az feature register --namespace Microsoft.CognitiveServices --name OpenAI.ContextCacheAllowed
+
+# deploy the template with template-level validation (temporary private-preview workaround)
+az deployment group create \
+  --resource-group <resource-group> \
+  --template-file azuredeploy.json \
+  --validation-level Template
+```
+
+### 11.4 호출과 확인
+
+배포가 연결되면 그 배포로 가는 요청은 **클라이언트 코드 변경 없이** 캐시를 거칩니다. 안정적인 내용은 `instructions`(또는 `input`의 앞쪽)에, 매 턴 달라지는 내용은 **맨 끝**에 둡니다. 캐시는 요청의 **prefix** 기준으로 맞춰지므로 앞쪽 한 바이트만 달라도 히트가 깨집니다(§3).
+
+```python
+from openai import AzureOpenAI
+
+client = AzureOpenAI(
+    azure_endpoint="<azureOpenAIEndpoint>",
+    api_key="<your-key>",              # or a Microsoft Entra token
+    api_version="2026-03-15-preview",
+)
+
+resp = client.responses.create(
+    model="context-cache-deployment",  # the deployment linked to the cache container
+    instructions=LONG_STABLE_SYSTEM_PROMPT,   # keep byte-identical across calls
+    input=[{"role": "user", "content": [{"type": "input_text", "text": user_turn}]}],
+)
+print(resp.usage.input_tokens_details.cached_tokens)
+```
+
+히트는 응답의 `usage.input_tokens_details.cached_tokens`로 확인합니다. 저장소의 데모(약 2.4K 토큰 고정 prefix, 6회 호출)는 첫 호출이 cold(`cached_tokens` 약 0)이고 이후 호출이 warm(`cached_tokens` 약 2.4K)이 되는 모양을 보여 줍니다. **이 수치는 데모 한정의 예시이며 자신의 워크로드 결과가 아닙니다.**
+
+### 11.5 운영
+
+- **TTL**: 컨테이너의 `timeToLive`로 정합니다. 저장소 기본값은 **7일**(README의 `timeToLive = 7d`)이며, Bicep 템플릿에는 단위 없이 `timeToLive: 7`로 적혀 있습니다. 허용 범위와 단위는 저장소에 정의되어 있지 않으니 사용하는 API 버전의 스키마로 확인하세요.
+- **연결 해제**: 같은 배포를 `properties.contextCacheContainerId` **없이** PUT합니다(`sku`와 `model`은 그대로 유지).
+- **캐시가 안 쓰이는 것 같을 때**: prefix가 요청 간 **바이트 단위로 동일**한지, 충분히 긴지, 트래픽이 `contextCacheContainerId`가 설정된 **그 배포**로 가는지(연결되지 않은 형제 배포가 아닌지) 확인합니다.
+- **`FeatureNotRegistered`**: 기능 등록 상태가 모두 `Registered`가 될 때까지 기다립니다.
+
+### 11.6 언제 검토하나
+
+아래는 저장소의 설명을 바탕으로 한 **판단 가이드**이며 공식 권고가 아닙니다.
+
+- 캐시 컨테이너와 TTL을 **애플리케이션이 직접 통제**하는 명시적 방식이 필요한 경우(저장소는 이를 implicit 방식과 구분해 설명합니다).
+- 캐시의 **격리, 데이터가 머무는 리전, 생명주기**를 고객 구독 안에서 직접 관리해야 하는 경우.
+- 모델을 바꾸거나 캐시 내용을 교체할 때 Azure OpenAI 계정을 건드리고 싶지 않은 경우(저장소 설명).
+
+반대로 다음은 **문서에 없어서 확인하지 못한 부분**입니다. 도입 전에 직접 확인하세요.
+
+- 자동 캐싱의 `prompt_cache_key`·breakpoint(§5)와 **함께 쓸 수 있는지, 서로 영향이 있는지**
+- 캐시 읽기·쓰기 **가격**과 Context Cache 컨테이너 자체의 비용
+- `gpt-5.4` 외 **모델 지원 범위**, GA 일정, 최소 prefix 길이
+- 프로덕션(SLA) 사용 가능 여부 — **Preview**입니다.
+
+---
+
 ## 참고 자료
 
 - Prompt caching with Azure OpenAI in Microsoft Foundry Models: https://learn.microsoft.com/azure/foundry/openai/how-to/prompt-caching
@@ -574,4 +699,5 @@ SLO:  "캐시 히트 요청의 TTFT p95 < X ms"
 - Azure OpenAI v1 API 라이프사이클: https://learn.microsoft.com/azure/foundry/openai/api-version-lifecycle
 - Claude models in Microsoft Foundry (automatic prompt caching): https://learn.microsoft.com/azure/foundry/foundry-models/concepts/claude-models
 - AI gateway capabilities in Azure API Management (semantic caching): https://learn.microsoft.com/azure/api-management/genai-gateway-capabilities
+- Azure Context Cache — Quickstart (Preview): https://github.com/Azure/AzureContextCache
 - Azure OpenAI 가격: https://azure.microsoft.com/pricing/details/cognitive-services/openai-service/
