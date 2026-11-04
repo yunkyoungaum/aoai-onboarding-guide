@@ -43,7 +43,7 @@
 - [ ] 앞 1,024 토큰에 **가변 값**(타임스탬프, 사용자 ID, UUID)이 **없다** (§3.2)
 - [ ] 대화 컨텍스트를 **append-only**로 유지한다 (§3.3)
 - [ ] 도구 정의와 출력 스키마의 **직렬화 순서가 고정**되어 있다 (§3.2)
-- [ ] 모델에 맞는 **보존 정책**을 명시적으로 설정했다 (§4)
+- [ ] 모델 계열에 맞는 **보존 설정**을 확인했다 (5.4 이하는 `prompt_cache_retention`, 5.5는 설정 불필요, 5.6+는 기본 `30m`, §4)
 - [ ] *(5.6+)* `prompt_cache_key`가 **안정적 해시**로 샤딩되어 있다 (§5.3)
 - [ ] *(5.6+)* 키당 트래픽이 **~15 RPM 이하**다 (§5.2)
 - [ ] **`cached_tokens`를 로깅**하고 키별로 집계한다 (§9.1)
@@ -306,7 +306,7 @@ user   = f"[시각 {now_hour}] [사용자 {user_name}]\n{question}"
 
 ### 5.1 `prompt_cache_key`는 저장이 아니라 라우팅입니다
 
-`prompt_cache_key`는 **"같은 키의 요청을 같은 머신으로 보내라"는 힌트**입니다. 캐시를 저장하는 게 아니라 **어디로 보낼지**를 결정합니다.
+`prompt_cache_key`는 **"같은 키의 요청을 같은 머신으로 보내라"는 힌트**입니다. 캐시를 저장하는 게 아니라 **어디로 보낼지**를 결정합니다. 특정 API 버전이 필요하지 않으며, 신규 통합에는 v1 API를 권장합니다.
 
 > 동일 **prefix + `prompt_cache_key`** 조합의 요청이 **분당 약 15건**을 넘으면 일부 요청이 **넘쳐서(overflow) 추가 머신으로 라우팅**되고, 그 요청들은 캐시를 놓칠 수 있습니다.
 
@@ -466,6 +466,8 @@ flowchart LR
 | 사내 문서 Q&A | 최신성이 중요한 질의 (재고, 시세) |
 | 카탈로그·상품 설명 생성 | 정확도 요구가 높은 도메인 (의료, 법률, 금융) |
 
+> 📌 **선행 조건** — APIM semantic caching은 **Azure Managed Redis 또는 RediSearch 호환 외부 캐시**, **Embeddings API**, 그리고 `llm-semantic-cache-lookup` / `llm-semantic-cache-store` 정책이 필요합니다. 기능 제공 범위는 APIM 서비스 계층에 따라 다를 수 있으니 연결된 문서로 확인하세요.
+
 > ⚠️ semantic caching은 **유사도 임계값 튜닝이 핵심**입니다. 느슨하면 오답을, 빡빡하면 히트율 0을 얻습니다. 오프라인 평가셋으로 임계를 정하고 **캐시 히트 응답을 샘플링 검수**하는 절차를 함께 두세요.
 
 > 💡 APIM은 캐싱 외에 **토큰 제한·백엔드 풀·서킷 브레이커**도 제공합니다. 가용성 설계와 함께 도입하면 효과가 큽니다 — [04 고가용성 가이드](../04-aoai-high-availability/) 참조.
@@ -567,7 +569,7 @@ SLO:  "캐시 히트 요청의 TTFT p95 < X ms"
 
 - Prompt caching with Azure OpenAI in Microsoft Foundry Models: https://learn.microsoft.com/azure/foundry/openai/how-to/prompt-caching
 - Provisioned throughput (PTU) 개념: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput
-- Model router — 라우팅과 프롬프트 캐싱: https://learn.microsoft.com/azure/foundry/openai/concepts/model-router
+- Model router — 프롬프트 캐싱 섹션(세션 어피니티 포함): https://learn.microsoft.com/azure/foundry/openai/concepts/model-router
 - Azure OpenAI Responses API (`context_management`, 서버 측 압축): https://learn.microsoft.com/azure/foundry/openai/how-to/responses
 - Azure OpenAI v1 API 라이프사이클: https://learn.microsoft.com/azure/foundry/openai/api-version-lifecycle
 - Claude models in Microsoft Foundry (automatic prompt caching): https://learn.microsoft.com/azure/foundry/foundry-models/concepts/claude-models

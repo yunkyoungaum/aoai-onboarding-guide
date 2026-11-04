@@ -515,7 +515,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 <li>[ ] 앞 1,024 토큰에 <strong>가변 값</strong>(타임스탬프, 사용자 ID, UUID)이 <strong>없다</strong> (§3.2)</li>
 <li>[ ] 대화 컨텍스트를 <strong>append-only</strong>로 유지한다 (§3.3)</li>
 <li>[ ] 도구 정의와 출력 스키마의 <strong>직렬화 순서가 고정</strong>되어 있다 (§3.2)</li>
-<li>[ ] 모델에 맞는 <strong>보존 정책</strong>을 명시적으로 설정했다 (§4)</li>
+<li>[ ] 모델 계열에 맞는 <strong>보존 설정</strong>을 확인했다 (5.4 이하는 <code>prompt_cache_retention</code>, 5.5는 설정 불필요, 5.6+는 기본 <code>30m</code>, §4)</li>
 <li>[ ] <em>(5.6+)</em> <code>prompt_cache_key</code>가 <strong>안정적 해시</strong>로 샤딩되어 있다 (§5.3)</li>
 <li>[ ] <em>(5.6+)</em> 키당 트래픽이 <strong>~15 RPM 이하</strong>다 (§5.2)</li>
 <li>[ ] <strong><code>cached_tokens</code>를 로깅</strong>하고 키별로 집계한다 (§9.1)</li>
@@ -871,7 +871,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </blockquote>
 <p><strong>"캐시는 머신 로컬"</strong> 성질이 정면으로 드러나는 영역입니다.</p>
 <h3 id="51-prompt_cache_key">5.1 <code>prompt_cache_key</code>는 저장이 아니라 라우팅입니다</h3>
-<p><code>prompt_cache_key</code>는 <strong>"같은 키의 요청을 같은 머신으로 보내라"는 힌트</strong>입니다. 캐시를 저장하는 게 아니라 <strong>어디로 보낼지</strong>를 결정합니다.</p>
+<p><code>prompt_cache_key</code>는 <strong>"같은 키의 요청을 같은 머신으로 보내라"는 힌트</strong>입니다. 캐시를 저장하는 게 아니라 <strong>어디로 보낼지</strong>를 결정합니다. 특정 API 버전이 필요하지 않으며, 신규 통합에는 v1 API를 권장합니다.</p>
 <blockquote>
 <p>동일 <strong>prefix + <code>prompt_cache_key</code></strong> 조합의 요청이 <strong>분당 약 15건</strong>을 넘으면 일부 요청이 <strong>넘쳐서(overflow) 추가 머신으로 라우팅</strong>되고, 그 요청들은 캐시를 놓칠 수 있습니다.</p>
 </blockquote>
@@ -1112,6 +1112,7 @@ html[data-theme="dark"] .codehilite .il { color: #AE81FF } /* Literal.Number.Int
 </tbody>
 </table>
 <blockquote>
+<p>📌 <strong>선행 조건</strong> — APIM semantic caching은 <strong>Azure Managed Redis 또는 RediSearch 호환 외부 캐시</strong>, <strong>Embeddings API</strong>, 그리고 <code>llm-semantic-cache-lookup</code> / <code>llm-semantic-cache-store</code> 정책이 필요합니다. 기능 제공 범위는 APIM 서비스 계층에 따라 다를 수 있으니 연결된 문서로 확인하세요.</p>
 <p>⚠️ semantic caching은 <strong>유사도 임계값 튜닝이 핵심</strong>입니다. 느슨하면 오답을, 빡빡하면 히트율 0을 얻습니다. 오프라인 평가셋으로 임계를 정하고 <strong>캐시 히트 응답을 샘플링 검수</strong>하는 절차를 함께 두세요.</p>
 <p>💡 APIM은 캐싱 외에 <strong>토큰 제한·백엔드 풀·서킷 브레이커</strong>도 제공합니다. 가용성 설계와 함께 도입하면 효과가 큽니다 — <a href="../04-aoai-high-availability/">04 고가용성 가이드</a> 참조.</p>
 </blockquote>
@@ -1328,7 +1329,7 @@ SLO:  "캐시 히트 요청의 TTFT p95 &lt; X ms"
 <ul>
 <li>Prompt caching with Azure OpenAI in Microsoft Foundry Models: https://learn.microsoft.com/azure/foundry/openai/how-to/prompt-caching</li>
 <li>Provisioned throughput (PTU) 개념: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput</li>
-<li>Model router — 라우팅과 프롬프트 캐싱: https://learn.microsoft.com/azure/foundry/openai/concepts/model-router</li>
+<li>Model router — 프롬프트 캐싱 섹션(세션 어피니티 포함): https://learn.microsoft.com/azure/foundry/openai/concepts/model-router</li>
 <li>Azure OpenAI Responses API (<code>context_management</code>, 서버 측 압축): https://learn.microsoft.com/azure/foundry/openai/how-to/responses</li>
 <li>Azure OpenAI v1 API 라이프사이클: https://learn.microsoft.com/azure/foundry/openai/api-version-lifecycle</li>
 <li>Claude models in Microsoft Foundry (automatic prompt caching): https://learn.microsoft.com/azure/foundry/foundry-models/concepts/claude-models</li>
@@ -1414,7 +1415,7 @@ SLO:  "캐시 히트 요청의 TTFT p95 &lt; X ms"
 </blockquote>
 <hr/>
 <h2 id="en-0-tldr">0. TL;DR</h2>
-<p>Prompt caching <strong>reuses the KV operation results of the same prompt prefix</strong> to reduce TTFT and input token costs. It is <strong>enabled by default</strong> on supported models, so the practical challenge is entirely about <strong>how to increase the hit rate</strong>. Since the cache exists <strong>locally</strong> on a specific inference machine, the hit rate is determined by ① how stable the prompt is ② how long the cache lives ③ how well requests are concentrated on the same machine.</p>
+<p>Prompt caching <strong>reuses the KV operation results of the same prompt prefix</strong> to reduce TTFT and input token costs. It is <strong>enabled by default</strong> on supported models, so the practical challenge comes down to <strong>how to raise the hit rate</strong>. Since the cache exists <strong>locally</strong> on a specific inference machine, the hit rate is determined by ① how stable the prompt is ② how long the cache lives ③ how well requests are concentrated on the same machine.</p>
 <h3 id="en-3">Three Steps to Improve Cache Hit Rate</h3>
 <table>
 <thead>
@@ -1494,7 +1495,7 @@ Concentrate requests enough for reuse, but <strong>not so much</strong> that a s
 <li>[ ] No <strong>variable values</strong> (timestamps, user ID, UUID) are present in the first 1,024 tokens (§3.2)</li>
 <li>[ ] Maintain conversation context as <strong>append-only</strong> (§3.3)</li>
 <li>[ ] Serialization order of tool definitions and output schema is <strong>fixed</strong> (§3.2)</li>
-<li>[ ] Explicitly set a <strong>retention policy</strong> appropriate for the model (§4)</li>
+<li>[ ] Confirmed the <strong>retention setting</strong> for your model family (5.4 and earlier: <code>prompt_cache_retention</code>; 5.5: none needed; 5.6+: default <code>30m</code>, §4)</li>
 <li>[ ] <em>(5.6+)</em> <code>prompt_cache_key</code> is sharded using a <strong>stable hash</strong> (§5.3)</li>
 <li>[ ] <em>(5.6+)</em> Traffic per key is <strong>~15 RPM or less</strong> (§5.2)</li>
 <li>[ ] <strong>Log <code>cached_tokens</code></strong> and aggregate by key (§9.1)</li>
@@ -1665,7 +1666,7 @@ Concentrate requests enough for reuse, but <strong>not so much</strong> that a s
 <tbody>
 <tr>
 <td>Current time in the system prompt</td>
-<td>Each request string differs</td>
+<td>The text changes on every request</td>
 <td>Move to the back, or truncate the time unit</td>
 </tr>
 <tr>
@@ -1686,7 +1687,7 @@ Concentrate requests enough for reuse, but <strong>not so much</strong> that a s
 <tr>
 <td>Transform the prompt <strong>into A/B each time</strong></td>
 <td>Separate cache for each variant</td>
-<td>Fix the variant as a decimal</td>
+<td>Limit the number of variants</td>
 </tr>
 <tr>
 <td><strong>Summarize/delete</strong> the conversation history from the middle</td>
@@ -1714,7 +1715,7 @@ Turn 3:  [S][Summary(U1,A1)][U3]       → Change prefix → Overall miss ❌
 </blockquote>
 <hr/>
 <h2 id="en-4-2">4. Improvement Stage 2 — Extend Cache Retention Time</h2>
-<p><strong>One-line parameter</strong> means almost no cost to try. It is especially effective for workloads with gaps between requests.</p>
+<p>It is <strong>a single parameter</strong>, so it costs almost nothing to try. It is especially effective for workloads with gaps between requests.</p>
 <h3 id="en-41-in-memory-vs-extended">4.1 in-memory vs extended</h3>
 <table>
 <thead>
@@ -1834,12 +1835,12 @@ Turn 3:  [S][Summary(U1,A1)][U3]       → Change prefix → Overall miss ❌
 </tr>
 <tr>
 <td><strong>Extended</strong></td>
-<td><strong>Temporarily stored</strong> on GPU machines. Data Zone is kept <strong>within the data zone boundary</strong>, Regional is kept <strong>within the region boundary</strong></td>
+<td><strong>Temporarily stored</strong> on GPU machines. Data Zone deployments stay <strong>within the data zone boundary</strong> and Regional deployments stay <strong>within the region boundary</strong></td>
 </tr>
 </tbody>
 </table>
 <blockquote>
-<p>💡 This is a point that must be addressed for regulated industry clients. While it does not cross boundaries, the fact that <strong>"temporary storage occurs"</strong> itself can be a subject of review.</p>
+<p>💡 This must be addressed for customers in regulated industries. Although data does not cross the boundary, the fact that <strong>"temporary storage occurs"</strong> itself can be a subject of review.</p>
 </blockquote>
 <hr/>
 <h2 id="en-5-3-prefix-prompt_cache_key">5. Three-Step Improvement — Adjusting the Concentration of <code>prefix</code> + <code>prompt_cache_key</code></h2>
@@ -1850,7 +1851,7 @@ Turn 3:  [S][Summary(U1,A1)][U3]       → Change prefix → Overall miss ❌
 </blockquote>
 <p>This is an area where the property of <strong>"cache is machine-local"</strong> is clearly evident.</p>
 <h3 id="en-51-prompt_cache_key">5.1 <code>prompt_cache_key</code> is routing, not storage</h3>
-<p><code>prompt_cache_key</code> is a <strong>hint to "send requests with the same key to the same machine"</strong>. It does not store the cache but decides <strong>where to send it</strong>.</p>
+<p><code>prompt_cache_key</code> is a <strong>hint to "send requests with the same key to the same machine"</strong>. It does not store the cache but decides <strong>where to send it</strong>. No specific API version is required; use the v1 API for new integrations.</p>
 <blockquote>
 <p>If requests with the same <strong>prefix + <code>prompt_cache_key</code></strong> combination exceed <strong>about 15 per minute</strong>, some requests will <strong>overflow and be routed to additional machines</strong>, and those requests may miss the cache.</p>
 </blockquote>
@@ -1877,8 +1878,8 @@ Turn 3:  [S][Summary(U1,A1)][U3]       → Change prefix → Overall miss ❌
 </tr>
 <tr>
 <td>Metaphor</td>
-<td>Line overflows at one counter and gets pushed to the side</td>
-<td>A different counter each time — no one remembers</td>
+<td>The queue overflows at one counter and gets pushed aside</td>
+<td>A different counter every time, so no one remembers you</td>
 </tr>
 </tbody>
 </table>
@@ -2091,6 +2092,7 @@ Turn 3:  [S][Summary(U1,A1)][U3]       → Change prefix → Overall miss ❌
 </tbody>
 </table>
 <blockquote>
+<p>📌 <strong>Prerequisites</strong> — APIM semantic caching needs <strong>Azure Managed Redis or another RediSearch-compatible external cache</strong>, an <strong>Embeddings API</strong>, and the <code>llm-semantic-cache-lookup</code> / <code>llm-semantic-cache-store</code> policies. Feature availability can vary by API Management service tier, so check the linked documentation.</p>
 <p>⚠️ Semantic caching is <strong>all about tuning the similarity threshold</strong>. If it's too loose, you get wrong answers; if it's too strict, you get a hit rate of 0. Set the threshold using an offline evaluation set and include a procedure to <strong>sample and verify cache hit responses</strong>.</p>
 <p>💡 APIM also offers <strong>token limits, backend pool, and circuit breaker</strong> in addition to caching. It's very effective when implemented together with availability design — see <a href="../04-aoai-high-availability/">04 High Availability Guide</a>.</p>
 </blockquote>
@@ -2307,7 +2309,7 @@ Note: "Cache hit rate ≥ Z%"
 <ul>
 <li>Prompt caching with Azure OpenAI in Microsoft Foundry Models: https://learn.microsoft.com/azure/foundry/openai/how-to/prompt-caching</li>
 <li>Provisioned throughput (PTU) concept: https://learn.microsoft.com/azure/foundry/openai/concepts/provisioned-throughput</li>
-<li>Model router — Routing and prompt caching: https://learn.microsoft.com/azure/foundry/openai/concepts/model-router</li>
+<li>Model router — Prompt caching section (including session affinity): https://learn.microsoft.com/azure/foundry/openai/concepts/model-router</li>
 <li>Azure OpenAI Responses API (<code>context_management</code>, server-side compression): https://learn.microsoft.com/azure/foundry/openai/how-to/responses</li>
 <li>Azure OpenAI v1 API lifecycle: https://learn.microsoft.com/azure/foundry/openai/api-version-lifecycle</li>
 <li>Claude models in Microsoft Foundry (automatic prompt caching): https://learn.microsoft.com/azure/foundry/foundry-models/concepts/claude-models</li>
