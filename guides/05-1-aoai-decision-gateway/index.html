@@ -367,7 +367,7 @@ blockquote p { margin: .35rem 0; }
 <tr><td><code>score</code></td><td><code>instructions</code>, <code>criteria</code>(낮음→높음 순 레벨 배열)</td><td>순서 척도의 값과 레벨별 확률 (확률 가중 평균이라 레벨 사이 값 가능)</td></tr>
 </tbody>
 </table>
-<p>게이트웨이에서는 <strong><code>choice</code>를 기본으로</strong> 쓰는 것을 권장합니다. 응답에서 선택된 옵션과 옵션별 확률을 읽는 방식이 문서와 워크샵 코드로 모두 확인된 유일한 형태이기 때문입니다. 난이도처럼 순서가 있는 판단도 <code>low</code>/<code>high</code> 같은 옵션 두 개로 표현하면 이 형태로 처리할 수 있습니다.</p>
+<p>게이트웨이에서는 <strong><code>choice</code>를 기본으로</strong> 쓰는 것을 권장합니다. 난이도처럼 순서가 있는 판단도 <code>low</code>/<code>high</code> 같은 옵션 두 개로 표현할 수 있습니다.</p>
 <pre><code>POST &lt;your-foundry-resource-endpoint&gt;/providers/microsoft/v1/systemone
 Content-Type: application/json
 Authorization: Bearer &lt;entra-access-token&gt;
@@ -788,7 +788,7 @@ Authorization: Bearer &lt;API_KEY&gt;
 <tr><td><code>score</code></td><td><code>instructions</code>, <code>criteria</code> (levels listed lowest to highest)</td><td>A value on an ordered scale and a probability for each level (a probability-weighted average, so it can fall between levels)</td></tr>
 </tbody>
 </table>
-<p>For a gateway, prefer <strong><code>choice</code> questions</strong>: reading the selected option and its per-option probabilities is the only response shape confirmed by both the documentation and the workshop code. Ordered judgments such as complexity can be expressed as two options like <code>low</code>/<code>high</code>.</p>
+<p>For a gateway, prefer <strong><code>choice</code> questions</strong>. Ordered judgments such as complexity can be expressed as two options like <code>low</code>/<code>high</code>.</p>
 <pre><code>POST &lt;your-foundry-resource-endpoint&gt;/providers/microsoft/v1/systemone
 Content-Type: application/json
 Authorization: Bearer &lt;entra-access-token&gt;
